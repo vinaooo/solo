@@ -24,12 +24,19 @@ jobs:
         with:
           packages: platforms;android-37.0
       - uses: gradle/actions/setup-gradle@v4
+      # gradle.properties is tuned for a low-RAM dev machine; the runner can afford more memory and parallelism.
+      - name: Gradle settings for CI
+        run: |
+          mkdir -p ~/.gradle
+          printf '%s\n' \
+            'org.gradle.parallel=true' \
+            'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' \
+            'kotlin.daemon.jvmargs=-Xmx1536m' >> ~/.gradle/gradle.properties
       - name: ktlint, detekt, lint
         run: ./gradlew ktlintCheck detekt lintDebug
-      - name: Unit tests + coverage gate
+      # Unit tests also verify the screenshots (roborazzi.test.verify in gradle.properties).
+      - name: Unit tests, screenshots + coverage gate
         run: ./gradlew test koverVerify koverXmlReport
-      - name: Screenshot tests
-        run: ./gradlew verifyRoborazziDebug
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
