@@ -16,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class SettingsScreenTest {
@@ -60,5 +61,14 @@ class SettingsScreenTest {
         listOf("Game", "Appearance", "Feedback").forEach {
             compose.onNode(hasText(it) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
         }
+    }
+
+    @Test
+    @Config(qualifiers = "pt-rBR")
+    fun `Brazilian Portuguese names the feedback section after what it holds`() {
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
+
+        compose.onNodeWithText("Sons e vibração").performScrollTo().assertExists()
+        compose.onNodeWithText("Vale a partir da próxima partida.").performScrollTo().assertExists()
     }
 }
