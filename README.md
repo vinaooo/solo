@@ -29,7 +29,7 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 ./gradlew ktlintCheck detekt lint  # static analysis
 ./gradlew test koverVerify         # unit tests + coverage gates
 ./gradlew :domain:pitest           # mutation testing
-./gradlew verifyRoborazziDebug     # screenshot tests (recordRoborazziDebug to update baselines)
+./gradlew recordRoborazziDebug     # update the screenshot goldens (every test run verifies them)
 ./gradlew connectedDebugAndroidTest
 ```
 
