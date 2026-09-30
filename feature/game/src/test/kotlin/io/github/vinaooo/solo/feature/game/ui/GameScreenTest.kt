@@ -30,6 +30,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class GameScreenTest {
@@ -180,6 +181,39 @@ class GameScreenTest {
     }
 
     @Test
+    @Config(qualifiers = LANDSCAPE)
+    fun `in landscape the stats sit left of the board and the toolbar right of it`() {
+        show(playing)
+
+        val board = compose.onNodeWithTag(dealt.tableau[0].single().tag).fetchSemanticsNode().boundsInRoot
+        val score = compose.onNodeWithText("25").fetchSemanticsNode().boundsInRoot
+        val scores = compose.onNodeWithContentDescription("Scores").fetchSemanticsNode().boundsInRoot
+        val hint = compose.onNodeWithContentDescription("Hint").fetchSemanticsNode().boundsInRoot
+        val lastColumn = compose.onNodeWithTag(dealt.tableau[6].last().tag).fetchSemanticsNode().boundsInRoot
+
+        (score.right <= board.left) shouldBe true
+        (scores.right <= board.left) shouldBe true
+        (hint.left >= lastColumn.right) shouldBe true
+    }
+
+    @Test
+    @Config(qualifiers = LANDSCAPE)
+    fun `in landscape every control still works`() {
+        val drawn = playing.session!!.play(Move.Draw, engine)!!
+        show(playing.copy(session = drawn))
+
+        compose.onNodeWithContentDescription("Undo").performClick()
+        compose.onNodeWithContentDescription("Hint").performClick()
+        compose.onNodeWithContentDescription("Scores").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithTag(dealt.tableau[0].single().tag).performClick()
+
+        intents shouldContainExactly listOf(GameIntent.Undo, GameIntent.Hint, GameIntent.Tap(PileRef.Tableau(0), 0))
+        openedScores shouldBe true
+        openedSettings shouldBe true
+    }
+
+    @Test
     fun `no board is drawn while the game loads`() {
         compose.mainClock.autoAdvance = false
         show(GameUiState())
@@ -199,6 +233,7 @@ class GameScreenTest {
     private companion object {
         val engine = GameEngine()
         const val DRAG_STEPS = 20
+        const val LANDSCAPE = "w891dp-h411dp-land"
         const val SNACKBAR_MILLIS = 5_000L
     }
 }
