@@ -3,11 +3,11 @@
     <string name="back">Voltar</string>
     <string name="section_game">Jogo</string>
     <string name="section_appearance">Aparência</string>
-    <string name="section_feedback">Retorno</string>
+    <string name="section_feedback">Sons e vibração</string>
     <string name="draw_mode">Cartas viradas do monte</string>
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
-    <string name="draw_mode_note">Vale a partir do próximo jogo.</string>
+    <string name="draw_mode_note">Vale a partir da próxima partida.</string>
     <string name="show_timer">Mostrar cronômetro</string>
     <string name="theme">Tema</string>
     <string name="theme_system">Sistema</string>

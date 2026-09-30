@@ -15,6 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class ScoresScreenTest {
@@ -69,5 +70,14 @@ class ScoresScreenTest {
         compose.setContent { SoloTheme { ScoresScreen(ScoresUiState(isLoading = false), onBack = {}) } }
 
         compose.onNodeWithText("Win a game to see your scores here.").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "pt-rBR")
+    fun `Brazilian Portuguese counts partidas`() {
+        compose.setContent { SoloTheme { ScoresScreen(ScoresUiState(isLoading = false), onBack = {}) } }
+
+        compose.onNodeWithContentDescription("Partidas, 0").assertExists()
+        compose.onNodeWithText("Vença uma partida para ver suas pontuações").assertExists()
     }
 }

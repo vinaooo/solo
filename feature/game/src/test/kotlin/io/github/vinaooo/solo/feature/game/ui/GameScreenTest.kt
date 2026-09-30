@@ -236,4 +236,15 @@ class GameScreenTest {
         const val LANDSCAPE = "w891dp-h411dp-land"
         const val SNACKBAR_MILLIS = 5_000L
     }
+
+    @Test
+    @Config(qualifiers = "pt-rBR")
+    fun `the new game menu speaks of a partida in Brazilian Portuguese`() {
+        show(playing)
+
+        compose.onNodeWithContentDescription("Nova partida").performClick()
+
+        compose.onNodeWithText("Nova partida").assertExists()
+        compose.onNodeWithText("Reiniciar partida").assertExists()
+    }
 }

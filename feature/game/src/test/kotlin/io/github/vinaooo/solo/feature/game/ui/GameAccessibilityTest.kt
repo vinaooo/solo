@@ -220,5 +220,8 @@ class GameAccessibilityTest {
         spoken() shouldBe "Nove de Copas para a coluna 2"
         readableNode("Nove de Copas, coluna 1, 2 cartas viradas para baixo").assertExists()
         readableNode("Monte, 2 cartas").assertExists()
+        readableNode("Ás de Paus, base").assertExists()
+        compose.onAllNodes(hasContentDescription("Base vazia") and readable, useUnmergedTree = true)
+            .fetchSemanticsNodes().size shouldBe 3
     }
 }
