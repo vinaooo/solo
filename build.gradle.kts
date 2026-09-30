@@ -21,3 +21,8 @@ dependencies {
     kover(project(":feature:scores"))
     kover(project(":feature:settings"))
 }
+
+// `./gradlew test` also runs the build logic's own tests (the included build isn't a subproject).
+tasks.register("test") {
+    dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
+}

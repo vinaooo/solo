@@ -36,3 +36,14 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 ## Secrets
 
 Signing keys and ad unit IDs live in `local.properties` / GitHub Secrets and are never committed.
+
+To sign release builds, keep the upload keystore outside the repository (and backed up) and add to `local.properties`:
+
+```properties
+solo.signing.storeFile=/path/to/solo-upload.jks
+solo.signing.storePassword=…
+solo.signing.keyAlias=solo-upload
+solo.signing.keyPassword=…
+```
+
+On CI, set the same values as the `SOLO_SIGNING_STORE_FILE`, `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS` and `SOLO_SIGNING_KEY_PASSWORD` environment variables. Without them, `./gradlew :app:assembleRelease` builds an unsigned APK.
