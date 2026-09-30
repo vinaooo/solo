@@ -95,12 +95,14 @@ private fun BoardCard(
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
     val animated by animateIntOffsetAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "card")
     val dragging = dragOffset != null
+    // A card on its way to a new pile flies above every other card, like a dragged one; stacks keep their order.
+    val lifted = dragging || animated != target
     PlayingCard(
         card = placed.card,
         highlighted = highlighted,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated }
-            .zIndex(if (dragging) DRAG_Z + placed.z else placed.z)
+            .zIndex(if (lifted) LIFTED_Z + placed.z else placed.z)
             .scale(if (dragging) DRAG_SCALE else 1f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
@@ -197,5 +199,5 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 }
 
 private val GAP = 4.dp
-private const val DRAG_Z = 10_000f
+private const val LIFTED_Z = 10_000f
 private const val DRAG_SCALE = 1.05f
