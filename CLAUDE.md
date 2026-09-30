@@ -19,14 +19,18 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew :feature:game:testDebugUnitTest --tests "*GameViewModelTest*"                    # one Android-module test
 ./gradlew recordRoborazziDebug                   # re-record screenshot goldens after an intended UI change
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
-./gradlew :app:assembleRelease                   # minified (R8) release APK, unsigned until release signing exists
+./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.
 
 - **Low RAM:** `gradle.properties` is sized for a low-RAM dev machine (2 GB Gradle heap, no parallel builds, 1 GB test workers), because the user runs other heavy jobs at the same time. Don't raise these values. CI writes its own larger settings to `~/.gradle/gradle.properties` in `.github/workflows/ci.yml`.
 - **Warnings are errors** in every Kotlin compilation. Experimental APIs (most Material 3 Expressive APIs) need a local `@OptIn(ExperimentalMaterial3ExpressiveApi::class)`. Test compilations already opt in to `ExperimentalCoroutinesApi`.
-- **Release build:** it uses R8 with resource shrinking. `app/proguard-rules.pro` is empty, because Hilt, Room and kotlinx.serialization bring their own keep rules. To try a release build on the device before release signing exists, sign it with the debug key:
+- **Release signing:** `ReleaseSigning` (in `build-logic`, applied by `solo.android.application`) reads the upload key from `local.properties` (`solo.signing.storeFile`, `solo.signing.storePassword`, `solo.signing.keyAlias`, `solo.signing.keyPassword`) or, on CI, from the `SOLO_SIGNING_*` environment variables. Environment variables win.
+  - With none of them set, `assembleRelease` builds an unsigned APK. A partial setup fails the build and names what is missing.
+  - The keystore and its passwords are never committed. `*.jks` and `local.properties` are ignored.
+  - `build-logic` has its own tests, which `./gradlew test` runs.
+- **Release build:** it uses R8 with resource shrinking. `app/proguard-rules.pro` is empty, because Hilt, Room and kotlinx.serialization bring their own keep rules. Without the upload key, you can still try a release build on the device by signing it with the debug key:
   - run `zipalign -p 4` and then `apksigner sign --ks ~/.android/debug.keystore --ks-pass pass:android`, both from the build-tools;
   - `adb install -r` then installs it over a debug install, keeping its data;
   - the saved game, settings and scores are compatible both ways, so a regression shows up as a lost game or reset settings, not as a crash, because a save that can't be read is discarded.
