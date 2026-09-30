@@ -1,5 +1,8 @@
 package io.github.vinaooo.solo.feature.settings
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -48,5 +51,14 @@ class SettingsScreenTest {
         compose.onNodeWithText("Dynamic color").performScrollTo().performClick()
 
         changes shouldContainExactly listOf(SettingsChange.DynamicColorChanged(false))
+    }
+
+    @Test
+    fun `section titles are headings, so TalkBack can jump between them`() {
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
+
+        listOf("Game", "Appearance", "Feedback").forEach {
+            compose.onNode(hasText(it) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
+        }
     }
 }

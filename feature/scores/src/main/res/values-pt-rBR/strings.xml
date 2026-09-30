@@ -10,4 +10,5 @@
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
     <string name="score_details">%1$d jogadas · %2$s · %3$s</string>
+    <string name="rank_description">%1$dº lugar</string>
 </resources>

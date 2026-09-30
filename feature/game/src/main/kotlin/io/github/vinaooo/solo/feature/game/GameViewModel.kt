@@ -84,6 +84,7 @@ class GameViewModel @Inject constructor(
             feedback.give(FeedbackEvent.REJECTED, state.value.settings)
         } else {
             onPlayed(next)
+            state.announce(announcementFor(session.state, move, next.state))
         }
     }
 
@@ -104,6 +105,7 @@ class GameViewModel @Inject constructor(
     private fun undo() {
         val undone = state.value.session?.undo() ?: return
         show(undone)
+        state.announce(Announcement.Undone)
         feedback.give(FeedbackEvent.MOVE, state.value.settings)
         persist(undone)
     }
@@ -112,11 +114,13 @@ class GameViewModel @Inject constructor(
         val session = state.value.session ?: return
         val hint = hints.bestHint(session.state)
         state.update { if (hint == null) it.copy(message = GameMessage.NO_MOVES) else it.copy(hint = hint) }
+        hint?.let { state.announce(hintAnnouncement(session.state, it)) }
     }
 
     private fun autoComplete() {
         if (!state.value.canAutoComplete || autoCompleteJob?.isActive == true) return
         state.update { it.copy(isAutoCompleting = true) }
+        state.announce(Announcement.AutoCompleting)
         autoCompleteJob = viewModelScope.launch {
             // Each step starts from the latest session, so clock ticks between steps are kept.
             while (true) {
@@ -156,6 +160,12 @@ class GameViewModel @Inject constructor(
                 session = session,
                 hint = if (keepHint) it.hint else null,
                 canAutoComplete = autoCompleter.canAutoComplete(session.state),
+                // A clock tick leaves the cards where they are, so their destinations don't change.
+                destinations = if (it.session?.state?.hasSamePilesAs(session.state) == true) {
+                    it.destinations
+                } else {
+                    resolver.destinationsOf(session.state)
+                },
             )
         }
     }
@@ -168,4 +178,9 @@ class GameViewModel @Inject constructor(
         const val CLOCK_TICK_MILLIS = 1_000L
         const val AUTO_COMPLETE_STEP_MILLIS = 120L
     }
+}
+
+/** Numbers each announcement, so saying the same thing twice in a row is still spoken twice. */
+private fun MutableStateFlow<GameUiState>.announce(announcement: Announcement) {
+    update { it.copy(announcement = Announced(announcement, (it.announcement?.sequence ?: 0) + 1)) }
 }

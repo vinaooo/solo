@@ -34,9 +34,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.ui.formatElapsed
+import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.R
@@ -78,12 +81,16 @@ private fun Stats(uiState: GameUiState) {
     val state = uiState.session?.state
     Stat(stringResource(R.string.score), (state?.score ?: 0).toString())
     Stat(stringResource(R.string.moves), (state?.moves ?: 0).toString())
-    if (uiState.settings.showTimer) Stat(stringResource(R.string.time), formatElapsed(state?.elapsedSeconds ?: 0))
+    if (uiState.settings.showTimer) {
+        val elapsed = state?.elapsedSeconds ?: 0
+        Stat(stringResource(R.string.time), formatElapsed(elapsed), spoken = spokenElapsed(elapsed))
+    }
 }
 
+/** A label over its value, read by TalkBack as one item: "Score, 25". */
 @Composable
-private fun Stat(label: String, value: String) {
-    Column {
+private fun Stat(label: String, value: String, spoken: String = value) {
+    Column(modifier = Modifier.clearAndSetSemantics { contentDescription = "$label, $spoken" }) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }

@@ -65,17 +65,17 @@ class GameScreenTest {
     fun `shows score, moves and time`() {
         show(playing)
 
-        compose.onNodeWithText("25").assertExists()
-        compose.onNodeWithText("7").assertExists()
-        compose.onNodeWithText("1:23").assertExists()
+        compose.onNodeWithContentDescription("Score, 25").assertExists()
+        compose.onNodeWithContentDescription("Moves, 7").assertExists()
+        compose.onNodeWithContentDescription("Time, 1 minute 23 seconds").assertExists()
     }
 
     @Test
     fun `hides the time when the timer is off`() {
         show(playing.copy(settings = Settings(showTimer = false)))
 
-        compose.onNodeWithText("Time").assertDoesNotExist()
-        compose.onNodeWithText("1:23").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Time", substring = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Score, 25").assertExists()
     }
 
     @Test
@@ -186,7 +186,7 @@ class GameScreenTest {
         show(playing)
 
         val board = compose.onNodeWithTag(dealt.tableau[0].single().tag).fetchSemanticsNode().boundsInRoot
-        val score = compose.onNodeWithText("25").fetchSemanticsNode().boundsInRoot
+        val score = compose.onNodeWithContentDescription("Score, 25").fetchSemanticsNode().boundsInRoot
         val scores = compose.onNodeWithContentDescription("Scores").fetchSemanticsNode().boundsInRoot
         val hint = compose.onNodeWithContentDescription("Hint").fetchSemanticsNode().boundsInRoot
         val lastColumn = compose.onNodeWithTag(dealt.tableau[6].last().tag).fetchSemanticsNode().boundsInRoot
@@ -220,7 +220,7 @@ class GameScreenTest {
         compose.mainClock.advanceTimeByFrame()
 
         compose.onNodeWithTag(dealt.tableau[0].single().tag).assertDoesNotExist()
-        compose.onNodeWithText("Score").assertExists()
+        compose.onNodeWithContentDescription("Score, 0").assertExists()
     }
 
     /** A finger drag in small steps, the way detectDragGestures sees a real one. */

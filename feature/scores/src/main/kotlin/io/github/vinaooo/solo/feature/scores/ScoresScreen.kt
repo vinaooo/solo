@@ -26,11 +26,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.ui.formatElapsed
+import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
@@ -95,7 +99,10 @@ private fun StatsCard(stats: GameStats) {
 
 @Composable
 private fun StatItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clearAndSetSemantics { contentDescription = "$label, $value" },
+    ) {
         Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -105,10 +112,25 @@ private fun StatItem(label: String, value: String) {
 private fun ScoreRow(rank: Int, record: ScoreRecord) {
     val drawMode = stringResource(if (record.drawMode == DrawMode.ONE) R.string.draw_one else R.string.draw_three)
     val date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(record.playedAtMillis))
+    val rankDescription = stringResource(R.string.rank_description, rank)
+    val spokenTime = spokenElapsed(record.elapsedSeconds)
     ListItem(
-        leadingContent = { Text("#$rank", style = MaterialTheme.typography.titleMedium) },
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+        leadingContent = {
+            Text(
+                "#$rank",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { contentDescription = rankDescription },
+            )
+        },
         supportingContent = { Text(stringResource(R.string.score_details, record.moves, drawMode, date)) },
-        trailingContent = { Text(formatElapsed(record.elapsedSeconds), style = MaterialTheme.typography.titleMedium) },
+        trailingContent = {
+            Text(
+                formatElapsed(record.elapsedSeconds),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { contentDescription = spokenTime },
+            )
+        },
     ) {
         Text(record.points.toString(), fontWeight = FontWeight.Bold)
     }

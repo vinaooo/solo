@@ -358,4 +358,92 @@ class GameViewModelTest {
 
         viewModel().uiState.value.settings.showTimer.shouldBeFalse()
     }
+
+    private val nineOnTen = readyToAutoComplete.copy(
+        foundations = Suit.entries.map { emptyList() },
+        tableau = List(GameState.TABLEAU_COUNT) { i ->
+            when (i) {
+                0 -> listOf(Card(Suit.CLUBS, Rank.FIVE), Card(Suit.HEARTS, Rank.NINE, isFaceUp = true))
+                1 -> listOf(Card(Suit.SPADES, Rank.TEN, isFaceUp = true))
+                else -> emptyList()
+            }
+        },
+    )
+
+    @Test
+    fun `every legal destination of each face-up card is offered`() = gameTest {
+        savedGames.saved = sessionWith(nineOnTen)
+        val vm = viewModel()
+
+        vm.uiState.value.destinations shouldBe mapOf(CardSpot(PileRef.Tableau(0), 1) to listOf(PileRef.Tableau(1)))
+
+        vm.onIntent(GameIntent.Tap(PileRef.Tableau(0), 1))
+        runCurrent()
+        // The nine now sits on the ten and the five it uncovered has nowhere to go.
+        vm.uiState.value.destinations shouldBe emptyMap()
+    }
+
+    @Test
+    fun `a move is announced with the card, its destination and the card it turned over`() = gameTest {
+        savedGames.saved = sessionWith(nineOnTen)
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.Drop(PileRef.Tableau(0), 1, PileRef.Tableau(1)))
+        runCurrent()
+
+        vm.uiState.value.announcement?.announcement shouldBe Announcement.Moved(
+            Card(Suit.HEARTS, Rank.NINE, isFaceUp = true),
+            PileRef.Tableau(1),
+            revealed = Card(Suit.CLUBS, Rank.FIVE, isFaceUp = true),
+        )
+    }
+
+    @Test
+    fun `drawing, undoing and hints are announced, each time with a new sequence number`() = gameTest {
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        vm.uiState.value.announcement?.announcement shouldBe Announcement.Drew(vm.session.state.waste.last())
+
+        vm.onIntent(GameIntent.Undo)
+        val first = vm.uiState.value.announcement.shouldNotBeNull()
+        first.announcement shouldBe Announcement.Undone
+
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        vm.onIntent(GameIntent.Undo)
+        val second = vm.uiState.value.announcement.shouldNotBeNull()
+        second.announcement shouldBe Announcement.Undone
+        (second.sequence > first.sequence).shouldBeTrue()
+
+        vm.onIntent(GameIntent.Hint)
+        vm.uiState.value.announcement?.announcement shouldBe
+            hintAnnouncement(vm.session.state, vm.uiState.value.hint.shouldNotBeNull())
+    }
+
+    @Test
+    fun `auto-complete is announced once instead of card by card`() = gameTest {
+        savedGames.saved = sessionWith(readyToAutoComplete)
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.AutoComplete)
+        advanceTimeBy(10_000)
+        runCurrent()
+
+        vm.session.state.isWon.shouldBeTrue()
+        vm.uiState.value.announcement?.announcement shouldBe Announcement.AutoCompleting
+    }
+
+    @Test
+    fun `an ordinary clock tick keeps the last announcement`() = gameTest {
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Resume)
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        val announced = vm.uiState.value.announcement
+
+        advanceTimeBy(3_500)
+
+        vm.uiState.value.announcement shouldBe announced
+    }
 }
