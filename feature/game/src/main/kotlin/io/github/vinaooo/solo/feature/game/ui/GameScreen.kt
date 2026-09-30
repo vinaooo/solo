@@ -2,30 +2,21 @@ package io.github.vinaooo.solo.feature.game.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Undo
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Style
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalFloatingToolbar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -36,13 +27,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -98,7 +86,10 @@ fun GameScreen(
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/**
+ * Portrait: stats on top, board below, toolbar floating at the bottom.
+ * Landscape: stats, board and toolbar side by side, the board centered.
+ */
 @Composable
 private fun GameContent(
     uiState: GameUiState,
@@ -107,96 +98,71 @@ private fun GameContent(
     onOpenSettings: () -> Unit,
     snackbar: SnackbarHostState,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            GameTopBar(uiState, onOpenScores, onOpenSettings)
-            val session = uiState.session
-            if (session == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
-            } else {
-                GameBoard(
-                    state = session.state,
-                    hint = uiState.hint,
-                    onIntent = onIntent,
-                    modifier = Modifier.fillMaxWidth().weight(1f).padding(bottom = TOOLBAR_SPACE),
-                )
-            }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        if (maxWidth > maxHeight) {
+            LandscapeGame(uiState, onIntent, onOpenScores, onOpenSettings)
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+        } else {
+            PortraitGame(uiState, onIntent, onOpenScores, onOpenSettings)
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = TOOLBAR_SPACE))
         }
-        GameToolbar(
-            uiState = uiState,
-            onIntent = onIntent,
-            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -FloatingToolbarDefaults.ScreenOffset),
-        )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = TOOLBAR_SPACE))
-    }
-}
-
-@Composable
-private fun GameTopBar(uiState: GameUiState, onOpenScores: () -> Unit, onOpenSettings: () -> Unit) {
-    val state = uiState.session?.state
-    Row(
-        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Stat(stringResource(R.string.score), (state?.score ?: 0).toString())
-        Stat(stringResource(R.string.moves), (state?.moves ?: 0).toString())
-        if (uiState.settings.showTimer) Stat(stringResource(R.string.time), formatElapsed(state?.elapsedSeconds ?: 0))
-        Spacer(Modifier.weight(1f))
-        IconButton(onClick = onOpenScores) { Icon(Icons.Rounded.EmojiEvents, stringResource(R.string.open_scores)) }
-        IconButton(onClick = onOpenSettings) { Icon(Icons.Rounded.Settings, stringResource(R.string.open_settings)) }
-    }
-}
-
-@Composable
-private fun Stat(label: String, value: String) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun GameToolbar(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier = Modifier) {
-    var menuOpen by remember { mutableStateOf(false) }
-    HorizontalFloatingToolbar(
-        expanded = true,
-        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier,
-    ) {
-        IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
-            Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
+private fun PortraitGame(
+    uiState: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    onOpenScores: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            GameTopBar(uiState, onOpenScores, onOpenSettings)
+            BoardOrLoading(uiState, onIntent, Modifier.fillMaxWidth().weight(1f).padding(bottom = TOOLBAR_SPACE))
         }
-        IconButton(onClick = { onIntent(GameIntent.Hint) }) {
-            Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
-        }
-        if (uiState.canAutoComplete) {
-            IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
-                Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
-            }
-        }
-        Box {
-            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.Style, stringResource(R.string.new_game)) }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.new_game)) },
-                    leadingIcon = { Icon(Icons.Rounded.Style, null) },
-                    onClick = {
-                        menuOpen = false
-                        onIntent(GameIntent.NewGame)
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.restart_deal)) },
-                    leadingIcon = { Icon(Icons.Rounded.Refresh, null) },
-                    onClick = {
-                        menuOpen = false
-                        onIntent(GameIntent.RestartDeal)
-                    },
-                )
-            }
-        }
+        HorizontalGameToolbar(
+            uiState = uiState,
+            onIntent = onIntent,
+            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -FloatingToolbarDefaults.ScreenOffset),
+        )
+    }
+}
+
+/** The board centered at full height, info on its left and the game actions in a vertical toolbar on its right. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun LandscapeGame(
+    uiState: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    onOpenScores: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    CenteredRow(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
+        start = { GameSidePanel(uiState, onOpenScores, onOpenSettings, Modifier.fillMaxHeight()) },
+        center = { BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp)) },
+        end = {
+            VerticalGameToolbar(
+                uiState = uiState,
+                onIntent = onIntent,
+                modifier = Modifier.padding(end = FloatingToolbarDefaults.ScreenOffset),
+            )
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier) {
+    val session = uiState.session
+    if (session == null) {
+        Box(modifier, contentAlignment = Alignment.Center) { LoadingIndicator() }
+    } else {
+        GameBoard(state = session.state, hint = uiState.hint, onIntent = onIntent, modifier = modifier)
     }
 }
 
