@@ -1,0 +1,25 @@
+# Gradle / build
+.gradle/
+build/
+.kotlin/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Signing & secrets — never commit
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+google-services.json
+play-service-account.json
+
+# Logs
+*.log

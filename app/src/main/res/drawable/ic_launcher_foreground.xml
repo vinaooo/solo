@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Placeholder: a spade inside the safe zone. Final icon arrives in the release-prep milestone. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,30 C44,42 34,48 34,58 C34,65 40,70 46,70 C49,70 51,69 52,67 L49,78 L59,78 L56,67 C57,69 59,70 62,70 C68,70 74,65 74,58 C74,48 64,42 54,30 Z" />
+</vector>

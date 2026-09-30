@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Static analysis, unit tests & coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-37.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: ktlint, detekt, lint
+        run: ./gradlew ktlintCheck detekt lintDebug
+      - name: Unit tests + coverage gate
+        run: ./gradlew test koverVerify koverXmlReport
+      - name: Screenshot tests
+        run: ./gradlew verifyRoborazziDebug
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: reports
+          path: '**/build/reports/**'

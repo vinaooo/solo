@@ -1,0 +1,21 @@
+<resources>
+    <string name="card_description">%1$s de %2$s</string>
+    <string name="card_face_down">Carta virada para baixo</string>
+    <string name="suit_clubs">Paus</string>
+    <string name="suit_diamonds">Ouros</string>
+    <string name="suit_hearts">Copas</string>
+    <string name="suit_spades">Espadas</string>
+    <string name="rank_ace">Ás</string>
+    <string name="rank_2">Dois</string>
+    <string name="rank_3">Três</string>
+    <string name="rank_4">Quatro</string>
+    <string name="rank_5">Cinco</string>
+    <string name="rank_6">Seis</string>
+    <string name="rank_7">Sete</string>
+    <string name="rank_8">Oito</string>
+    <string name="rank_9">Nove</string>
+    <string name="rank_10">Dez</string>
+    <string name="rank_jack">Valete</string>
+    <string name="rank_queen">Dama</string>
+    <string name="rank_king">Rei</string>
+</resources>

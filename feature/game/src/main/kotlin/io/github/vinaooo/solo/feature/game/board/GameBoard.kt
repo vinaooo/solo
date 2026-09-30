@@ -1,0 +1,201 @@
+package io.github.vinaooo.solo.feature.game.board
+
+import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
+import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
+import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Move
+import io.github.vinaooo.solo.domain.model.PileRef
+import io.github.vinaooo.solo.feature.game.GameIntent
+import io.github.vinaooo.solo.feature.game.R
+import kotlin.math.roundToInt
+
+private data class DragState(val pile: PileRef, val index: Int, val offset: Offset)
+
+@Composable
+fun GameBoard(state: GameState, hint: Move?, onIntent: (GameIntent) -> Unit, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier = modifier) {
+        val density = LocalDensity.current
+        val layout = remember(constraints.maxWidth, constraints.maxHeight, density) {
+            BoardLayout(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat(), with(density) { GAP.toPx() })
+        }
+        val cardWidth = with(density) { layout.cardWidth.toDp() }
+        val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }
+        var drag by remember { mutableStateOf<DragState?>(null) }
+        val currentState by rememberUpdatedState(state)
+        val currentOnIntent by rememberUpdatedState(onIntent)
+
+        EmptySlots(state, layout, cardWidth, onIntent)
+
+        layout.positions(state).values.forEach { placed ->
+            key(placed.card.identity()) {
+                val dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset
+                BoardCard(
+                    placed = placed,
+                    cardWidth = cardWidth,
+                    highlighted = placed.card.identity() in highlighted,
+                    dragOffset = dragOffset,
+                    onTap = { onIntent(GameIntent.Tap(placed.pile, placed.index)) },
+                    dragModifier = if (!isDraggable(state, placed)) {
+                        Modifier
+                    } else {
+                        Modifier.cardDrag(
+                            placed = placed,
+                            onDragChange = { drag = it },
+                            onDrop = { offset ->
+                                layout.dropTarget(currentState, placed, offset.x, offset.y)?.let { to ->
+                                    currentOnIntent(GameIntent.Drop(placed.pile, placed.index, to))
+                                }
+                            },
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** One card, animated to its slot, or following the finger while [dragOffset] is set. */
+@Composable
+private fun BoardCard(
+    placed: PlacedCard,
+    cardWidth: Dp,
+    highlighted: Boolean,
+    dragOffset: Offset?,
+    onTap: () -> Unit,
+    dragModifier: Modifier,
+) {
+    val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
+    val animated by animateIntOffsetAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "card")
+    val dragging = dragOffset != null
+    PlayingCard(
+        card = placed.card,
+        highlighted = highlighted,
+        modifier = Modifier
+            .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated }
+            .zIndex(if (dragging) DRAG_Z + placed.z else placed.z)
+            .scale(if (dragging) DRAG_SCALE else 1f)
+            .width(cardWidth)
+            .testTag("card_${placed.card.suit}_${placed.card.rank}")
+            .clickable(onClick = onTap)
+            .then(dragModifier),
+    )
+}
+
+/** Drags the card (and the cards on top of it); [onDrop] gets the total offset when the finger lifts. */
+private fun Modifier.cardDrag(
+    placed: PlacedCard,
+    onDragChange: (DragState?) -> Unit,
+    onDrop: (Offset) -> Unit,
+): Modifier = pointerInput(placed.pile, placed.index) {
+    var offset: Offset? = null
+    detectDragGestures(
+        onDragStart = { offset = null },
+        onDrag = { change, amount ->
+            change.consume()
+            val moved = offset?.plus(amount) ?: amount.plusTouchSlop(viewConfiguration.touchSlop)
+            offset = moved
+            onDragChange(DragState(placed.pile, placed.index, moved))
+        },
+        onDragEnd = {
+            onDragChange(null)
+            offset?.let(onDrop)
+        },
+        onDragCancel = { onDragChange(null) },
+    )
+}
+
+@Composable
+private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onIntent: (GameIntent) -> Unit) {
+    val density = LocalDensity.current
+
+    @Composable
+    fun Slot(pile: PileRef, description: String, label: String? = null) {
+        val position = layout.slot(pile)
+        val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
+        Box(
+            modifier = Modifier
+                .offset { offset }
+                .width(cardWidth)
+                .semantics { contentDescription = description }
+                .clickable { onIntent(GameIntent.Tap(pile, 0)) },
+        ) {
+            EmptyPileSlot(Modifier.width(cardWidth), label = label)
+        }
+    }
+    Slot(
+        PileRef.Stock,
+        stringResource(if (state.waste.isEmpty()) R.string.stock_empty else R.string.stock_recycle),
+        label = "↻",
+    )
+    state.foundations.indices.forEach {
+        Slot(PileRef.Foundation(it), stringResource(R.string.foundation_empty), label = "A")
+    }
+    state.tableau.indices.forEach { column ->
+        if (state.tableau[column].isEmpty()) {
+            Slot(
+                PileRef.Tableau(column),
+                stringResource(R.string.column_empty, column + 1),
+            )
+        }
+    }
+}
+
+/**
+ * The first drag amount leaves out the touch slop the finger travelled before the drag began. Adding it
+ * back (along the same direction) keeps the card under the finger, so it lands where it is dropped.
+ */
+private fun Offset.plusTouchSlop(touchSlop: Float): Offset {
+    val distance = getDistance()
+    return if (distance == 0f) this else this + this / distance * touchSlop
+}
+
+private fun isDraggable(state: GameState, placed: PlacedCard): Boolean = placed.card.isFaceUp &&
+    when (placed.pile) {
+        PileRef.Stock -> false
+        PileRef.Waste -> placed.index == state.waste.lastIndex
+        is PileRef.Foundation -> placed.index == state.foundations[placed.pile.index].lastIndex
+        is PileRef.Tableau -> true
+    }
+
+/** Cards to outline for a hint: the cards the suggested move would pick up. */
+internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when (move) {
+    Move.Draw -> setOfNotNull(state.stock.lastOrNull()?.identity())
+    Move.Recycle -> emptySet()
+    is Move.WasteToFoundation -> setOfNotNull(state.waste.lastOrNull()?.identity())
+    is Move.WasteToTableau -> setOfNotNull(state.waste.lastOrNull()?.identity())
+    is Move.TableauToFoundation -> setOfNotNull(state.tableau[move.from].lastOrNull()?.identity())
+    is Move.TableauToTableau -> state.tableau[move.from].takeLast(move.count).map { it.identity() }.toSet()
+    is Move.FoundationToTableau -> setOfNotNull(state.foundations[move.from].lastOrNull()?.identity())
+}
+
+private val GAP = 4.dp
+private const val DRAG_Z = 10_000f
+private const val DRAG_SCALE = 1.05f

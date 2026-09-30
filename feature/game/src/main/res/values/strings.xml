@@ -1,0 +1,21 @@
+<resources>
+    <string name="score">Score</string>
+    <string name="moves">Moves</string>
+    <string name="time">Time</string>
+    <string name="undo">Undo</string>
+    <string name="hint">Hint</string>
+    <string name="auto_complete">Auto-complete</string>
+    <string name="new_game">New game</string>
+    <string name="restart_deal">Restart this deal</string>
+    <string name="open_scores">Scores</string>
+    <string name="open_settings">Settings</string>
+    <string name="no_moves">No useful moves left. Try a new game.</string>
+    <string name="you_won">You won!</string>
+    <string name="win_score">Score: %1$d</string>
+    <string name="win_time">Time: %1$s</string>
+    <string name="win_moves">Moves: %1$d</string>
+    <string name="stock_empty">Empty stock</string>
+    <string name="stock_recycle">Turn the waste over</string>
+    <string name="foundation_empty">Empty foundation</string>
+    <string name="column_empty">Empty column %1$d</string>
+</resources>

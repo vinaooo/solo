@@ -1,0 +1,21 @@
+<resources>
+    <string name="score">Pontos</string>
+    <string name="moves">Jogadas</string>
+    <string name="time">Tempo</string>
+    <string name="undo">Desfazer</string>
+    <string name="hint">Dica</string>
+    <string name="auto_complete">Completar automaticamente</string>
+    <string name="new_game">Novo jogo</string>
+    <string name="restart_deal">Reiniciar esta partida</string>
+    <string name="open_scores">Pontuações</string>
+    <string name="open_settings">Configurações</string>
+    <string name="no_moves">Não há jogadas úteis. Tente um novo jogo.</string>
+    <string name="you_won">Você venceu!</string>
+    <string name="win_score">Pontos: %1$d</string>
+    <string name="win_time">Tempo: %1$s</string>
+    <string name="win_moves">Jogadas: %1$d</string>
+    <string name="stock_empty">Monte vazio</string>
+    <string name="stock_recycle">Virar o descarte</string>
+    <string name="foundation_empty">Fundação vazia</string>
+    <string name="column_empty">Coluna %1$d vazia</string>
+</resources>

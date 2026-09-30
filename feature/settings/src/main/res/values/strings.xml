@@ -1,0 +1,20 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="back">Back</string>
+    <string name="section_game">Game</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_feedback">Feedback</string>
+    <string name="draw_mode">Cards drawn from the stock</string>
+    <string name="draw_one">Draw 1</string>
+    <string name="draw_three">Draw 3</string>
+    <string name="draw_mode_note">Applies to the next game.</string>
+    <string name="show_timer">Show timer</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_color">Dynamic color</string>
+    <string name="dynamic_color_note">Use colors from your wallpaper</string>
+    <string name="sound">Sound effects</string>
+    <string name="haptics">Vibration</string>
+</resources>

@@ -1,0 +1,21 @@
+<resources>
+    <string name="card_description">%1$s of %2$s</string>
+    <string name="card_face_down">Face-down card</string>
+    <string name="suit_clubs">Clubs</string>
+    <string name="suit_diamonds">Diamonds</string>
+    <string name="suit_hearts">Hearts</string>
+    <string name="suit_spades">Spades</string>
+    <string name="rank_ace">Ace</string>
+    <string name="rank_2">Two</string>
+    <string name="rank_3">Three</string>
+    <string name="rank_4">Four</string>
+    <string name="rank_5">Five</string>
+    <string name="rank_6">Six</string>
+    <string name="rank_7">Seven</string>
+    <string name="rank_8">Eight</string>
+    <string name="rank_9">Nine</string>
+    <string name="rank_10">Ten</string>
+    <string name="rank_jack">Jack</string>
+    <string name="rank_queen">Queen</string>
+    <string name="rank_king">King</string>
+</resources>

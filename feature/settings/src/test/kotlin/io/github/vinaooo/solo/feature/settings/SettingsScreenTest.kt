@@ -1,0 +1,52 @@
+package io.github.vinaooo.solo.feature.settings
+
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
+import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.kotest.matchers.collections.shouldContainExactly
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class SettingsScreenTest {
+
+    @get:Rule
+    val compose = createComposeRule()
+
+    @Test
+    fun `controls report the change the player made`() {
+        val changes = mutableListOf<SettingsChange>()
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = { changes += it }, onBack = {}) } }
+
+        compose.onNodeWithText("Draw 3").performScrollTo().performClick()
+        compose.onNodeWithText("Dark").performScrollTo().performClick()
+        compose.onNodeWithText("Sound effects").performScrollTo().performClick()
+        compose.onNodeWithText("Vibration").performScrollTo().performClick()
+        compose.onNodeWithText("Show timer").performScrollTo().performClick()
+
+        changes shouldContainExactly listOf(
+            SettingsChange.DrawModeChanged(DrawMode.THREE),
+            SettingsChange.ThemeModeChanged(ThemeMode.DARK),
+            SettingsChange.SoundChanged(false),
+            SettingsChange.HapticsChanged(false),
+            SettingsChange.ShowTimerChanged(false),
+        )
+    }
+
+    @Test
+    fun `dynamic color can be turned off on Android 12 and later`() {
+        val changes = mutableListOf<SettingsChange>()
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = { changes += it }, onBack = {}) } }
+
+        compose.onNodeWithText("Dynamic color").performScrollTo().performClick()
+
+        changes shouldContainExactly listOf(SettingsChange.DynamicColorChanged(false))
+    }
+}

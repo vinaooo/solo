@@ -1,0 +1,13 @@
+<resources>
+    <string name="scores_title">Pontuações</string>
+    <string name="back">Voltar</string>
+    <string name="no_scores">Vença uma partida para ver suas pontuações aqui.</string>
+    <string name="stat_played">Jogos</string>
+    <string name="stat_won">Vitórias</string>
+    <string name="stat_win_rate">Aproveitamento</string>
+    <string name="stat_streak">Sequência</string>
+    <string name="stat_best_streak">Melhor sequência</string>
+    <string name="draw_one">Virar 1</string>
+    <string name="draw_three">Virar 3</string>
+    <string name="score_details">%1$d jogadas · %2$s · %3$s</string>
+</resources>
