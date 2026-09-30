@@ -18,4 +18,32 @@
     <string name="stock_recycle">Turn the waste over</string>
     <string name="foundation_empty">Empty foundation</string>
     <string name="column_empty">Empty column %1$d</string>
+    <!-- TalkBack -->
+    <string name="a11y_moved">%1$s to %2$s</string>
+    <string name="a11y_moved_revealed">%1$s to %2$s. Revealed %3$s</string>
+    <string name="a11y_drew">Drew %1$s</string>
+    <string name="a11y_recycled">Waste turned over</string>
+    <string name="a11y_undone">Move undone</string>
+    <string name="a11y_hint_move">Hint: %1$s to %2$s</string>
+    <string name="a11y_hint_draw">Hint: draw a card</string>
+    <string name="a11y_hint_recycle">Hint: turn the waste over</string>
+    <string name="a11y_auto_completing">Finishing the game</string>
+    <string name="a11y_to_column">column %1$d</string>
+    <string name="a11y_to_foundation">the foundation</string>
+    <string name="a11y_card_in_column">%1$s, column %2$d</string>
+    <plurals name="a11y_card_in_column_above_hidden">
+        <item quantity="one">%1$s, column %2$d, %3$d face-down card</item>
+        <item quantity="other">%1$s, column %2$d, %3$d face-down cards</item>
+    </plurals>
+    <string name="a11y_card_in_waste">%1$s, waste</string>
+    <string name="a11y_card_in_foundation">%1$s, foundation</string>
+    <plurals name="a11y_stock">
+        <item quantity="one">Stock, %1$d card</item>
+        <item quantity="other">Stock, %1$d cards</item>
+    </plurals>
+    <string name="a11y_hinted">Hint</string>
+    <string name="a11y_move_to_column">Move to column %1$d</string>
+    <string name="a11y_move_to_foundation">Move to the foundation</string>
+    <string name="a11y_click_move">move</string>
+    <string name="a11y_click_draw">draw a card</string>
 </resources>

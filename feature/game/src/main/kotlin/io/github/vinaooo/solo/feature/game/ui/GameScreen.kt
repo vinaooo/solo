@@ -81,7 +81,11 @@ fun GameScreen(
         color = SoloThemeExtras.cardColors.table,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        GameContent(uiState, onIntent, onOpenScores, onOpenSettings, snackbar)
+        // Surface stretches each direct child to its full size, so the tiny announcer sits in a Box of its own.
+        Box {
+            GameContent(uiState, onIntent, onOpenScores, onOpenSettings, snackbar)
+            Announcer(uiState.announcement)
+        }
     }
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
 }
@@ -162,7 +166,13 @@ private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
     if (session == null) {
         Box(modifier, contentAlignment = Alignment.Center) { LoadingIndicator() }
     } else {
-        GameBoard(state = session.state, hint = uiState.hint, onIntent = onIntent, modifier = modifier)
+        GameBoard(
+            state = session.state,
+            hint = uiState.hint,
+            onIntent = onIntent,
+            modifier = modifier,
+            destinations = uiState.destinations,
+        )
     }
 }
 

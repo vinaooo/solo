@@ -14,7 +14,13 @@ data class GameUiState(
     val isAutoCompleting: Boolean = false,
     val winRecord: ScoreRecord? = null,
     val message: GameMessage? = null,
+    /** Where each face-up card can legally go; TalkBack offers these as actions. */
+    val destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
+    val announcement: Announced? = null,
 )
+
+/** The card at [index] in [pile]. */
+data class CardSpot(val pile: PileRef, val index: Int)
 
 enum class GameMessage { NO_MOVES }
 

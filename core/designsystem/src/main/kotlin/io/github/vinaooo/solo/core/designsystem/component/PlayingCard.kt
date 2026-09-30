@@ -33,14 +33,17 @@ import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.model.SuitColor
 
+/** A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. */
 @Composable
-fun PlayingCard(card: Card, modifier: Modifier = Modifier, highlighted: Boolean = false) {
+fun PlayingCard(
+    card: Card,
+    modifier: Modifier = Modifier,
+    highlighted: Boolean = false,
+    contentDescription: String? = null,
+) {
     val colors = SoloThemeExtras.cardColors
-    val description = if (card.isFaceUp) {
-        stringResource(R.string.card_description, stringResource(card.rank.nameRes), stringResource(card.suit.nameRes))
-    } else {
-        stringResource(R.string.card_face_down)
-    }
+    val description =
+        contentDescription ?: if (card.isFaceUp) cardName(card) else stringResource(R.string.card_face_down)
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(CardDimensions.ASPECT_RATIO)
@@ -51,7 +54,7 @@ fun PlayingCard(card: Card, modifier: Modifier = Modifier, highlighted: Boolean 
                 color = if (highlighted) colors.highlight else colors.border,
                 shape = CardDimensions.shape,
             )
-            .clearAndSetSemantics { contentDescription = description },
+            .clearAndSetSemantics { this.contentDescription = description },
     ) {
         if (card.isFaceUp) CardFace(card, colors, maxWidth) else CardBack(colors)
     }
@@ -132,6 +135,11 @@ val Rank.symbol: String
         Rank.KING -> "K"
         else -> value.toString()
     }
+
+/** The spoken name of a card, such as "Queen of Hearts", whichever way it faces. */
+@Composable
+fun cardName(card: Card): String =
+    stringResource(R.string.card_description, stringResource(card.rank.nameRes), stringResource(card.suit.nameRes))
 
 @get:StringRes
 val Suit.nameRes: Int

@@ -41,4 +41,16 @@ class PlayingCardTest {
 
         compose.onNodeWithContentDescription("Ás de Espadas").assertIsDisplayed()
     }
+
+    @Test
+    fun `a given description replaces the card name`() {
+        compose.setContent {
+            SoloTheme {
+                PlayingCard(Card(Suit.HEARTS, Rank.QUEEN, isFaceUp = true), contentDescription = "Queen, waste")
+            }
+        }
+
+        compose.onNodeWithContentDescription("Queen, waste").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Queen of Hearts").assertDoesNotExist()
+    }
 }

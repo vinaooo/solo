@@ -8,6 +8,8 @@ import io.github.vinaooo.solo.domain.suitRun
 import io.github.vinaooo.solo.domain.up
 import io.github.vinaooo.solo.domain.withFoundation
 import io.github.vinaooo.solo.domain.withTableau
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
@@ -142,6 +144,74 @@ class MoveResolverTest {
             resolver.resolveDrop(state, PileRef.Waste, 0, PileRef.Stock).shouldBeNull()
             resolver.resolveDrop(state, PileRef.Waste, 0, PileRef.Waste).shouldBeNull()
             resolver.resolveDrop(state, PileRef.Stock, 0, PileRef.Tableau(1)).shouldBeNull()
+        }
+    }
+
+    @Nested
+    inner class Destinations {
+        @Test
+        fun `lists every pile the card can legally move to, foundations first`() {
+            val state = emptyState()
+                .copy(waste = up("AH"))
+                .withTableau(0, up("2S"))
+                .withTableau(3, up("2C"))
+
+            resolver.destinations(state, PileRef.Waste, 0) shouldContainExactly listOf(
+                PileRef.Foundation(0),
+                PileRef.Foundation(1),
+                PileRef.Foundation(2),
+                PileRef.Foundation(3),
+                PileRef.Tableau(0),
+                PileRef.Tableau(3),
+            )
+        }
+
+        @Test
+        fun `a run inside a column can go to columns but not to a foundation`() {
+            val state = emptyState()
+                .withTableau(0, down("KD") + up("2H", "AS"))
+                .withTableau(4, up("3C"))
+
+            resolver.destinations(state, PileRef.Tableau(0), 1) shouldContainExactly listOf(PileRef.Tableau(4))
+        }
+
+        @Test
+        fun `a king that already fills a column is not offered the empty columns`() {
+            val state = emptyState().withTableau(0, up("KD"))
+
+            resolver.destinations(state, PileRef.Tableau(0), 0).shouldBeEmpty()
+        }
+
+        @Test
+        fun `a king under face-down cards is offered every empty column`() {
+            val state = emptyState()
+                .withTableau(0, down("5D") + up("KD"))
+                .withTableau(1, up("9S"))
+                .withTableau(2, up("9C"))
+                .withTableau(3, up("9H"))
+                .withTableau(4, up("9D"))
+                .withTableau(5, up("8S"))
+
+            resolver.destinations(state, PileRef.Tableau(0), 1) shouldContainExactly listOf(PileRef.Tableau(6))
+        }
+
+        @Test
+        fun `face-down cards, buried waste cards and the stock have nowhere to go`() {
+            val state = emptyState()
+                .copy(stock = down("AC"), waste = up("AH", "AD"))
+                .withTableau(0, down("AS", "9C") + up("KD"))
+
+            resolver.destinations(state, PileRef.Tableau(0), 1).shouldBeEmpty()
+            resolver.destinations(state, PileRef.Waste, 0).shouldBeEmpty()
+            resolver.destinations(state, PileRef.Stock, 0).shouldBeEmpty()
+        }
+
+        @Test
+        fun `only the top foundation card can come back down`() {
+            val state = emptyState().withFoundation(2, suitRun('H', upTo = 2)).withTableau(5, up("3S"))
+
+            resolver.destinations(state, PileRef.Foundation(2), 1) shouldContainExactly listOf(PileRef.Tableau(5))
+            resolver.destinations(state, PileRef.Foundation(2), 0).shouldBeEmpty()
         }
     }
 }
