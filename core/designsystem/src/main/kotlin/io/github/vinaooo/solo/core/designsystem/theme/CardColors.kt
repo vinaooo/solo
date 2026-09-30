@@ -5,13 +5,17 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-/** Colors for the playing table. Suits stay classic red/black; the back and highlights follow the theme. */
+/**
+ * Colors for the playing table. Spades and clubs take the color of the game toolbar's icons (onPrimaryContainer):
+ * pale on the dark faces, dark on the light ones. Hearts and diamonds take a vivid shade of the theme's accent
+ * that stands apart from both (see [accentSuitInk]). The back and highlights follow the theme too.
+ */
 @Immutable
 data class CardColors(
     val table: Color,
     val face: Color,
-    val red: Color,
-    val black: Color,
+    val redSuits: Color,
+    val blackSuits: Color,
     val border: Color,
     val back: Color,
     val backPattern: Color,
@@ -19,24 +23,23 @@ data class CardColors(
     val emptySlot: Color,
 )
 
-internal fun cardColorsFor(scheme: ColorScheme, darkTheme: Boolean) = CardColors(
-    table = scheme.surfaceContainer,
-    face = if (darkTheme) FaceDark else FaceLight,
-    red = if (darkTheme) RedDark else RedLight,
-    black = if (darkTheme) BlackDark else BlackLight,
-    border = scheme.outlineVariant,
-    back = scheme.primary,
-    backPattern = scheme.primaryContainer,
-    highlight = scheme.tertiary,
-    emptySlot = scheme.outline,
-)
+internal fun cardColorsFor(scheme: ColorScheme, darkTheme: Boolean): CardColors {
+    val face = if (darkTheme) FaceDark else FaceLight
+    val blackSuits = scheme.onPrimaryContainer
+    return CardColors(
+        table = scheme.surfaceContainer,
+        face = face,
+        redSuits = accentSuitInk(scheme.primary, neutral = blackSuits, face = face),
+        blackSuits = blackSuits,
+        border = scheme.outlineVariant,
+        back = scheme.primary,
+        backPattern = scheme.primaryContainer,
+        highlight = scheme.tertiary,
+        emptySlot = scheme.outline,
+    )
+}
 
-// Suit inks keep at least 4.5:1 contrast on their card face in both themes.
 private val FaceLight = Color(0xFFFFFFFF)
 private val FaceDark = Color(0xFF2B302D)
-private val RedLight = Color(0xFFC62828)
-private val RedDark = Color(0xFFFF8A80)
-private val BlackLight = Color(0xFF1B1C1E)
-private val BlackDark = Color(0xFFE8ECE9)
 
 val LocalCardColors = staticCompositionLocalOf { cardColorsFor(BrandColors.light, darkTheme = false) }

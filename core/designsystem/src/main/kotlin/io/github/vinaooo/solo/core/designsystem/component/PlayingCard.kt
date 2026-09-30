@@ -59,7 +59,7 @@ fun PlayingCard(card: Card, modifier: Modifier = Modifier, highlighted: Boolean 
 
 @Composable
 private fun CardFace(card: Card, colors: CardColors, width: Dp) {
-    val ink = if (card.suit.color == SuitColor.RED) colors.red else colors.black
+    val ink = if (card.suit.color == SuitColor.RED) colors.redSuits else colors.blackSuits
     val density = LocalDensity.current
     val cornerSize = with(density) { (width * CORNER_TEXT_RATIO).toSp() }
     val centerSize = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
