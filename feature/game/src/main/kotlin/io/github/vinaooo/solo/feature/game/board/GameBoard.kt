@@ -237,15 +237,13 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
     val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
-    // On a thin bar the font shrinks so the digits fit inside it with a little room.
-    val count: @Composable (Int, Dp) -> Unit = { value, room ->
-        val size = with(density) { minOf(COUNT_SIZE.toDp(), room * COUNT_TO_ROOM).toSp() }
+    val count: @Composable (Int) -> Unit = { value ->
         Text(
             text = value.toString(),
             color = MaterialTheme.colorScheme.onPrimary,
-            fontSize = size,
+            fontSize = COUNT_SIZE,
             style = LocalTextStyle.current.copy(
-                lineHeight = size,
+                lineHeight = COUNT_SIZE,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
             ),
             modifier = Modifier.clearAndSetSemantics {},
@@ -264,8 +262,7 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
                         .size(cardWidth, height)
                         .background(color, shape),
                     contentAlignment = Alignment.Center,
-                    // A bar too thin to hold a readable number goes without one.
-                ) { if (hidden > 0 && height >= MIN_COUNT_ROOM) count(hidden, height) }
+                ) { if (hidden > 0) count(hidden) }
             }
         }
     }
@@ -278,7 +275,7 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
                 .size(cardWidth, cardHeight)
                 .zIndex(STOCK_COUNT_Z),
             contentAlignment = Alignment.Center,
-        ) { count(state.stock.size, cardHeight) }
+        ) { count(state.stock.size) }
     }
 }
 
@@ -374,7 +371,5 @@ private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */
 private const val STOCK_COUNT_Z = 199f
-private val COUNT_SIZE = 11.sp
-private const val COUNT_TO_ROOM = 0.85f
-private val MIN_COUNT_ROOM = 6.dp
+private val COUNT_SIZE = 9.sp
 private const val DRAG_SCALE = 1.05f
