@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.MaterialTheme
@@ -205,6 +206,8 @@ private fun Modifier.cardDrag(
 private fun HiddenCardBars(state: GameState, layout: BoardLayout, cardWidth: Dp) {
     val density = LocalDensity.current
     val color = SoloThemeExtras.cardColors.back
+    // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
+    val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
     state.tableau.forEachIndexed { column, pile ->
         key(column) {
             val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
@@ -215,7 +218,7 @@ private fun HiddenCardBars(state: GameState, layout: BoardLayout, cardWidth: Dp)
                     Modifier
                         .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
                         .size(cardWidth, height)
-                        .background(color, CardDimensions.shape),
+                        .background(color, shape),
                 )
             }
         }
