@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
@@ -29,8 +30,13 @@ fun EmptyPileSlot(modifier: Modifier = Modifier, label: String? = null, borderWi
         contentAlignment = Alignment.Center,
     ) {
         if (label != null) {
-            val size = with(LocalDensity.current) { (maxWidth * 0.4f).toSp() }
-            Text(text = label, color = colors.emptySlot.copy(alpha = 0.6f), fontSize = size)
+            val size = with(LocalDensity.current) { (maxWidth * 0.5f).toSp() }
+            Text(
+                text = label,
+                color = colors.emptySlot.copy(alpha = 0.6f),
+                fontSize = size,
+                fontWeight = FontWeight.Bold,
+            )
         }
     }
 }
