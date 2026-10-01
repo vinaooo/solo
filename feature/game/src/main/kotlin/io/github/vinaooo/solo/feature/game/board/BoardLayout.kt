@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.feature.game.board
 
+import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
@@ -15,6 +16,9 @@ data class Position(val x: Float, val y: Float)
 data class CardIdentity(val suit: Suit, val rank: Rank)
 
 fun Card.identity() = CardIdentity(suit, rank)
+
+/** A card's [CardCover] in pixels. */
+data class Cover(val edge: CardCover.Edge, val strip: Float)
 
 data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val position: Position, val z: Float)
 
@@ -44,7 +48,9 @@ class BoardLayout(
     private val left = (width - boardWidth) / 2
     private val topRowY = gap
     private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
-    private val wasteFanStep = cardWidth * WASTE_FAN_STEP
+
+    // The fan spreads over the empty column beside the waste, so the cards under the top one show as much as they can.
+    private val wasteFanStep = (cardWidth + columnGap) / (VISIBLE_WASTE_CARDS - 1)
     private val rightHanded = handedness == Handedness.RIGHT
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
@@ -84,13 +90,27 @@ class BoardLayout(
         }
     }
 
-    /** How much of a column card shows above the card on top of it, or null when nothing covers it. */
-    fun coveredStrip(state: GameState, placed: PlacedCard): Float? {
-        val pile = placed.pile as? PileRef.Tableau ?: return null
-        val column = state.tableau[pile.index]
-        if (placed.index >= column.lastIndex) return null
-        val offsets = columnOffsets(column)
-        return offsets[placed.index + 1] - offsets[placed.index]
+    /**
+     * What shows of a card past the next card of its pile: a strip along the top in a column, along a side in the
+     * waste fan. Null when nothing covers it, or when the next card hides it completely.
+     */
+    fun cover(state: GameState, placed: PlacedCard): Cover? = when (val pile = placed.pile) {
+        is PileRef.Tableau -> state.tableau[pile.index].takeIf { placed.index < it.lastIndex }?.let { column ->
+            val offsets = columnOffsets(column)
+            Cover(CardCover.Edge.TOP, offsets[placed.index + 1] - offsets[placed.index])
+        }
+        PileRef.Waste -> if (placed.index < state.waste.lastIndex) {
+            val positions = wastePositions(state)
+            val dx = positions[placed.index + 1].x - positions[placed.index].x
+            when {
+                dx > 0 -> Cover(CardCover.Edge.LEFT, dx)
+                dx < 0 -> Cover(CardCover.Edge.RIGHT, -dx)
+                else -> null
+            }
+        } else {
+            null
+        }
+        else -> null
     }
 
     /** The pile a dragged card is dropped on. Tableau columns accept drops anywhere along their length. */
@@ -146,7 +166,6 @@ class BoardLayout(
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
         const val FACE_UP_STEP = 0.28f
-        const val WASTE_FAN_STEP = 0.3f
         const val VISIBLE_WASTE_CARDS = 3
         const val WASTE_Z = 100f
         const val FOUNDATION_Z = 200f

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
 import io.github.vinaooo.solo.core.designsystem.component.cardName
@@ -96,7 +97,7 @@ fun GameBoard(
                     placed = placed,
                     cardWidth = cardWidth,
                     highlighted = isHighlighted,
-                    coveredStrip = layout.coveredStrip(state, placed)?.let { with(density) { it.toDp() } },
+                    cover = layout.cover(state, placed)?.let { CardCover(it.edge, with(density) { it.strip.toDp() }) },
                     dragOffset = dragOffset,
                     description = accessibility.description,
                     gestures = accessibility.modifier.then(
@@ -199,7 +200,7 @@ private fun BoardCard(
     placed: PlacedCard,
     cardWidth: Dp,
     highlighted: Boolean,
-    coveredStrip: Dp?,
+    cover: CardCover?,
     dragOffset: Offset?,
     description: String?,
     gestures: Modifier,
@@ -213,7 +214,7 @@ private fun BoardCard(
         card = placed.card,
         highlighted = highlighted,
         contentDescription = description,
-        coveredStrip = coveredStrip,
+        cover = cover,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated }
             .zIndex(if (lifted) LIFTED_Z + placed.z else placed.z)
