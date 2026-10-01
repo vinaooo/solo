@@ -53,6 +53,14 @@ class BoardLayoutTest {
     }
 
     @Test
+    fun `columns sit a column gap apart, inside a plain gap margin`() {
+        val wide = BoardLayout(width = 1080f, height = 1800f, gap = 12f, columnGap = 24f)
+        (wide.cardWidth * 7 + 12f * 2 + 24f * 6).toDouble() shouldBe (1080.0 plusOrMinus 0.5)
+        wide.columnX(0) shouldBe 12f
+        (wide.columnX(1) - wide.columnX(0)).toDouble() shouldBe ((wide.cardWidth + 24f).toDouble() plusOrMinus 0.01)
+    }
+
+    @Test
     fun `three gaps separate the top row from the tableau`() {
         portrait.slot(PileRef.Tableau(0)).y shouldBe portrait.gap + portrait.cardHeight + portrait.gap * 3
     }

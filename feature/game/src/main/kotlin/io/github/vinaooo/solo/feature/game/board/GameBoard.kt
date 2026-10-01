@@ -69,6 +69,7 @@ fun GameBoard(
                 constraints.maxHeight.toFloat(),
                 with(density) { GAP.toPx() },
                 handedness,
+                with(density) { COLUMN_GAP.toPx() },
             )
         }
         val cardWidth = with(density) { layout.cardWidth.toDp() }
@@ -323,5 +324,6 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 }
 
 private val GAP = 4.dp
+private val COLUMN_GAP = 8.dp
 private const val LIFTED_Z = 10_000f
 private const val DRAG_SCALE = 1.05f

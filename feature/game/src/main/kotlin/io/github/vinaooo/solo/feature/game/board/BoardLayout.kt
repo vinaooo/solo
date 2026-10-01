@@ -23,14 +23,21 @@ data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val pos
  * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
  * [handedness] side of the top row, the foundations on the other.
  */
-class BoardLayout(val width: Float, val height: Float, val gap: Float, val handedness: Handedness = Handedness.RIGHT) {
+class BoardLayout(
+    val width: Float,
+    val height: Float,
+    val gap: Float,
+    val handedness: Handedness = Handedness.RIGHT,
+    /** Space between neighbouring columns (and top-row piles); [gap] is the margin and the vertical spacing. */
+    val columnGap: Float = gap,
+) {
 
     val cardWidth: Float = minOf(
-        (width - gap * (COLUMNS + 1)) / COLUMNS,
+        (width - gap * 2 - columnGap * (COLUMNS - 1)) / COLUMNS,
         (height - gap * (TOP_ROW_GAPS + 2)) / HEIGHT_IN_CARDS * CardDimensions.ASPECT_RATIO,
     )
     val cardHeight: Float = cardWidth / CardDimensions.ASPECT_RATIO
-    val boardWidth: Float = cardWidth * COLUMNS + gap * (COLUMNS + 1)
+    val boardWidth: Float = cardWidth * COLUMNS + gap * 2 + columnGap * (COLUMNS - 1)
     val faceDownStep: Float = cardHeight * FACE_DOWN_STEP
     val faceUpStep: Float = cardHeight * FACE_UP_STEP
 
@@ -40,7 +47,7 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float, val hande
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
-    fun columnX(column: Int): Float = left + gap + column * (cardWidth + gap)
+    fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
     fun slot(pile: PileRef): Position = when (pile) {
         PileRef.Stock -> Position(columnX(if (rightHanded) COLUMNS - 1 else 0), topRowY)
