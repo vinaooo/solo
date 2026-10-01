@@ -42,6 +42,7 @@ import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
 import io.github.vinaooo.solo.core.designsystem.component.cardName
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.CardSpot
@@ -58,11 +59,17 @@ fun GameBoard(
     onIntent: (GameIntent) -> Unit,
     modifier: Modifier = Modifier,
     destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
+    handedness: Handedness = Handedness.RIGHT,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
-        val layout = remember(constraints.maxWidth, constraints.maxHeight, density) {
-            BoardLayout(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat(), with(density) { GAP.toPx() })
+        val layout = remember(constraints.maxWidth, constraints.maxHeight, density, handedness) {
+            BoardLayout(
+                constraints.maxWidth.toFloat(),
+                constraints.maxHeight.toFloat(),
+                with(density) { GAP.toPx() },
+                handedness,
+            )
         }
         val cardWidth = with(density) { layout.cardWidth.toDp() }
         val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }

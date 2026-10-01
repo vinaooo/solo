@@ -9,4 +9,5 @@ data class Settings(
     val soundEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val showTimer: Boolean = true,
+    val handedness: Handedness = Handedness.RIGHT,
 )

@@ -176,6 +176,7 @@ private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
             onIntent = onIntent,
             modifier = modifier,
             destinations = uiState.destinations,
+            handedness = uiState.settings.handedness,
         )
     }
 }

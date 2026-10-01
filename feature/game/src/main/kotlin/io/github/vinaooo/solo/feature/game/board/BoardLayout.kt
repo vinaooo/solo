@@ -4,6 +4,7 @@ import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
@@ -19,9 +20,15 @@ data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val pos
 
 /**
  * Pure geometry of the table, in pixels. Cards fill the width in portrait and shrink to fit the height in
- * landscape; tableau columns compress when they would run off the board.
+ * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
+ * [handedness] side of the top row, the foundations on the other.
  */
-class BoardLayout(val width: Float, val height: Float, val gap: Float) {
+class BoardLayout(
+    val width: Float,
+    val height: Float,
+    val gap: Float,
+    private val handedness: Handedness = Handedness.RIGHT,
+) {
 
     val cardWidth: Float = minOf(
         (width - gap * (COLUMNS + 1)) / COLUMNS,
@@ -36,13 +43,15 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float) {
     private val topRowY = gap
     private val tableauY = topRowY + cardHeight + gap
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
+    private val rightHanded = handedness == Handedness.RIGHT
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + gap)
 
     fun slot(pile: PileRef): Position = when (pile) {
-        PileRef.Stock -> Position(columnX(0), topRowY)
-        PileRef.Waste -> Position(columnX(1), topRowY)
-        is PileRef.Foundation -> Position(columnX(FIRST_FOUNDATION_COLUMN + pile.index), topRowY)
+        PileRef.Stock -> Position(columnX(if (rightHanded) COLUMNS - 1 else 0), topRowY)
+        PileRef.Waste -> Position(columnX(if (rightHanded) COLUMNS - 2 else 1), topRowY)
+        is PileRef.Foundation ->
+            Position(columnX(pile.index + if (rightHanded) 0 else FIRST_FOUNDATION_COLUMN), topRowY)
         is PileRef.Tableau -> Position(columnX(pile.index), tableauY)
     }
 
@@ -99,9 +108,11 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float) {
         val base = slot(PileRef.Waste)
         val fanned = if (state.drawMode == DrawMode.THREE) VISIBLE_WASTE_CARDS else 1
         val firstFanned = (state.waste.size - fanned).coerceAtLeast(0)
+        // Right-handed, the fan grows leftward so the top card stays next to the stock.
+        val shift = if (rightHanded) (state.waste.lastIndex - firstFanned).coerceAtLeast(0) else 0
         return state.waste.indices.map { i ->
             val fanIndex = (i - firstFanned).coerceAtLeast(0)
-            Position(base.x + fanIndex * wasteFanStep, base.y)
+            Position(base.x + (fanIndex - shift) * wasteFanStep, base.y)
         }
     }
 

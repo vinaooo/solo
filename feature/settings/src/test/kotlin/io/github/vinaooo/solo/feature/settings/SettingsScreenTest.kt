@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.collections.shouldContainExactly
@@ -34,6 +35,7 @@ class SettingsScreenTest {
         compose.onNodeWithText("Dark").performScrollTo().performClick()
         compose.onNodeWithText("Sound effects").performScrollTo().performClick()
         compose.onNodeWithText("Vibration").performScrollTo().performClick()
+        compose.onNodeWithText("Left").performScrollTo().performClick()
         compose.onNodeWithText("Show timer").performScrollTo().performClick()
 
         changes shouldContainExactly listOf(
@@ -41,6 +43,7 @@ class SettingsScreenTest {
             SettingsChange.ThemeModeChanged(ThemeMode.DARK),
             SettingsChange.SoundChanged(false),
             SettingsChange.HapticsChanged(false),
+            SettingsChange.HandednessChanged(Handedness.LEFT),
             SettingsChange.ShowTimerChanged(false),
         )
     }

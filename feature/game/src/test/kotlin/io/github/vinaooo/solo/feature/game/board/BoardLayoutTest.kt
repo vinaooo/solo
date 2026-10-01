@@ -6,6 +6,7 @@ import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
@@ -35,11 +36,20 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `top row has stock, waste, a gap, then the four foundations`() {
+    fun `right-handed, the top row has the four foundations, a gap, then waste and stock`() {
         val y = portrait.gap
-        portrait.slot(PileRef.Stock) shouldBe Position(portrait.columnX(0), y)
-        portrait.slot(PileRef.Waste) shouldBe Position(portrait.columnX(1), y)
-        (0 until 4).forEach { portrait.slot(PileRef.Foundation(it)) shouldBe Position(portrait.columnX(3 + it), y) }
+        (0 until 4).forEach { portrait.slot(PileRef.Foundation(it)) shouldBe Position(portrait.columnX(it), y) }
+        portrait.slot(PileRef.Waste) shouldBe Position(portrait.columnX(5), y)
+        portrait.slot(PileRef.Stock) shouldBe Position(portrait.columnX(6), y)
+    }
+
+    @Test
+    fun `left-handed, the top row has stock, waste, a gap, then the four foundations`() {
+        val left = BoardLayout(width = 1080f, height = 1800f, gap = 12f, handedness = Handedness.LEFT)
+        val y = left.gap
+        left.slot(PileRef.Stock) shouldBe Position(left.columnX(0), y)
+        left.slot(PileRef.Waste) shouldBe Position(left.columnX(1), y)
+        (0 until 4).forEach { left.slot(PileRef.Foundation(it)) shouldBe Position(left.columnX(3 + it), y) }
     }
 
     @Test
@@ -114,6 +124,10 @@ class BoardLayoutTest {
         xs[0] shouldBe xs[1]
         (xs[2] > xs[1]) shouldBe true
         (xs[3] > xs[2]) shouldBe true
+        // Right-handed, the fan grows leftward and the top card sits on the waste slot, next to the stock.
+        xs[3] shouldBe portrait.slot(PileRef.Waste).x
+        val left = BoardLayout(width = 1080f, height = 1800f, gap = 12f, handedness = Handedness.LEFT)
+        left.positions(state).getValue(waste[0].identity()).position.x shouldBe left.slot(PileRef.Waste).x
     }
 
     @Test
@@ -122,7 +136,7 @@ class BoardLayoutTest {
         portrait.pileAt(slot.x + 5, slot.y + portrait.cardHeight * 2, dealt) shouldBe PileRef.Tableau(3)
         val foundation = portrait.slot(PileRef.Foundation(1))
         portrait.pileAt(foundation.x + 5, foundation.y + 5, dealt) shouldBe PileRef.Foundation(1)
-        portrait.pileAt(portrait.columnX(2) + 5, portrait.gap + 5, dealt).shouldBeNull()
+        portrait.pileAt(portrait.columnX(4) + 5, portrait.gap + 5, dealt).shouldBeNull()
     }
 
     @Test
@@ -141,6 +155,6 @@ class BoardLayoutTest {
         val top = portrait.positions(dealt).values.single { it.pile == PileRef.Tableau(0) }
 
         portrait.dropTarget(dealt, top, 3f, 3f).shouldBeNull()
-        portrait.dropTarget(dealt, top, portrait.columnX(2) - top.position.x, -top.position.y).shouldBeNull()
+        portrait.dropTarget(dealt, top, portrait.columnX(4) - top.position.x, -top.position.y).shouldBeNull()
     }
 }
