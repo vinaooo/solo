@@ -30,6 +30,7 @@ The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRobora
   - With none of them set, `assembleRelease` builds an unsigned APK. A partial setup fails the build and names what is missing.
   - The keystore and its passwords are never committed. `*.jks` and `local.properties` are ignored.
   - `build-logic` has its own tests, which `./gradlew test` runs.
+- **Versions** come from git (`AppVersion` in `build-logic`): `versionCode` is `git rev-list --count HEAD` and `versionName` the latest `vX.Y.Z` tag from `git describe` (`0.0.0-g<hash>` before the first tag). A shallow clone fails the build, so both workflows check out with `fetch-depth: 0`. Don't set `versionCode`/`versionName` in `app/build.gradle.kts`.
 - **Release build:** it uses R8 with resource shrinking. `app/proguard-rules.pro` is empty, because Hilt, Room and kotlinx.serialization bring their own keep rules. Without the upload key, you can still try a release build on the device by signing it with the debug key:
   - run `zipalign -p 4` and then `apksigner sign --ks ~/.android/debug.keystore --ks-pass pass:android`, both from the build-tools;
   - `adb install -r` then installs it over a debug install, keeping its data;
