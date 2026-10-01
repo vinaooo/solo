@@ -24,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -43,7 +44,11 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions)
+    val uriHandler = LocalUriHandler.current
+    val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
+    SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions) {
+        uriHandler.openUri(privacyPolicyUrl)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +60,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     privacyOptionsRequired: Boolean = false,
     onOpenPrivacyOptions: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -104,7 +110,7 @@ fun SettingsScreen(
             ToggleRow(stringResource(R.string.haptics), settings.hapticsEnabled) {
                 onChange(SettingsChange.HapticsChanged(it))
             }
-            if (privacyOptionsRequired) PrivacySection(onOpenPrivacyOptions)
+            PrivacySection(privacyOptionsRequired, onOpenPrivacyOptions, onOpenPrivacyPolicy)
         }
     }
 }
@@ -122,16 +128,35 @@ private fun SettingsTopBar(onBack: () -> Unit) {
     )
 }
 
-/** Shown only where the law requires a way to change ad consent (GDPR, some US states). */
+/**
+ * The privacy policy link, which Google Play requires inside the app, and the consent form, which is offered only
+ * where the law requires a way to change ad consent (GDPR, some US states).
+ */
 @Composable
-private fun PrivacySection(onOpenPrivacyOptions: () -> Unit) {
+private fun PrivacySection(
+    privacyOptionsRequired: Boolean,
+    onOpenPrivacyOptions: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+) {
     SectionTitle(stringResource(R.string.section_privacy))
+    LinkRow(stringResource(R.string.privacy_policy), onClick = onOpenPrivacyPolicy)
+    if (privacyOptionsRequired) {
+        LinkRow(
+            stringResource(R.string.privacy_options),
+            supporting = stringResource(R.string.privacy_options_note),
+            onClick = onOpenPrivacyOptions,
+        )
+    }
+}
+
+@Composable
+private fun LinkRow(title: String, supporting: String? = null, onClick: () -> Unit) {
     ListItem(
-        onClick = onOpenPrivacyOptions,
-        supportingContent = { Text(stringResource(R.string.privacy_options_note)) },
+        onClick = onClick,
+        supportingContent = supporting?.let { { Text(it) } },
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
     ) {
-        Text(stringResource(R.string.privacy_options))
+        Text(title)
     }
 }
 

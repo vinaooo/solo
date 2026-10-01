@@ -50,7 +50,13 @@ class SettingsScreenTest {
         var opened = 0
         compose.setContent {
             SoloTheme {
-                SettingsScreen(Settings(), onChange = {}, onBack = {}, privacyOptionsRequired = true) { opened++ }
+                SettingsScreen(
+                    Settings(),
+                    onChange = {},
+                    onBack = {},
+                    privacyOptionsRequired = true,
+                    onOpenPrivacyOptions = { opened++ },
+                )
             }
         }
 
@@ -64,7 +70,18 @@ class SettingsScreenTest {
         compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
 
         compose.onNodeWithText("Privacy options").assertDoesNotExist()
-        compose.onNodeWithText("Privacy").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the privacy policy link is always there, as Google Play requires`() {
+        var opened = 0
+        compose.setContent {
+            SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}, onOpenPrivacyPolicy = { opened++ }) }
+        }
+
+        compose.onNodeWithText("Privacy policy").performScrollTo().performClick()
+
+        opened shouldBe 1
     }
 
     @Test
