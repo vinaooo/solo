@@ -62,11 +62,8 @@ fun PlayingCard(
             .aspectRatio(CardDimensions.ASPECT_RATIO)
             .clip(CardDimensions.shape)
             .background(if (card.isFaceUp) colors.face else colors.back)
-            .border(
-                width = if (highlighted) 3.dp else 1.dp,
-                color = if (highlighted) colors.highlight else colors.border,
-                shape = CardDimensions.shape,
-            )
+            // No outline of its own: only a hinted card is outlined.
+            .then(if (highlighted) Modifier.border(3.dp, colors.highlight, CardDimensions.shape) else Modifier)
             .clearAndSetSemantics { this.contentDescription = description },
     ) {
         // A face-down card is its back color alone, from the background above.
