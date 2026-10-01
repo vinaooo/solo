@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -24,7 +26,9 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
 import io.github.vinaooo.solo.core.designsystem.R
 import io.github.vinaooo.solo.core.designsystem.theme.CardColors
@@ -33,6 +37,7 @@ import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.model.SuitColor
+import kotlin.math.roundToInt
 
 /**
  * A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. [faceAtTop] slides the
@@ -89,15 +94,25 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp, atTop: Boolean) 
         val width = constraints.maxWidth
         // The glyphs carry blank space above and below them, so the stacked suit overlaps the rank's line a little.
         val stackedTop = (constraints.maxHeight - (rank.height + suit.height - overlap)) / 2
-        val rowLeft = (width - rank.width - suit.width) / 2
+        // Covered, the pair also shrinks, so the row is laid out from the scaled sizes.
+        val scale = lerp(1f, COVERED_FACE_SCALE, progress)
+        val rankWidth = (rank.width * scale).roundToInt()
+        val rowLeft = (width - rankWidth - (suit.width * scale).roundToInt()) / 2
+        val rowRank = IntOffset(rowLeft, 0)
+        val rowSuit = IntOffset(rowLeft + rankWidth, ((rank.height - suit.height) * scale / 2).roundToInt())
+        val scaled: GraphicsLayerScope.() -> Unit = {
+            scaleX = scale
+            scaleY = scale
+            transformOrigin = TransformOrigin(0f, 0f)
+        }
         layout(width, constraints.maxHeight) {
-            rank.place(
-                lerp((width - rank.width) / 2, rowLeft, progress),
-                lerp(stackedTop, 0, progress),
+            rank.placeWithLayer(
+                lerp(IntOffset((width - rank.width) / 2, stackedTop), rowRank, progress),
+                layerBlock = scaled,
             )
-            suit.place(
-                lerp((width - suit.width) / 2, rowLeft + rank.width, progress),
-                lerp(stackedTop + rank.height - overlap, (rank.height - suit.height) / 2, progress),
+            suit.placeWithLayer(
+                lerp(IntOffset((width - suit.width) / 2, stackedTop + rank.height - overlap), rowSuit, progress),
+                layerBlock = scaled,
             )
         }
     }
@@ -186,6 +201,7 @@ val Rank.nameRes: Int
 
 private const val CENTER_SUIT_RATIO = 0.4f
 private const val FACE_SPACING_RATIO = 0.08f
+private const val COVERED_FACE_SCALE = 0.75f
 private const val BACK_INSET_RATIO = 0.08f
 private const val BACK_CORNER_RATIO = 0.06f
 private const val DOTS_PER_ROW = 7f
