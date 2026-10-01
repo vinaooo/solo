@@ -52,7 +52,9 @@ class BoardLayout(
     // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
-    private val hiddenBarGap = gap
+
+    // 3dp with the board's 4dp gap.
+    private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
     /** A face-down card's share of the column's staircase. */
     private val hiddenStep = faceDownStep + hiddenBarGap / (COLUMNS - 1)
@@ -189,6 +191,7 @@ class BoardLayout(
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
+        const val HIDDEN_BAR_GAP = 0.75f
         const val FACE_UP_STEP = 0.28f
         const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
