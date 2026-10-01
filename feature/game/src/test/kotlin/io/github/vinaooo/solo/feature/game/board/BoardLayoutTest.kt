@@ -157,7 +157,8 @@ class BoardLayoutTest {
         val leftXs = waste.map { left.positions(state).getValue(it.identity()).position.x }
         leftXs[1] shouldBe left.slot(PileRef.Waste).x
         (leftXs[3] < left.columnX(2)) shouldBe true
-        // The two cards under the top one show their left side, as wide as the fan step; the one below them none.
+        // The two cards under the top one show their left side, as wide as the fan step. The one below them is
+        // hidden, but keeps the same face so it doesn't spring back while drawn cards fly over it.
         listOf(portrait, left).forEach { layout ->
             val placed = layout.positions(state)
             val step = layout.cover(state, placed.getValue(waste[2].identity()))!!
@@ -165,9 +166,14 @@ class BoardLayoutTest {
             step.strip.toDouble() shouldBe ((layout.cardWidth * 0.4f).toDouble() plusOrMinus 0.01)
             val under = layout.cover(state, placed.getValue(waste[1].identity()))!!.strip.toDouble()
             under shouldBe (step.strip.toDouble() plusOrMinus 0.01)
-            layout.cover(state, placed.getValue(waste[0].identity())).shouldBeNull()
+            val hidden = layout.cover(state, placed.getValue(waste[0].identity()))!!
+            hidden.edge shouldBe CardCover.Edge.LEFT
+            hidden.strip.toDouble() shouldBe (step.strip.toDouble() plusOrMinus 0.01)
             layout.cover(state, placed.getValue(waste[3].identity())).shouldBeNull()
         }
+        // Drawing one, the waste is a plain pile: the cards under the top one keep a centered face.
+        val drawOne = state.copy(drawMode = DrawMode.ONE)
+        portrait.cover(drawOne, portrait.positions(drawOne).getValue(waste[2].identity())).shouldBeNull()
     }
 
     @Test

@@ -92,7 +92,9 @@ class BoardLayout(
 
     /**
      * What shows of a card past the next card of its pile: a strip along the top in a column, along a side in the
-     * waste fan. Null when nothing covers it, or when the next card hides it completely.
+     * waste fan. Null when nothing covers it, or when the next card hides it completely, except under a draw-three
+     * fan: those cards were fanned a moment ago and keep their face there, so it doesn't spring back to the center
+     * while the new cards fly over it.
      */
     fun cover(state: GameState, placed: PlacedCard): Cover? = when (val pile = placed.pile) {
         is PileRef.Tableau -> state.tableau[pile.index].takeIf { placed.index < it.lastIndex }?.let { column ->
@@ -105,6 +107,7 @@ class BoardLayout(
             when {
                 dx > 0 -> Cover(CardCover.Edge.LEFT, dx)
                 dx < 0 -> Cover(CardCover.Edge.RIGHT, -dx)
+                state.drawMode == DrawMode.THREE -> Cover(CardCover.Edge.LEFT, wasteFanStep)
                 else -> null
             }
         } else {
