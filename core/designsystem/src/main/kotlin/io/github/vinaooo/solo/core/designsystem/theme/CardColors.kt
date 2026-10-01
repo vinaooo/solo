@@ -18,7 +18,6 @@ data class CardColors(
     val blackSuits: Color,
     val border: Color,
     val back: Color,
-    val backPattern: Color,
     val highlight: Color,
     val emptySlot: Color,
 )
@@ -33,7 +32,6 @@ internal fun cardColorsFor(scheme: ColorScheme, darkTheme: Boolean): CardColors 
         blackSuits = blackSuits,
         border = scheme.outlineVariant,
         back = scheme.primary,
-        backPattern = scheme.primaryContainer,
         highlight = scheme.tertiary,
         emptySlot = scheme.outline,
     )

@@ -2,7 +2,6 @@ package io.github.vinaooo.solo.core.designsystem.component
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,9 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.FirstBaseline
@@ -73,7 +69,8 @@ fun PlayingCard(
             )
             .clearAndSetSemantics { this.contentDescription = description },
     ) {
-        if (card.isFaceUp) CardFace(card, colors, maxWidth, cover) else CardBack(colors)
+        // A face-down card is its back color alone, from the background above.
+        if (card.isFaceUp) CardFace(card, colors, maxWidth, cover)
     }
 }
 
@@ -162,35 +159,6 @@ private class FaceGeometry(
     }
 }
 
-@Composable
-private fun CardBack(colors: CardColors) {
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val inset = size.width * BACK_INSET_RATIO
-        val inner = Size(size.width - inset * 2, size.height - inset * 2)
-        val radius = CornerRadius(size.width * BACK_CORNER_RATIO)
-        drawRoundRect(
-            color = colors.backPattern.copy(alpha = 0.35f),
-            topLeft = Offset(inset, inset),
-            size = inner,
-            cornerRadius = radius,
-        )
-        val step = size.width / DOTS_PER_ROW
-        var y = inset + step / 2
-        while (y < size.height - inset) {
-            var x = inset + step / 2
-            while (x < size.width - inset) {
-                drawCircle(
-                    color = colors.backPattern.copy(alpha = 0.55f),
-                    radius = step * DOT_RATIO,
-                    center = Offset(x, y),
-                )
-                x += step
-            }
-            y += step
-        }
-    }
-}
-
 /** Suit glyph forced to text presentation (U+FE0E), so devices don't draw it as an emoji that ignores the color. */
 val Suit.symbol: String
     get() = when (this) {
@@ -250,7 +218,3 @@ private const val COVERED_GAP_RATIO = 0.04f
 
 /** Roboto's capital and digit height, as a fraction of the font size. */
 private const val CAP_HEIGHT = 0.71f
-private const val BACK_INSET_RATIO = 0.08f
-private const val BACK_CORNER_RATIO = 0.06f
-private const val DOTS_PER_ROW = 7f
-private const val DOT_RATIO = 0.18f
