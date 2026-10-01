@@ -95,6 +95,9 @@ fun GameBoard(
                     placed = placed,
                     cardWidth = cardWidth,
                     highlighted = isHighlighted,
+                    // A column card under another one shows only its top edge.
+                    covered = placed.pile is PileRef.Tableau &&
+                        placed.index < state.tableau[placed.pile.index].lastIndex,
                     dragOffset = dragOffset,
                     description = accessibility.description,
                     gestures = accessibility.modifier.then(
@@ -197,6 +200,7 @@ private fun BoardCard(
     placed: PlacedCard,
     cardWidth: Dp,
     highlighted: Boolean,
+    covered: Boolean,
     dragOffset: Offset?,
     description: String?,
     gestures: Modifier,
@@ -210,6 +214,7 @@ private fun BoardCard(
         card = placed.card,
         highlighted = highlighted,
         contentDescription = description,
+        faceAtTop = covered,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated }
             .zIndex(if (lifted) LIFTED_Z + placed.z else placed.z)

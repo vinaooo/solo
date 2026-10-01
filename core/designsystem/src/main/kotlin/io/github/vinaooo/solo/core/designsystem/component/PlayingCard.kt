@@ -1,17 +1,22 @@
 package io.github.vinaooo.solo.core.designsystem.component
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -32,13 +37,17 @@ import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.model.SuitColor
 
-/** A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. */
+/**
+ * A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. [faceAtTop] slides the
+ * rank and suit to the top edge, where they stay visible while another card covers the rest.
+ */
 @Composable
 fun PlayingCard(
     card: Card,
     modifier: Modifier = Modifier,
     highlighted: Boolean = false,
     contentDescription: String? = null,
+    faceAtTop: Boolean = false,
 ) {
     val colors = SoloThemeExtras.cardColors
     val description =
@@ -55,23 +64,30 @@ fun PlayingCard(
             )
             .clearAndSetSemantics { this.contentDescription = description },
     ) {
-        if (card.isFaceUp) CardFace(card, colors, maxWidth) else CardBack(colors)
+        if (card.isFaceUp) CardFace(card, colors, maxWidth, faceAtTop) else CardBack(colors)
     }
 }
 
 @Composable
-private fun CardFace(card: Card, colors: CardColors, width: Dp) {
+private fun CardFace(card: Card, colors: CardColors, width: Dp, atTop: Boolean) {
     val ink = if (card.suit.color == SuitColor.RED) colors.redSuits else colors.blackSuits
     val density = LocalDensity.current
     val size = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        // The glyphs carry blank space above and below them, so pull the suit up under the rank.
-        verticalArrangement = Arrangement.spacedBy(-width * FACE_SPACING_RATIO, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(text = card.rank.symbol, color = ink, fontSize = size, fontWeight = FontWeight.Bold, lineHeight = size)
-        Text(text = card.suit.symbol, color = ink, fontSize = size, lineHeight = size)
+    // The same spring that moves cards, so the face slides while the card that covers or uncovers it travels.
+    val bias by animateFloatAsState(
+        if (atTop) -1f else 0f,
+        MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "face",
+    )
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = BiasAlignment(0f, bias)) {
+        Column(
+            // The glyphs carry blank space above and below them, so pull the suit up under the rank.
+            verticalArrangement = Arrangement.spacedBy(-width * FACE_SPACING_RATIO),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = card.rank.symbol, color = ink, fontSize = size, fontWeight = FontWeight.Bold, lineHeight = size)
+            Text(text = card.suit.symbol, color = ink, fontSize = size, lineHeight = size)
+        }
     }
 }
 
