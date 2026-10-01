@@ -236,7 +236,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     val density = LocalDensity.current
 
     @Composable
-    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null, borderWidth: Dp = 2.dp) {
+    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null, borderWidth: Dp? = null) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
         Box(

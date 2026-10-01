@@ -12,14 +12,20 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
 
-/** Outline shown where a pile is empty (stock, foundations, tableau columns). */
+/** Card-sized slot where a pile is empty; a null [borderWidth] hides its outline. */
 @Composable
-fun EmptyPileSlot(modifier: Modifier = Modifier, label: String? = null, borderWidth: Dp = 2.dp) {
+fun EmptyPileSlot(modifier: Modifier = Modifier, label: String? = null, borderWidth: Dp? = 2.dp) {
     val colors = SoloThemeExtras.cardColors
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(CardDimensions.ASPECT_RATIO)
-            .border(borderWidth, colors.emptySlot.copy(alpha = 0.5f), CardDimensions.shape),
+            .then(
+                if (borderWidth == null) {
+                    Modifier
+                } else {
+                    Modifier.border(borderWidth, colors.emptySlot.copy(alpha = 0.5f), CardDimensions.shape)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (label != null) {
