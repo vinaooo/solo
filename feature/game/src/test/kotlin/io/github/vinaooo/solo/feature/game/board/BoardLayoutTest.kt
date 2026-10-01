@@ -102,6 +102,10 @@ class BoardLayoutTest {
         // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
         ys.take(6).forEach { it shouldBe ys[6] }
         portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
+        // With no bar, the gap still comes first, so every column's first face-up card keeps to one staircase.
+        val first = placed.getValue(dealt.tableau[0].single().identity()).position.y
+        val below = first - portrait.slot(PileRef.Tableau(0)).y
+        below.toDouble() shouldBe ((portrait.gap * 2).toDouble() plusOrMinus 0.01)
     }
 
     @Test
