@@ -265,7 +265,6 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
             PileRef.Foundation(it),
             stringResource(R.string.foundation_empty),
             isEmpty = state.foundations[it].isEmpty(),
-            label = "A",
         )
     }
     state.tableau.indices.forEach { column ->
