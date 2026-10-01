@@ -20,6 +20,7 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew recordRoborazziDebug                   # re-record screenshot goldens after an intended UI change
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
 ./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest   # on-device UI tests (emulator; not part of the gate or CI)
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.
@@ -56,6 +57,7 @@ The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRobora
 - **Fakes:** repository fakes live in `:domain`'s `testFixtures` (`FakeSavedGameRepository`, etc.). Feature modules get them through `testImplementation(testFixtures(project(":domain")))`. Prefer these fakes to mocks.
 - **Screenshots:** Roborazzi goldens live in each module's `src/test/screenshots/`. `roborazzi.test.verify=true`, so any pixel change fails `test`. Record and verify on Linux, and keep dates and other machine-dependent values out of captures (the scores screenshot uses noon-UTC timestamps).
 - **ViewModel tests:** `GameViewModel` runs an endless clock loop, so its tests go through the `gameTest {}` helper, which pauses every ViewModel in a `finally`. Without it, `runTest` waits for the clock forever and a failing assertion hangs instead of failing.
+- **On-device tests:** `app/src/androidTest` runs the real app under Hilt (`HiltTestRunner`) on an emulator. Test Orchestrator gives each test its own process and clears the app's data, so every test starts on a fresh deal. Without it, the second Hilt graph in one process would open a second DataStore on the same file and crash. `FakeAdsModule` lives in `src/sharedTest`, shared by Robolectric and on-device tests. Checked on `Solo_API_26` (Android 8.0, minSdk) and `Pixel_9a_Android_16`. The latter needs `-skin 1080x2424` to start headless. Run them on emulators, not on the user's phones, which have the upload-key-signed release installed: installing the debug build means uninstalling it and losing the saved game.
 - **Whole-app test:** `app/src/test/.../AdBannerGameScreenOnlyTest` launches the real `MainActivity` under Hilt (`HiltTestApplication`, with `FakeAdsModule`) and checks that the banner is on the game screen and not on Scores or Settings.
 
 ## Architecture
