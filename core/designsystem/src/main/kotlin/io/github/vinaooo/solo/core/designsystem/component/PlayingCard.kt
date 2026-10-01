@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.core.designsystem.component
 
+import android.graphics.BlurMaskFilter
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -17,13 +18,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
@@ -165,25 +168,33 @@ private class FaceGeometry(
     }
 }
 
-/** A shadow fading out from the card's [edge], drawn outside it onto the card underneath. */
-private fun DrawScope.drawEdgeShadow(edge: CardCover.Edge, width: Float) {
-    val dark = Color.Black.copy(alpha = SHADOW_ALPHA)
-    when (edge) {
-        CardCover.Edge.TOP -> drawRect(
-            Brush.verticalGradient(listOf(Color.Transparent, dark), startY = -width, endY = 0f),
-            topLeft = Offset(0f, -width),
-            size = Size(size.width, width),
-        )
-        CardCover.Edge.LEFT -> drawRect(
-            Brush.horizontalGradient(listOf(Color.Transparent, dark), startX = -width, endX = 0f),
-            topLeft = Offset(-width, 0f),
-            size = Size(width, size.height),
-        )
-        CardCover.Edge.RIGHT -> drawRect(
-            Brush.horizontalGradient(listOf(dark, Color.Transparent), startX = size.width, endX = size.width + width),
-            topLeft = Offset(size.width, 0f),
-            size = Size(width, size.height),
-        )
+/**
+ * A soft shadow past the card's [edge], onto the card underneath: the card's own rounded shape, blurred and nudged
+ * toward that edge. It is kept to that side and within the card's span, where the card underneath is, so it follows
+ * the rounded corners without spilling onto the table.
+ */
+private fun DrawScope.drawEdgeShadow(edge: CardCover.Edge, blur: Float) {
+    val corner = size.width * CardDimensions.CORNER_PERCENT / PERCENT
+    val shift = blur / 2
+    val (dx, dy) = when (edge) {
+        CardCover.Edge.TOP -> 0f to -shift
+        CardCover.Edge.LEFT -> -shift to 0f
+        CardCover.Edge.RIGHT -> shift to 0f
+    }
+    val margin = blur * 2
+    val side = when (edge) {
+        CardCover.Edge.TOP -> Rect(0f, -margin, size.width, corner)
+        CardCover.Edge.LEFT -> Rect(-margin, 0f, corner, size.height)
+        CardCover.Edge.RIGHT -> Rect(size.width - corner, 0f, size.width + margin, size.height)
+    }
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.Black.copy(alpha = SHADOW_ALPHA).toArgb()
+        maskFilter = BlurMaskFilter(blur, BlurMaskFilter.Blur.NORMAL)
+    }
+    clipRect(side.left, side.top, side.right, side.bottom) {
+        drawIntoCanvas {
+            it.nativeCanvas.drawRoundRect(dx, dy, size.width + dx, size.height + dy, corner, corner, paint)
+        }
     }
 }
 
@@ -243,7 +254,8 @@ private const val CENTER_SUIT_RATIO = 0.4f
 private const val FACE_SPACING_RATIO = 0.08f
 private const val COVERED_FACE_SCALE = 0.65f
 private val SHADOW_WIDTH = 5.dp
-private const val SHADOW_ALPHA = 0.22f
+private const val SHADOW_ALPHA = 0.35f
+private const val PERCENT = 100
 private const val COVERED_GAP_RATIO = 0.04f
 
 /** Roboto's capital and digit height, as a fraction of the font size. */
