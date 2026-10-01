@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -67,22 +66,20 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp) {
     val cornerSize = with(density) { (width * CORNER_TEXT_RATIO).toSp() }
     val centerSize = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
     Box(modifier = Modifier.fillMaxSize().padding(width * PADDING_RATIO)) {
-        Column(modifier = Modifier.align(Alignment.TopStart), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = card.rank.symbol,
-                color = ink,
-                fontSize = cornerSize,
-                fontWeight = FontWeight.Bold,
-                lineHeight = cornerSize,
-            )
-            Text(text = card.suit.symbol, color = ink, fontSize = cornerSize, lineHeight = cornerSize)
-        }
+        Text(
+            text = card.rank.symbol,
+            color = ink,
+            fontSize = cornerSize,
+            fontWeight = FontWeight.Bold,
+            lineHeight = cornerSize,
+            modifier = Modifier.align(Alignment.TopStart),
+        )
         Text(
             text = card.suit.symbol,
             color = ink,
             fontSize = centerSize,
             lineHeight = centerSize,
-            modifier = Modifier.align(Alignment.BottomEnd),
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 }
