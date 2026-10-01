@@ -104,13 +104,17 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp, coveredStrip: Dp
         // Covered, the pair also shrinks, so the row is laid out from the scaled sizes.
         val scale = lerp(1f, COVERED_FACE_SCALE, progress)
         val rankWidth = (rank.width * scale).roundToInt()
-        val rowLeft = (width - rankWidth - (suit.width * scale).roundToInt()) / 2
+        val rowGap = (width * COVERED_GAP_RATIO * progress).roundToInt()
+        val rowLeft = (width - rankWidth - rowGap - (suit.width * scale).roundToInt()) / 2
         val strip = (coveredStrip ?: lastStrip.value).roundToPx()
         // Center the letters' ink, not their line box, which carries empty descender space below them.
         val inkCenter = (rank[FirstBaseline] - size.toPx() * CAP_HEIGHT / 2) * scale
         val rowTop = (strip / 2 - inkCenter).roundToInt()
         val rowRank = IntOffset(rowLeft, rowTop)
-        val rowSuit = IntOffset(rowLeft + rankWidth, rowTop + ((rank.height - suit.height) * scale / 2).roundToInt())
+        val rowSuit = IntOffset(
+            rowLeft + rankWidth + rowGap,
+            rowTop + ((rank.height - suit.height) * scale / 2).roundToInt(),
+        )
         val scaled: GraphicsLayerScope.() -> Unit = {
             scaleX = scale
             scaleY = scale
@@ -213,6 +217,7 @@ val Rank.nameRes: Int
 private const val CENTER_SUIT_RATIO = 0.4f
 private const val FACE_SPACING_RATIO = 0.08f
 private const val COVERED_FACE_SCALE = 0.65f
+private const val COVERED_GAP_RATIO = 0.04f
 
 /** Roboto's capital and digit height, as a fraction of the font size. */
 private const val CAP_HEIGHT = 0.71f
