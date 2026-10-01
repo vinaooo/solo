@@ -1,0 +1,105 @@
+name: Release to Google Play
+
+# Builds the signed app bundle and uploads it to Google Play. Off until the repository variable
+# PLAY_UPLOAD_ENABLED is set to "true" (Settings → Secrets and variables → Actions → Variables);
+# until then every run is skipped. Setup is described in README.md ("Releasing to Google Play").
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Play track to upload to
+        type: choice
+        options: [internal, alpha, beta, production]
+        default: internal
+      status:
+        description: Release status (use draft while the app has never been published)
+        type: choice
+        options: [completed, draft]
+        default: completed
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    name: Signed bundle → Google Play
+    if: vars.PLAY_UPLOAD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOLO_SIGNING_STORE_PASSWORD: ${{ secrets.SOLO_SIGNING_STORE_PASSWORD }}
+      SOLO_SIGNING_KEY_ALIAS: ${{ secrets.SOLO_SIGNING_KEY_ALIAS }}
+      SOLO_SIGNING_KEY_PASSWORD: ${{ secrets.SOLO_SIGNING_KEY_PASSWORD }}
+      SOLO_ADS_APP_ID: ${{ secrets.SOLO_ADS_APP_ID }}
+      SOLO_ADS_BANNER_ID: ${{ secrets.SOLO_ADS_BANNER_ID }}
+    steps:
+      # Full history and tags: the version code is the commit count and the version name comes from the tag.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Without these the build would still succeed: unsigned, or with Google's test ads. Stop before that ships.
+      - name: Check that every release secret is set
+        env:
+          KEYSTORE: ${{ secrets.SOLO_UPLOAD_KEYSTORE_BASE64 }}
+          SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          missing=()
+          for name in KEYSTORE SERVICE_ACCOUNT SOLO_SIGNING_STORE_PASSWORD SOLO_SIGNING_KEY_ALIAS \
+                      SOLO_SIGNING_KEY_PASSWORD SOLO_ADS_APP_ID SOLO_ADS_BANNER_ID; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing release secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Restore the upload keystore
+        env:
+          KEYSTORE: ${{ secrets.SOLO_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          echo "SOLO_SIGNING_STORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-37.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Gradle settings for CI
+        run: |
+          mkdir -p ~/.gradle
+          printf '%s\n' \
+            'org.gradle.parallel=true' \
+            'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' \
+            'kotlin.daemon.jvmargs=-Xmx1536m' >> ~/.gradle/gradle.properties
+
+      - name: Build the signed bundle
+        run: ./gradlew :app:bundleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: solo-release-${{ github.ref_name }}
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt
+
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.vinaooo.solo
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
+          track: ${{ inputs.track || 'internal' }}
+          status: ${{ inputs.status || 'completed' }}
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
