@@ -27,7 +27,7 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float, val hande
 
     val cardWidth: Float = minOf(
         (width - gap * (COLUMNS + 1)) / COLUMNS,
-        (height - gap * 3) / HEIGHT_IN_CARDS * CardDimensions.ASPECT_RATIO,
+        (height - gap * (TOP_ROW_GAPS + 2)) / HEIGHT_IN_CARDS * CardDimensions.ASPECT_RATIO,
     )
     val cardHeight: Float = cardWidth / CardDimensions.ASPECT_RATIO
     val boardWidth: Float = cardWidth * COLUMNS + gap * (COLUMNS + 1)
@@ -36,7 +36,7 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float, val hande
 
     private val left = (width - boardWidth) / 2
     private val topRowY = gap
-    private val tableauY = topRowY + cardHeight + gap
+    private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
@@ -122,6 +122,9 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float, val hande
     private companion object {
         const val COLUMNS = 7
         const val FIRST_FOUNDATION_COLUMN = 3
+
+        /** Gaps between the top row and the tableau. */
+        const val TOP_ROW_GAPS = 3
 
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f

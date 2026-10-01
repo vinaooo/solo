@@ -53,6 +53,11 @@ class BoardLayoutTest {
     }
 
     @Test
+    fun `three gaps separate the top row from the tableau`() {
+        portrait.slot(PileRef.Tableau(0)).y shouldBe portrait.gap + portrait.cardHeight + portrait.gap * 3
+    }
+
+    @Test
     fun `every card of a deal gets a position`() {
         portrait.positions(dealt).size shouldBe 52
     }
