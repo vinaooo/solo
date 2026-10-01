@@ -11,7 +11,10 @@ android {
 
     defaultConfig {
         applicationId = "io.github.vinaooo.solo"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Runs instrumented tests on HiltTestApplication; the orchestrator gives each test its own process and clears
+        // the app's data (saved game, settings, scores) in between.
+        testInstrumentationRunner = "io.github.vinaooo.solo.HiltTestRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
     buildTypes {
@@ -20,6 +23,16 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+    }
+
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+    }
+
+    // FakeAdsModule keeps the real ads SDKs out of both Robolectric and on-device tests.
+    sourceSets {
+        getByName("test").kotlin.directories += "src/sharedTest/kotlin"
+        getByName("androidTest").kotlin.directories += "src/sharedTest/kotlin"
     }
 
     androidResources {
@@ -56,6 +69,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
+    androidTestUtil(libs.androidx.test.orchestrator)
+    androidTestUtil(libs.androidx.test.services)
 
     constraints {
         // AGP pins test classpaths to the app's own versions; androidx.test and Hilt testing need 1.2.0.
