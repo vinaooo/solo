@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -236,7 +239,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     val density = LocalDensity.current
 
     @Composable
-    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null, borderWidth: Dp? = null) {
+    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, icon: ImageVector? = null, borderWidth: Dp? = null) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
         Box(
@@ -251,14 +254,14 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 }
                 .clickable { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
-            EmptyPileSlot(Modifier.width(cardWidth), label = label, borderWidth = borderWidth)
+            EmptyPileSlot(Modifier.width(cardWidth), icon = icon, borderWidth = borderWidth)
         }
     }
     Slot(
         PileRef.Stock,
         stringResource(if (state.waste.isEmpty()) R.string.stock_empty else R.string.stock_recycle),
         isEmpty = state.stock.isEmpty(),
-        label = "↻",
+        icon = Icons.Rounded.Refresh,
     )
     state.foundations.indices.forEach {
         Slot(
