@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
+import io.github.vinaooo.solo.buildlogic.AdIds
 import io.github.vinaooo.solo.buildlogic.AppVersion
 import io.github.vinaooo.solo.buildlogic.ReleaseSigning
 import io.github.vinaooo.solo.buildlogic.configureJUnitPlatform
@@ -30,6 +31,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 }
             }
         }
+        configureAds()
         configureJUnitPlatform()
     }
 
@@ -51,17 +53,41 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         return result.standardOutput.asText.get().takeIf { result.result.get().exitValue == 0 }
     }
 
+    /**
+     * AdMob IDs: the app ID becomes the `adMobAppId` manifest placeholder and the banner ad unit
+     * `BuildConfig.AD_BANNER_ID`. Debug builds always get Google's test IDs; see [AdIds].
+     */
+    private fun Project.configureAds() = extensions.configure<ApplicationExtension> {
+        val properties = localProperties()
+        val release = AdIds.resolve(properties, environment(AdIds.environmentVariables)) ?: AdIds.TEST
+        buildFeatures.buildConfig = true
+        defaultConfig.buildConfigField(
+            "String",
+            "AD_TEST_DEVICE_IDS",
+            AdIds.testDevices(properties).joinToString(",").quoted(),
+        )
+        mapOf("debug" to AdIds.TEST, "release" to release).forEach { (buildType, ids) ->
+            buildTypes.getByName(buildType) {
+                manifestPlaceholders["adMobAppId"] = ids.appId
+                buildConfigField("String", "AD_BANNER_ID", ids.bannerId.quoted())
+            }
+        }
+    }
+
+    private fun String.quoted() = "\"$this\""
+
     /** The upload key from local.properties or the CI environment; without one, release builds stay unsigned. */
-    private fun Project.releaseSigning(): ReleaseSigning? {
-        // Read through providers so the configuration cache notices when local.properties changes.
-        val localProperties = providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+    private fun Project.releaseSigning(): ReleaseSigning? =
+        ReleaseSigning.resolve(localProperties(), environment(ReleaseSigning.environmentVariables), rootDir)
+
+    /** local.properties, read through providers so the configuration cache notices when it changes. */
+    private fun Project.localProperties(): Map<String, String> =
+        providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
             .asText.orNull
             ?.let { text -> Properties().apply { load(text.reader()) } }
             ?.let { properties -> properties.stringPropertyNames().associateWith(properties::getProperty) }
             .orEmpty()
-        val environment = ReleaseSigning.environmentVariables
-            .mapNotNull { name -> providers.environmentVariable(name).orNull?.let { name to it } }
-            .toMap()
-        return ReleaseSigning.resolve(localProperties, environment, rootDir)
-    }
+
+    private fun Project.environment(names: List<String>): Map<String, String> =
+        names.mapNotNull { name -> providers.environmentVariable(name).orNull?.let { name to it } }.toMap()
 }

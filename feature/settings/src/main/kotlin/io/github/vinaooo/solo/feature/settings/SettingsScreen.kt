@@ -35,9 +35,15 @@ import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    privacyOptionsRequired: Boolean = false,
+    onOpenPrivacyOptions: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    SettingsScreen(settings, viewModel::onChange, onBack, modifier)
+    SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,19 +53,12 @@ fun SettingsScreen(
     onChange: (SettingsChange) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    privacyOptionsRequired: Boolean = false,
+    onOpenPrivacyOptions: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back))
-                    }
-                },
-            )
-        },
+        topBar = { SettingsTopBar(onBack) },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             SectionTitle(stringResource(R.string.section_game))
@@ -105,7 +104,34 @@ fun SettingsScreen(
             ToggleRow(stringResource(R.string.haptics), settings.hapticsEnabled) {
                 onChange(SettingsChange.HapticsChanged(it))
             }
+            if (privacyOptionsRequired) PrivacySection(onOpenPrivacyOptions)
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsTopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.settings_title)) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back))
+            }
+        },
+    )
+}
+
+/** Shown only where the law requires a way to change ad consent (GDPR, some US states). */
+@Composable
+private fun PrivacySection(onOpenPrivacyOptions: () -> Unit) {
+    SectionTitle(stringResource(R.string.section_privacy))
+    ListItem(
+        onClick = onOpenPrivacyOptions,
+        supportingContent = { Text(stringResource(R.string.privacy_options_note)) },
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+    ) {
+        Text(stringResource(R.string.privacy_options))
     }
 }
 

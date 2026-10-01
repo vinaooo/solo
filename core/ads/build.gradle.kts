@@ -10,4 +10,8 @@ android {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 }

@@ -17,4 +17,7 @@
     <string name="dynamic_color_note">Use colors from your wallpaper</string>
     <string name="sound">Sound effects</string>
     <string name="haptics">Vibration</string>
+    <string name="section_privacy">Privacy</string>
+    <string name="privacy_options">Privacy options</string>
+    <string name="privacy_options_note">Change your choices about ads and data</string>
 </resources>

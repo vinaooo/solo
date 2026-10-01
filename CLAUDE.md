@@ -56,7 +56,7 @@ The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRobora
 - **Fakes:** repository fakes live in `:domain`'s `testFixtures` (`FakeSavedGameRepository`, etc.). Feature modules get them through `testImplementation(testFixtures(project(":domain")))`. Prefer these fakes to mocks.
 - **Screenshots:** Roborazzi goldens live in each module's `src/test/screenshots/`. `roborazzi.test.verify=true`, so any pixel change fails `test`. Record and verify on Linux, and keep dates and other machine-dependent values out of captures (the scores screenshot uses noon-UTC timestamps).
 - **ViewModel tests:** `GameViewModel` runs an endless clock loop, so its tests go through the `gameTest {}` helper, which pauses every ViewModel in a `finally`. Without it, `runTest` waits for the clock forever and a failing assertion hangs instead of failing.
-- **Whole-app test:** `app/src/test/.../AdBannerEveryScreenTest` launches the real `MainActivity` under Hilt (`HiltTestApplication`) and checks that the ad banner is on every screen.
+- **Whole-app test:** `app/src/test/.../AdBannerGameScreenOnlyTest` launches the real `MainActivity` under Hilt (`HiltTestApplication`, with `FakeAdsModule`) and checks that the banner is on the game screen and not on Scores or Settings.
 
 ## Architecture
 
@@ -95,8 +95,13 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - Landscape: `CenteredRow` puts stats and buttons on the left, the board centered, and a vertical floating toolbar on the right. Both sides get the width of the wider one, so the board stays centered.
 
 **App shell (`:app`)**
-- `SoloApp` owns the only ad banner, in the `Scaffold`'s `bottomBar` around a type-safe `NavHost`. It consumes only the bottom inset, and each screen pads for the status bar itself.
-- Ads go through `AdBannerProvider` in `:core:ads`, which is a placeholder for now; AdMob comes later.
+- `SoloApp` is the type-safe `NavHost`. Only the game route carries the ad banner, in a `Column` under the game: the banner pads for the navigation bar and the game consumes that inset. Scores and Settings have no ads and pad for the system bars themselves.
+
+**Ads (`:core:ads`)**
+- AdMob through `AdBannerProvider` (`AdMobBanner`): a full-width inline adaptive banner capped at 60dp (`AdSize.getInlineAdaptiveBannerAdSize`; the user found the large anchored size, about 130dp, too big, and the other anchored sizes are deprecated). Its slot always takes the 60dp, so the board never jumps when an ad loads or fails.
+- Consent comes before ads. `MainActivity` calls `AdConsent.gather` once per launch. `DefaultAdConsent` updates the status, shows the consent form if needed, and only then starts the SDK and lets the banner load. The SDKs sit behind `ConsentClient` / `AdsSdk` (`GoogleAds.kt`), so the order is unit-tested with fakes. Settings shows "Privacy options" only when the consent SDK says it's required.
+- IDs: debug builds always use Google's test IDs. Release builds read `solo.ads.appId` / `solo.ads.bannerId` from `local.properties` (or `SOLO_ADS_APP_ID` / `SOLO_ADS_BANNER_ID`), and fall back to test IDs when neither is set (`AdIds` in `build-logic`; it rejects swapped or partial IDs). `solo.ads.testDeviceIds` lists hashed device IDs that always get test ads. Debug builds make the consent SDK act as in the EEA, and that only works on test devices: emulators, or phones listed there.
+- App tests replace `AdsModule` with `FakeAdsModule` (`@TestInstallIn`), so the real SDKs never run under Robolectric.
 
 **Theme**
 - `SoloTheme` (`:core:designsystem`) picks light or dark from the Settings choice or the system, with dynamic color on Android 12+ or the brand colors otherwise. Card faces and backs are drawn in Compose.

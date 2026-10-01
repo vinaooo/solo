@@ -1,10 +1,16 @@
 package io.github.vinaooo.solo
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.only
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -18,30 +24,40 @@ import io.github.vinaooo.solo.navigation.GameRoute
 import io.github.vinaooo.solo.navigation.ScoresRoute
 import io.github.vinaooo.solo.navigation.SettingsRoute
 
-/** One banner for every screen: it lives in the app scaffold, under the navigation host. */
+/** The navigation host. Only the game screen carries the ad banner, at its bottom; Scores and Settings have none. */
 @Composable
-fun SoloApp(adBanner: AdBannerProvider, modifier: Modifier = Modifier) {
+fun SoloApp(
+    adBanner: AdBannerProvider,
+    modifier: Modifier = Modifier,
+    privacyOptionsRequired: Boolean = false,
+    onOpenPrivacyOptions: () -> Unit = {},
+) {
     val navController = rememberNavController()
-    Scaffold(
-        modifier = modifier,
-        bottomBar = { adBanner.Banner(Modifier.navigationBarsPadding()) },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = GameRoute,
-            modifier = Modifier
-                .padding(bottom = padding.calculateBottomPadding())
-                // Only the bottom (banner + navigation bar) is handled here; screens pad for the status bar.
-                .consumeWindowInsets(PaddingValues(bottom = padding.calculateBottomPadding())),
-        ) {
-            composable<GameRoute> {
-                GameScreenRoute(
-                    onOpenScores = { navController.navigate(ScoresRoute) },
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                )
+    NavHost(
+        navController = navController,
+        startDestination = GameRoute,
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
+        composable<GameRoute> {
+            Column {
+                // The banner pads for the navigation bar, so the game above it must not pad for it again.
+                val navigationBar = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
+                Box(Modifier.weight(1f).consumeWindowInsets(navigationBar)) {
+                    GameScreenRoute(
+                        onOpenScores = { navController.navigate(ScoresRoute) },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                    )
+                }
+                adBanner.Banner(Modifier.navigationBarsPadding())
             }
-            composable<ScoresRoute> { ScoresScreenRoute(onBack = navController::popBackStack) }
-            composable<SettingsRoute> { SettingsScreenRoute(onBack = navController::popBackStack) }
+        }
+        composable<ScoresRoute> { ScoresScreenRoute(onBack = navController::popBackStack) }
+        composable<SettingsRoute> {
+            SettingsScreenRoute(
+                onBack = navController::popBackStack,
+                privacyOptionsRequired = privacyOptionsRequired,
+                onOpenPrivacyOptions = onOpenPrivacyOptions,
+            )
         }
     }
 }

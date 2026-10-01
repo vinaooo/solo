@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.vinaooo.solo.core.ads.AdBannerProvider
+import io.github.vinaooo.solo.core.ads.AdConsent
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.core.designsystem.theme.isDarkTheme
 import io.github.vinaooo.solo.domain.model.Settings
@@ -25,9 +26,13 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var adBanner: AdBannerProvider
 
+    @Inject lateinit var adConsent: AdConsent
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Once per launch, not again when the activity is recreated (rotation, theme change).
+        if (savedInstanceState == null) adConsent.gather(this)
         setContent {
             val settings by settingsRepository.settings.collectAsStateWithLifecycle(initialValue = Settings())
             val darkTheme = isDarkTheme(settings.themeMode, isSystemInDarkTheme())
@@ -37,7 +42,12 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
             }
             SoloTheme(themeMode = settings.themeMode, dynamicColor = settings.dynamicColor) {
-                SoloApp(adBanner)
+                val consent by adConsent.state.collectAsStateWithLifecycle()
+                SoloApp(
+                    adBanner = adBanner,
+                    privacyOptionsRequired = consent.privacyOptionsRequired,
+                    onOpenPrivacyOptions = { adConsent.showPrivacyOptions(this) },
+                )
             }
         }
     }

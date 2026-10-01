@@ -9,6 +9,8 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import io.github.vinaooo.solo.core.ads.AdBannerProvider
+import io.kotest.matchers.shouldBe
+import javax.inject.Inject
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -17,11 +19,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The whole app, wired by Hilt: the ad banner stays at the bottom whichever screen is open. */
+/** The whole app, wired by Hilt with fake ads (see [FakeAdsModule]): the banner belongs to the game screen only. */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class)
-class AdBannerEveryScreenTest {
+class AdBannerGameScreenOnlyTest {
 
     private val hilt = HiltAndroidRule(this)
     private val compose = createAndroidComposeRule<MainActivity>()
@@ -29,22 +31,27 @@ class AdBannerEveryScreenTest {
     @get:Rule
     val rules: TestRule = RuleChain.outerRule(hilt).around(compose)
 
-    private fun assertBannerShown() {
-        compose.onNodeWithTag(AdBannerProvider.TEST_TAG).assertExists()
-    }
+    @Inject lateinit var consent: FakeAdConsent
 
     @Test
-    fun `the banner is on the game, scores and settings screens`() {
+    fun `the banner is on the game screen and not on scores or settings`() {
         compose.onNodeWithContentDescription("Score, 0").assertExists()
-        assertBannerShown()
+        compose.onNodeWithTag(AdBannerProvider.TEST_TAG).assertExists()
 
         compose.onNodeWithContentDescription("Scores").performClick()
         compose.onNodeWithText("Scores").assertExists()
-        assertBannerShown()
+        compose.onNodeWithTag(AdBannerProvider.TEST_TAG).assertDoesNotExist()
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Settings").assertExists()
-        assertBannerShown()
+        compose.onNodeWithTag(AdBannerProvider.TEST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun `consent is gathered once when the app starts`() {
+        hilt.inject()
+
+        consent.gathered shouldBe 1
     }
 }

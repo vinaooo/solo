@@ -60,5 +60,7 @@ dependencies {
     constraints {
         // AGP pins test classpaths to the app's own versions; androidx.test and Hilt testing need 1.2.0.
         implementation(libs.androidx.concurrent.futures)
+        // The ads SDK's Guava asks for 2.11.0, below what the instrumented-test libraries (Espresso) need.
+        implementation(libs.errorprone.annotations)
     }
 }
