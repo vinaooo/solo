@@ -88,6 +88,7 @@ fun GameBoard(
                     placed = placed,
                     hinted = isHighlighted,
                     destinations = destinations[CardSpot(placed.pile, placed.index)].orEmpty(),
+                    handedness = handedness,
                     onIntent = onIntent,
                 )
                 BoardCard(
@@ -126,13 +127,14 @@ private fun cardAccessibility(
     placed: PlacedCard,
     hinted: Boolean,
     destinations: List<PileRef>,
+    handedness: Handedness,
     onIntent: (GameIntent) -> Unit,
 ): CardAccessibility {
     val hintLabel = stringResource(R.string.a11y_hinted)
     val actions = moveActions(placed, destinations, onIntent)
     val modifier = Modifier
         .semantics {
-            traversalIndex = traversalOrder(placed.pile, placed.index)
+            traversalIndex = traversalOrder(placed.pile, placed.index, handedness)
             if (role == CardRole.Hidden) hideFromAccessibility()
             if (hinted) stateDescription = hintLabel
             if (actions.isNotEmpty()) customActions = actions
@@ -255,7 +257,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 .width(cardWidth)
                 .semantics {
                     contentDescription = description
-                    traversalIndex = traversalOrder(pile, 0)
+                    traversalIndex = traversalOrder(pile, 0, layout.handedness)
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }

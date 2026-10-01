@@ -2,6 +2,7 @@ package io.github.vinaooo.solo.feature.game.board
 
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 
 /**
@@ -39,16 +40,17 @@ internal fun cardRole(state: GameState, placed: PlacedCard): CardRole {
 }
 
 /**
- * TalkBack reading order: the stock, the waste and the foundations, then each column from top to bottom. Without
- * it, cards would be read row by row across the columns.
+ * TalkBack reading order: the top row from left to right as [handedness] lays it out, then each column from top to
+ * bottom. Without it, cards would be read row by row across the columns.
  */
-internal fun traversalOrder(pile: PileRef, index: Int): Float = when (pile) {
-    PileRef.Stock -> 0f
-    PileRef.Waste -> 1f
-    is PileRef.Foundation -> FIRST_FOUNDATION_ORDER + pile.index
+internal fun traversalOrder(pile: PileRef, index: Int, handedness: Handedness): Float = when (pile) {
+    PileRef.Stock -> if (handedness == Handedness.RIGHT) RIGHT_HANDED_STOCK_ORDER else 0f
+    PileRef.Waste -> if (handedness == Handedness.RIGHT) RIGHT_HANDED_STOCK_ORDER - 1 else 1f
+    is PileRef.Foundation -> pile.index + if (handedness == Handedness.RIGHT) 0f else FIRST_FOUNDATION_ORDER
     is PileRef.Tableau -> FIRST_COLUMN_ORDER + pile.index * COLUMN_ORDER_SPAN + index
 }
 
 private const val FIRST_FOUNDATION_ORDER = 2f
+private const val RIGHT_HANDED_STOCK_ORDER = 5f
 private const val FIRST_COLUMN_ORDER = 10f
 private const val COLUMN_ORDER_SPAN = 100f

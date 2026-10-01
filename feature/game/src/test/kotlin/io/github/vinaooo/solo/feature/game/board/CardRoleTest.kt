@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.feature.game.board
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
@@ -60,17 +61,23 @@ class CardRoleTest {
     }
 
     @Test
-    fun `TalkBack reads the top row, then each column from top to bottom`() {
-        val order = listOf(
-            PileRef.Stock to 0,
-            PileRef.Waste to 1,
-            PileRef.Foundation(0) to 1,
-            PileRef.Foundation(3) to 0,
+    fun `left-handed, TalkBack reads stock, waste and foundations, then each column from top to bottom`() {
+        readingOrder(Handedness.LEFT, PileRef.Stock, PileRef.Waste, PileRef.Foundation(0), PileRef.Foundation(3))
+    }
+
+    @Test
+    fun `right-handed, TalkBack reads foundations, waste and stock, then each column from top to bottom`() {
+        readingOrder(Handedness.RIGHT, PileRef.Foundation(0), PileRef.Foundation(3), PileRef.Waste, PileRef.Stock)
+    }
+
+    private fun readingOrder(handedness: Handedness, vararg topRow: PileRef) {
+        val columns = listOf(
             PileRef.Tableau(0) to 0,
             PileRef.Tableau(0) to 18,
             PileRef.Tableau(1) to 0,
             PileRef.Tableau(6) to 18,
-        ).map { (pile, index) -> traversalOrder(pile, index) }
+        )
+        val order = (topRow.map { it to 0 } + columns).map { (pile, index) -> traversalOrder(pile, index, handedness) }
 
         order shouldBeSortedWith naturalOrder()
         order.toSet().size shouldBe order.size

@@ -23,12 +23,7 @@ data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val pos
  * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
  * [handedness] side of the top row, the foundations on the other.
  */
-class BoardLayout(
-    val width: Float,
-    val height: Float,
-    val gap: Float,
-    private val handedness: Handedness = Handedness.RIGHT,
-) {
+class BoardLayout(val width: Float, val height: Float, val gap: Float, val handedness: Handedness = Handedness.RIGHT) {
 
     val cardWidth: Float = minOf(
         (width - gap * (COLUMNS + 1)) / COLUMNS,
