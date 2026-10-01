@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
@@ -33,14 +36,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
@@ -81,7 +87,7 @@ fun GameBoard(
         val liftedFrom = liftedFrom(placedCards, moving)
 
         EmptySlots(state, layout, cardWidth, onIntent)
-        HiddenCardBars(state, layout, cardWidth)
+        FaceDownPiles(state, layout, cardWidth)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
@@ -207,17 +213,36 @@ private fun Modifier.cardDrag(
     )
 }
 
-/** Each column's face-down cards as one bar, as tall as they are many, growing and shrinking with the cards. */
+/**
+ * Each column's face-down cards as one bar, as tall as they are many, growing and shrinking with the cards, with
+ * their count in the middle; and the count of cards left in the stock, on top of it. TalkBack already reads both
+ * counts from the cards, so the labels are left out of it.
+ */
 @Composable
-private fun HiddenCardBars(state: GameState, layout: BoardLayout, cardWidth: Dp) {
+private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) {
     val density = LocalDensity.current
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
     val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
+    // On a thin bar the font shrinks so the digits fit inside it with a little room.
+    val count: @Composable (Int, Dp) -> Unit = { value, room ->
+        val size = with(density) { minOf(COUNT_SIZE.toDp(), room * COUNT_TO_ROOM).toSp() }
+        Text(
+            text = value.toString(),
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontSize = size,
+            style = LocalTextStyle.current.copy(
+                lineHeight = size,
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+            ),
+            modifier = Modifier.clearAndSetSemantics {},
+        )
+    }
     state.tableau.forEachIndexed { column, pile ->
         key(column) {
             val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
             val height by animateDpAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "hidden")
+            val hidden = pile.count { !it.isFaceUp }
             if (height > 0.dp) {
                 val slot = layout.slot(PileRef.Tableau(column))
                 Box(
@@ -225,9 +250,21 @@ private fun HiddenCardBars(state: GameState, layout: BoardLayout, cardWidth: Dp)
                         .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
                         .size(cardWidth, height)
                         .background(color, shape),
-                )
+                    contentAlignment = Alignment.Center,
+                ) { if (hidden > 0) count(hidden, height) }
             }
         }
+    }
+    if (state.stock.isNotEmpty()) {
+        val slot = layout.slot(PileRef.Stock)
+        val cardHeight = with(density) { layout.cardHeight.toDp() }
+        Box(
+            Modifier
+                .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
+                .size(cardWidth, cardHeight)
+                .zIndex(STOCK_COUNT_Z),
+            contentAlignment = Alignment.Center,
+        ) { count(state.stock.size, cardHeight) }
     }
 }
 
@@ -319,4 +356,9 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 private val GAP = 4.dp
 private val COLUMN_GAP = 8.dp
 private const val LIFTED_Z = 10_000f
+
+/** Above the stock's cards, under the waste's. */
+private const val STOCK_COUNT_Z = 99f
+private val COUNT_SIZE = 11.sp
+private const val COUNT_TO_ROOM = 0.85f
 private const val DRAG_SCALE = 1.05f
