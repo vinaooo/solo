@@ -264,7 +264,8 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
                         .size(cardWidth, height)
                         .background(color, shape),
                     contentAlignment = Alignment.Center,
-                ) { if (hidden > 0) count(hidden, height) }
+                    // A bar too thin to hold a readable number goes without one.
+                ) { if (hidden > 0 && height >= MIN_COUNT_ROOM) count(hidden, height) }
             }
         }
     }
@@ -375,4 +376,5 @@ private const val LANDED_PX = 2
 private const val STOCK_COUNT_Z = 199f
 private val COUNT_SIZE = 11.sp
 private const val COUNT_TO_ROOM = 0.85f
+private val MIN_COUNT_ROOM = 6.dp
 private const val DRAG_SCALE = 1.05f

@@ -96,19 +96,20 @@ class BoardLayoutTest {
         val placed = portrait.positions(dealt)
         val ys = column.map { placed.getValue(it.identity()).position.y }
         val bar = portrait.hiddenBarHeight(column)
-        // A step and a gap per card, less the last gap, which separates the bar from the face-up card.
-        bar.toDouble() shouldBe ((portrait.faceDownStep * 6 + portrait.gap * 2 * 5).toDouble() plusOrMinus 0.01)
+        // Six cards take six steps and the whole gap, spread over them, less the gap before the face-up card.
+        bar.toDouble() shouldBe ((portrait.faceDownStep * 6).toDouble() plusOrMinus 0.01)
         val top = portrait.slot(PileRef.Tableau(6)).y
         (ys[6] - top).toDouble() shouldBe ((bar + portrait.gap * 2).toDouble() plusOrMinus 0.01)
         // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
         ys.take(6).forEach { it shouldBe ys[6] }
         portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
-        // Every column's first face-up card keeps to one staircase from the top: one step and gap per card below it.
+        // Every first face-up card keeps to one staircase from the top: a step and a sixth of the gap per card.
         val firsts = dealt.tableau.mapIndexed { column, pile ->
             placed.getValue(pile.last().identity()).position.y - portrait.slot(PileRef.Tableau(column)).y
         }
         firsts.forEachIndexed { column, y ->
-            y.toDouble() shouldBe ((column * (portrait.faceDownStep + portrait.gap * 2)).toDouble() plusOrMinus 0.01)
+            val step = portrait.faceDownStep + portrait.gap * 2 / 6
+            y.toDouble() shouldBe ((column * step).toDouble() plusOrMinus 0.01)
         }
     }
 
