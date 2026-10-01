@@ -2,11 +2,14 @@ package io.github.vinaooo.solo.feature.game.board
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,8 +42,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
+import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
+import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
 import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Move
@@ -74,6 +80,7 @@ fun GameBoard(
         val liftedFrom = liftedFrom(placedCards, moving)
 
         EmptySlots(state, layout, cardWidth, onIntent)
+        HiddenCardBars(state, layout, cardWidth)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
@@ -95,6 +102,8 @@ fun GameBoard(
                     dragOffset = dragOffset,
                     lifted = placed.index >= (liftedFrom[placed.pile] ?: Int.MAX_VALUE),
                     onMovingChange = { moving[placed.card.identity()] = it },
+                    // A column's face-down cards are drawn as its bar instead.
+                    visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
                     description = accessibility.description,
                     gestures = accessibility.modifier.then(
                         if (!isDraggable(state, placed)) {
@@ -137,6 +146,7 @@ private fun BoardCard(
     dragOffset: Offset?,
     lifted: Boolean,
     onMovingChange: (Boolean) -> Unit,
+    visible: Boolean,
     description: String?,
     gestures: Modifier,
 ) {
@@ -160,6 +170,7 @@ private fun BoardCard(
             // A card on its way to a new pile flies above every other card, like a dragged one.
             .zIndex(if (dragging || lifted) LIFTED_Z + placed.z else placed.z)
             .scale(if (dragging) DRAG_SCALE else 1f)
+            .alpha(if (visible) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
             .then(gestures),
@@ -187,6 +198,28 @@ private fun Modifier.cardDrag(
         },
         onDragCancel = { onDragChange(null) },
     )
+}
+
+/** Each column's face-down cards as one bar, as tall as they are many, growing and shrinking with the cards. */
+@Composable
+private fun HiddenCardBars(state: GameState, layout: BoardLayout, cardWidth: Dp) {
+    val density = LocalDensity.current
+    val color = SoloThemeExtras.cardColors.back
+    state.tableau.forEachIndexed { column, pile ->
+        key(column) {
+            val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
+            val height by animateDpAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "hidden")
+            if (height > 0.dp) {
+                val slot = layout.slot(PileRef.Tableau(column))
+                Box(
+                    Modifier
+                        .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
+                        .size(cardWidth, height)
+                        .background(color, CardDimensions.shape),
+                )
+            }
+        }
+    }
 }
 
 @Composable

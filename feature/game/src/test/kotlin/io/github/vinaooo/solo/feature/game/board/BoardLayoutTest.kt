@@ -68,11 +68,19 @@ class BoardLayoutTest {
 
     @Test
     fun `a covered column card shows a strip as tall as the step to the next card, the top card none`() {
-        val placed = portrait.positions(dealt).values.filter { it.pile == PileRef.Tableau(6) }.sortedBy { it.index }
-        val cover = portrait.cover(dealt, placed[0])!!
+        val run = listOf(Card(Suit.SPADES, Rank.KING, true), Card(Suit.HEARTS, Rank.QUEEN, true))
+        val state = GameState(
+            stock = emptyList(),
+            waste = emptyList(),
+            foundations = List(4) { emptyList() },
+            tableau = List(7) { if (it == 0) run else emptyList() },
+            drawMode = DrawMode.ONE,
+        )
+        val placed = portrait.positions(state).values.filter { it.pile == PileRef.Tableau(0) }.sortedBy { it.index }
+        val cover = portrait.cover(state, placed[0])!!
         cover.edge shouldBe CardCover.Edge.TOP
-        cover.strip.toDouble() shouldBe (portrait.faceDownStep.toDouble() plusOrMinus 0.01)
-        portrait.cover(dealt, placed.last()).shouldBeNull()
+        cover.strip.toDouble() shouldBe (portrait.faceUpStep.toDouble() plusOrMinus 0.01)
+        portrait.cover(state, placed.last()).shouldBeNull()
         val stock = portrait.positions(dealt).values.first { it.pile == PileRef.Stock }
         portrait.cover(dealt, stock).shouldBeNull()
     }
@@ -83,14 +91,21 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `tableau cards fan downward, face-up cards further apart than face-down ones`() {
+    fun `face-down cards make a bar a step per card tall, and the face-up card starts two gaps below it`() {
         val column = dealt.tableau[6]
         val placed = portrait.positions(dealt)
         val ys = column.map { placed.getValue(it.identity()).position.y }
-        val downStep = ys[1] - ys[0]
-        val upStep = ys[6] - ys[5]
-        downStep.toDouble() shouldBe (portrait.faceDownStep.toDouble() plusOrMinus 0.01)
-        upStep.toDouble() shouldBe (downStep.toDouble() plusOrMinus 0.01)
+        val bar = portrait.hiddenBarHeight(column)
+        bar.toDouble() shouldBe ((portrait.faceDownStep * 6).toDouble() plusOrMinus 0.01)
+        val top = portrait.slot(PileRef.Tableau(6)).y
+        (ys[6] - top).toDouble() shouldBe ((bar + portrait.gap * 2).toDouble() plusOrMinus 0.01)
+        // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
+        ys.take(6).forEach { it shouldBe ys[6] }
+        portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
+    }
+
+    @Test
+    fun `face-up cards in a column fan downward a step apart`() {
         val withRun = GameState(
             stock = emptyList(),
             waste = emptyList(),
@@ -126,6 +141,7 @@ class BoardLayoutTest {
         val last = landscape.positions(state).values.maxOf { it.position.y }
 
         (last + landscape.cardHeight) shouldBeLessThanOrEqual landscape.height
+        landscape.hiddenBarHeight(tall) shouldBeLessThanOrEqual landscape.faceDownStep * 6
     }
 
     @Test

@@ -52,6 +52,7 @@ class BoardLayout(
     // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
+    private val hiddenBarGap = gap * 2
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
@@ -150,12 +151,26 @@ class BoardLayout(
         }
     }
 
+    /**
+     * Height of the bar that stands in for a column's face-down cards, one [faceDownStep] per card; 0 when it has
+     * none. The face-up cards start a gap below it.
+     */
+    fun hiddenBarHeight(column: List<Card>): Float {
+        val bar = column.count { !it.isFaceUp } * faceDownStep
+        // The face-down cards sit where the first face-up card is: below the bar and its gap, squeezed alike.
+        return if (bar == 0f) 0f else columnOffsets(column).first() * bar / (bar + hiddenBarGap)
+    }
+
     private fun columnOffsets(pile: List<Card>): List<Float> {
-        if (pile.isEmpty()) return emptyList()
-        val steps = pile.dropLast(1).map { if (it.isFaceUp) faceUpStep else faceDownStep }
+        val hidden = pile.count { !it.isFaceUp }
+        val bar = if (hidden > 0) hidden * faceDownStep + hiddenBarGap else 0f
+        // Squeezed when the column would run off the board.
+        val total = bar + (pile.size - hidden - 1).coerceAtLeast(0) * faceUpStep
         val available = height - tableauY - gap - cardHeight
-        val scale = steps.sum().let { total -> if (total > available) available / total else 1f }
-        return steps.runningFold(0f) { y, step -> y + step * scale }
+        val scale = if (total > available) available / total else 1f
+        // Face-down cards wait, unseen, where the first face-up card is: one that turns over slides up with the bar.
+        val faceUp = List(pile.size - hidden) { (bar + it * faceUpStep) * scale }
+        return List(hidden) { bar * scale } + faceUp
     }
 
     private companion object {
