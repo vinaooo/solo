@@ -52,7 +52,7 @@ class BoardLayout(
     // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
-    private val hiddenBarGap = gap * 2
+    private val hiddenBarGap = gap
 
     /** A face-down card's share of the column's staircase. */
     private val hiddenStep = faceDownStep + hiddenBarGap / (COLUMNS - 1)
