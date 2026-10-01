@@ -12,6 +12,7 @@ import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,6 +43,28 @@ class SettingsScreenTest {
             SettingsChange.HapticsChanged(false),
             SettingsChange.ShowTimerChanged(false),
         )
+    }
+
+    @Test
+    fun `privacy options open the consent form where the law requires them`() {
+        var opened = 0
+        compose.setContent {
+            SoloTheme {
+                SettingsScreen(Settings(), onChange = {}, onBack = {}, privacyOptionsRequired = true) { opened++ }
+            }
+        }
+
+        compose.onNodeWithText("Privacy options").performScrollTo().performClick()
+
+        opened shouldBe 1
+    }
+
+    @Test
+    fun `privacy options are hidden where no consent is required`() {
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
+
+        compose.onNodeWithText("Privacy options").assertDoesNotExist()
+        compose.onNodeWithText("Privacy").assertDoesNotExist()
     }
 
     @Test

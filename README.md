@@ -12,7 +12,7 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 | `:data` | Room (scores/stats), DataStore (settings), saved game serialization |
 | `:core:designsystem` | `SoloTheme` (dynamic color, light/dark, expressive motion), card composables |
 | `:core:ui` | Shared UI helpers |
-| `:core:ads` | `AdBannerProvider` abstraction (placeholder for now) |
+| `:core:ads` | AdMob banner and consent (UMP) behind `AdBannerProvider` / `AdConsent` |
 | `:feature:game` / `:feature:scores` / `:feature:settings` | Screens + ViewModels |
 | `:app` | Application, navigation, app scaffold with the bottom banner |
 | `build-logic` | Gradle convention plugins |
@@ -47,6 +47,16 @@ solo.signing.keyPassword=…
 ```
 
 On CI, set the same values as the `SOLO_SIGNING_STORE_FILE`, `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS` and `SOLO_SIGNING_KEY_PASSWORD` environment variables. Without them, `./gradlew :app:assembleRelease` builds an unsigned APK.
+
+### Ads
+
+Debug builds always show Google's test ads. For release builds, add your AdMob IDs to `local.properties` (or set `SOLO_ADS_APP_ID` / `SOLO_ADS_BANNER_ID` on CI); without them, release builds show test ads too:
+
+```properties
+solo.ads.appId=ca-app-pub-…~…        # the app ID, with a ~
+solo.ads.bannerId=ca-app-pub-…/…     # the banner ad unit ID, with a /
+solo.ads.testDeviceIds=…             # optional: hashed IDs of your own devices (from logcat), which always get test ads
+```
 
 ### Versions
 

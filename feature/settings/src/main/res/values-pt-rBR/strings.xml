@@ -17,4 +17,7 @@
     <string name="dynamic_color_note">Usar as cores do seu papel de parede</string>
     <string name="sound">Efeitos sonoros</string>
     <string name="haptics">Vibração</string>
+    <string name="section_privacy">Privacidade</string>
+    <string name="privacy_options">Opções de privacidade</string>
+    <string name="privacy_options_note">Altere suas escolhas sobre anúncios e dados</string>
 </resources>

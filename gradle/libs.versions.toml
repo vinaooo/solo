@@ -14,12 +14,15 @@ androidxDatastore = "1.2.1"
 androidxRoom = "2.8.5"
 androidxHiltNavigationCompose = "1.4.0"
 androidxConcurrentFutures = "1.2.0"
+errorproneAnnotations = "2.30.0"
 composeBom = "2026.09.00"
 # Material 3 Expressive APIs are public only in 1.5.0 alphas; move to stable 1.5.0 when released.
 material3 = "1.5.0-alpha29"
 hilt = "2.60.1"
 kotlinxCoroutines = "1.11.0"
 kotlinxSerialization = "1.11.0"
+playServicesAds = "25.5.0"
+userMessagingPlatform = "4.0.0"
 
 junit5 = "5.13.4"
 junit4 = "4.13.2"
@@ -48,8 +51,12 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "androidxRoom" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidxRoom" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "androidxRoom" }
+errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorproneAnnotations" }
 androidx-concurrent-futures = { module = "androidx.concurrent:concurrent-futures", version.ref = "androidxConcurrentFutures" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
+
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
