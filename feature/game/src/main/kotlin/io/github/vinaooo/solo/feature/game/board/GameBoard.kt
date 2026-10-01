@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -60,6 +61,7 @@ import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.CardSpot
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private data class DragState(val pile: PileRef, val index: Int, val offset: Offset)
@@ -165,15 +167,28 @@ private fun BoardCard(
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
+    // A waste card going back to the stock face down (an undone draw, a recycled waste) shows its face until it
+    // lands. Only from the waste: those faces were seen, while a new deal's cards must fly in face down.
+    val lastPile = remember { mutableStateOf(placed.pile) }
+    var keepFace by remember { mutableStateOf(false) }
+    val returning = placed.pile == PileRef.Stock && lastPile.value == PileRef.Waste
+    SideEffect {
+        if (returning) keepFace = true
+        lastPile.value = placed.pile
+    }
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     LaunchedEffect(target) {
         onMovingChange(true)
-        animated.animateTo(target, spec)
+        // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
+        animated.animateTo(target, spec) {
+            if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) keepFace = false
+        }
         onMovingChange(false)
+        keepFace = false
     }
     val dragging = dragOffset != null
     PlayingCard(
-        card = placed.card,
+        card = if (returning || keepFace) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
         contentDescription = description,
         cover = cover,
@@ -356,6 +371,7 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 private val GAP = 4.dp
 private val COLUMN_GAP = 8.dp
 private const val LIFTED_Z = 10_000f
+private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the waste's. */
 private const val STOCK_COUNT_Z = 99f
