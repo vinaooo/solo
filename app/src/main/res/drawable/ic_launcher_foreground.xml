@@ -1,10 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Placeholder: a spade inside the safe zone. Final icon arrives in the release-prep milestone. -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,30 C44,42 34,48 34,58 C34,65 40,70 46,70 C49,70 51,69 52,67 L49,78 L59,78 L56,67 C57,69 59,70 62,70 C68,70 74,65 74,58 C74,48 64,42 54,30 Z" />
+    <!-- A playing card with a large S (for Solo) and a spade in its corner, tilted inside the safe zone. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="-8">
+        <group
+            android:translateX="1.2"
+            android:translateY="2">
+            <path
+                android:fillColor="#33000000"
+                android:pathData="M39 27H69C71.76 27 74 29.24 74 32V76C74 78.76 71.76 81 69 81H39C36.24 81 34 78.76 34 76V32C34 29.24 36.24 27 39 27Z" />
+        </group>
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M39 27H69C71.76 27 74 29.24 74 32V76C74 78.76 71.76 81 69 81H39C36.24 81 34 78.76 34 76V32C34 29.24 36.24 27 39 27Z" />
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M59.51 64.9Q59.51 63.34 58.44 62.3Q57.37 61.26 53.25 59.93Q49.13 58.59 46.14 56.47Q42.99 54.27 42.99 50.21Q42.99 46.29 46.22 43.9Q49.45 41.5 54.5 41.5Q59.68 41.5 62.8 44.21Q65.93 46.91 65.93 51.1H59.51Q59.51 49.14 58.25 47.87Q56.98 46.61 54.4 46.61Q51.87 46.61 50.64 47.67Q49.41 48.73 49.41 50.23Q49.41 51.77 50.99 52.79Q52.58 53.82 55.59 54.74Q60.71 56.3 63.33 58.66Q65.95 61.01 65.95 64.86Q65.95 68.94 62.87 71.22Q59.79 73.5 54.65 73.5Q51.55 73.5 48.66 72.41Q45.78 71.32 43.91 69.05Q42.05 66.78 42.05 63.25H48.49Q48.49 66.1 50.19 67.25Q51.89 68.41 54.65 68.41Q57.13 68.41 58.32 67.4Q59.51 66.4 59.51 64.9ZM40.6 30.2C42.3 32.24 44 33.26 44 34.96C44 36.15 42.98 37 41.96 37C41.45 37 41.11 36.83 40.94 36.49L41.45 38.36H39.75L40.26 36.49C40.09 36.83 39.75 37 39.24 37C38.22 37 37.2 36.15 37.2 34.96C37.2 33.26 38.9 32.24 40.6 30.2Z" />
+    </group>
 </vector>

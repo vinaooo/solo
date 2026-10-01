@@ -1,3 +1,4 @@
 <resources>
+    <!-- Brand green below Android 12, where there is no wallpaper palette; values-v31 follows the wallpaper. -->
     <color name="ic_launcher_background">#FF1B5E20</color>
 </resources>

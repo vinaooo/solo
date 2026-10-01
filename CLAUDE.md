@@ -101,6 +101,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - `SoloTheme` (`:core:designsystem`) picks light or dark from the Settings choice or the system, with dynamic color on Android 12+ or the brand colors otherwise. Card faces and backs are drawn in Compose.
 - The window theme has a dark `values-night` variant. Otherwise Android 16's "make more apps dark" setting inverts the app, because it ignores `forceDarkAllowed` and inverts any light window theme at night.
 - Suit symbols carry U+FE0E so they render as text, not emoji.
+- **Launcher icon:** an adaptive vector (`app/src/main/res/drawable/ic_launcher_*`, generated from Roboto Bold's "S" and the spade path). On Android 12+ its background and "S" take the wallpaper accent (`values-v31`); below that, the brand green. Many launchers (Launcher3 and its forks) cache the icon until the app updates, so a wallpaper change shows up late there. The separate monochrome layer, with the marks cut out, is used when the user turns on themed icons. `LauncherIconScreenshotTest` holds the golden.
 
 ## Git
 

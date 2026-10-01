@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.solo.android.compose)
     alias(libs.plugins.solo.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -46,6 +47,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.compiler)
 

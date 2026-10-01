@@ -1,0 +1,4 @@
+<resources>
+    <!-- Android 12+: the wallpaper accent, the same shade as the app's dynamic primary, so the icon matches the app. -->
+    <color name="ic_launcher_background">@android:color/system_accent1_600</color>
+</resources>
