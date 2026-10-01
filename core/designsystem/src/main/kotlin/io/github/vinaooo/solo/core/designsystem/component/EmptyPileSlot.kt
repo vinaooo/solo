@@ -30,7 +30,7 @@ fun EmptyPileSlot(modifier: Modifier = Modifier, icon: ImageVector? = null, bord
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, Modifier.size(maxWidth * 0.6f), colors.emptySlot.copy(alpha = 0.6f))
+            Icon(icon, contentDescription = null, Modifier.size(maxWidth * 0.75f), colors.emptySlot.copy(alpha = 0.6f))
         }
     }
 }
