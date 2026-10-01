@@ -68,7 +68,7 @@ class BoardLayout(
         fun place(card: Card, pile: PileRef, index: Int, position: Position, z: Float) {
             put(card.identity(), PlacedCard(card, pile, index, position, z))
         }
-        state.stock.forEachIndexed { i, card -> place(card, PileRef.Stock, i, slot(PileRef.Stock), i.toFloat()) }
+        state.stock.forEachIndexed { i, card -> place(card, PileRef.Stock, i, slot(PileRef.Stock), STOCK_Z + i) }
         wastePositions(state).forEachIndexed { i, position ->
             place(state.waste[i], PileRef.Waste, i, position, WASTE_Z + i)
         }
@@ -187,6 +187,9 @@ class BoardLayout(
         const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
         const val WASTE_Z = 100f
+
+        /** Above the waste, so a card going back to the stock can pass between the two. */
+        const val STOCK_Z = 150f
         const val FOUNDATION_Z = 200f
         const val TABLEAU_Z = 300f
     }

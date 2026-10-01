@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -167,28 +166,20 @@ private fun BoardCard(
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
-    // A waste card going back to the stock face down (an undone draw, a recycled waste) shows its face until it
-    // lands. Only from the waste: those faces were seen, while a new deal's cards must fly in face down.
-    val lastPile = remember { mutableStateOf(placed.pile) }
-    var keepFace by remember { mutableStateOf(false) }
-    val returning = placed.pile == PileRef.Stock && lastPile.value == PileRef.Waste
-    SideEffect {
-        if (returning) keepFace = true
-        lastPile.value = placed.pile
-    }
+    val stockReturn = rememberStockReturn(placed.pile)
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     LaunchedEffect(target) {
         onMovingChange(true)
         // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
         animated.animateTo(target, spec) {
-            if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) keepFace = false
+            if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) stockReturn.landed()
         }
         onMovingChange(false)
-        keepFace = false
+        stockReturn.settled()
     }
     val dragging = dragOffset != null
     PlayingCard(
-        card = if (returning || keepFace) placed.card.faceUp() else placed.card,
+        card = if (stockReturn.showsFace(placed.pile)) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
         contentDescription = description,
         cover = cover,
@@ -196,7 +187,14 @@ private fun BoardCard(
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
             // A card on its way to a new pile flies above every other card, like a dragged one.
-            .zIndex(if (dragging || lifted) LIFTED_Z + placed.z else placed.z)
+            // One going back to the stock slides under the stock's cards, still above the waste it leaves.
+            .zIndex(
+                when {
+                    stockReturn.slidesUnder(placed.pile) -> placed.z - placed.index - 0.5f
+                    dragging || lifted -> LIFTED_Z + placed.z
+                    else -> placed.z
+                },
+            )
             .scale(if (dragging) DRAG_SCALE else 1f)
             .alpha(if (visible) 1f else 0f)
             .width(cardWidth)
@@ -373,8 +371,8 @@ private val COLUMN_GAP = 8.dp
 private const val LIFTED_Z = 10_000f
 private const val LANDED_PX = 2
 
-/** Above the stock's cards, under the waste's. */
-private const val STOCK_COUNT_Z = 99f
+/** Above the stock's cards, under the foundations'. */
+private const val STOCK_COUNT_Z = 199f
 private val COUNT_SIZE = 11.sp
 private const val COUNT_TO_ROOM = 0.85f
 private const val DRAG_SCALE = 1.05f
