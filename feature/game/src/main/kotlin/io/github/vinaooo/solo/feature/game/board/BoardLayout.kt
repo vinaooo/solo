@@ -188,7 +188,7 @@ class BoardLayout(
 
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f
-        const val FACE_DOWN_STEP = 0.14f
+        const val FACE_DOWN_STEP = 0.12f
         const val FACE_UP_STEP = 0.28f
         const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
