@@ -56,9 +56,6 @@ class BoardLayout(
     // 3dp with the board's 4dp gap.
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
-    /** A face-down card's share of the column's staircase. */
-    private val hiddenStep = faceDownStep + hiddenBarGap / (COLUMNS - 1)
-
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
     fun slot(pile: PileRef): Position = when (pile) {
@@ -157,21 +154,19 @@ class BoardLayout(
     }
 
     /**
-     * Height of the bar that stands in for a column's face-down cards; 0 when it has none. The staircase starts at
-     * the column's top, so a column without a bar keeps to it, and the gap between a bar and its face-up cards is
-     * spread over the most face-down cards a column is dealt: each takes a [faceDownStep] and a share of the gap.
-     * The bar is its cards' share of the staircase less the gap, so the tallest bar keeps its [faceDownStep]s and
-     * a one-card bar is thin.
+     * Height of the bar that stands in for a column's face-down cards; 0 when it has none. Each face-down card
+     * takes a [faceDownStep] of the column's staircase, which starts at the column's top so a column without a bar
+     * keeps to it. The bar is its cards' steps less the gap between it and the face-up cards.
      */
     fun hiddenBarHeight(column: List<Card>): Float {
-        val steps = column.count { !it.isFaceUp } * hiddenStep
+        val steps = column.count { !it.isFaceUp } * faceDownStep
         // The face-down cards sit where the first face-up card is: below the bar and its gap, squeezed alike.
         return if (steps == 0f) 0f else columnOffsets(column).first() * (steps - hiddenBarGap) / steps
     }
 
     private fun columnOffsets(pile: List<Card>): List<Float> {
         val hidden = pile.count { !it.isFaceUp }
-        val bar = hidden * hiddenStep
+        val bar = hidden * faceDownStep
         // Squeezed when the column would run off the board.
         val total = bar + (pile.size - hidden - 1).coerceAtLeast(0) * faceUpStep
         val available = height - tableauY - gap - cardHeight
