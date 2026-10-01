@@ -100,6 +100,10 @@ fun GameBoard(
                     cardWidth = cardWidth,
                     highlighted = isHighlighted,
                     cover = layout.cover(state, placed)?.let { CardCover(it.edge, with(density) { it.strip.toDp() }) },
+                    // The edge this card lies along on the card under it, where that card still shows.
+                    shadow = placedCards.find { it.pile == placed.pile && it.index == placed.index - 1 }
+                        ?.takeIf { it.position != placed.position }
+                        ?.let { layout.cover(state, it)?.edge },
                     dragOffset = dragOffset,
                     lifted = placed.index >= (liftedFrom[placed.pile] ?: Int.MAX_VALUE),
                     onMovingChange = { moving[placed.card.identity()] = it },
@@ -144,6 +148,7 @@ private fun BoardCard(
     cardWidth: Dp,
     highlighted: Boolean,
     cover: CardCover?,
+    shadow: CardCover.Edge?,
     dragOffset: Offset?,
     lifted: Boolean,
     onMovingChange: (Boolean) -> Unit,
@@ -166,6 +171,7 @@ private fun BoardCard(
         highlighted = highlighted,
         contentDescription = description,
         cover = cover,
+        shadow = shadow,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
             // A card on its way to a new pile flies above every other card, like a dragged one.

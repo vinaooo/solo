@@ -16,8 +16,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
@@ -44,7 +50,8 @@ import kotlin.math.roundToInt
 /**
  * A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. When another card
  * leaves only a [cover] strip of it showing, the rank and suit shrink into that strip: side by side along the top,
- * or still stacked along a side.
+ * or still stacked along a side. A card lying on another one casts a [shadow] past that edge, so the edge shows
+ * where the cards have no outline.
  */
 @Composable
 fun PlayingCard(
@@ -53,6 +60,7 @@ fun PlayingCard(
     highlighted: Boolean = false,
     contentDescription: String? = null,
     cover: CardCover? = null,
+    shadow: CardCover.Edge? = null,
 ) {
     val colors = SoloThemeExtras.cardColors
     val description =
@@ -60,6 +68,7 @@ fun PlayingCard(
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(CardDimensions.ASPECT_RATIO)
+            .drawBehind { shadow?.let { drawEdgeShadow(it, SHADOW_WIDTH.toPx()) } }
             .clip(CardDimensions.shape)
             .background(if (card.isFaceUp) colors.face else colors.back)
             // No outline of its own: only a hinted card is outlined.
@@ -156,6 +165,28 @@ private class FaceGeometry(
     }
 }
 
+/** A shadow fading out from the card's [edge], drawn outside it onto the card underneath. */
+private fun DrawScope.drawEdgeShadow(edge: CardCover.Edge, width: Float) {
+    val dark = Color.Black.copy(alpha = SHADOW_ALPHA)
+    when (edge) {
+        CardCover.Edge.TOP -> drawRect(
+            Brush.verticalGradient(listOf(Color.Transparent, dark), startY = -width, endY = 0f),
+            topLeft = Offset(0f, -width),
+            size = Size(size.width, width),
+        )
+        CardCover.Edge.LEFT -> drawRect(
+            Brush.horizontalGradient(listOf(Color.Transparent, dark), startX = -width, endX = 0f),
+            topLeft = Offset(-width, 0f),
+            size = Size(width, size.height),
+        )
+        CardCover.Edge.RIGHT -> drawRect(
+            Brush.horizontalGradient(listOf(dark, Color.Transparent), startX = size.width, endX = size.width + width),
+            topLeft = Offset(size.width, 0f),
+            size = Size(width, size.height),
+        )
+    }
+}
+
 /** Suit glyph forced to text presentation (U+FE0E), so devices don't draw it as an emoji that ignores the color. */
 val Suit.symbol: String
     get() = when (this) {
@@ -211,6 +242,8 @@ val Rank.nameRes: Int
 private const val CENTER_SUIT_RATIO = 0.4f
 private const val FACE_SPACING_RATIO = 0.08f
 private const val COVERED_FACE_SCALE = 0.65f
+private val SHADOW_WIDTH = 5.dp
+private const val SHADOW_ALPHA = 0.22f
 private const val COVERED_GAP_RATIO = 0.04f
 
 /** Roboto's capital and digit height, as a fraction of the font size. */
