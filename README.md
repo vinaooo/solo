@@ -58,6 +58,32 @@ solo.ads.bannerId=ca-app-pub-…/…     # the banner ad unit ID, with a /
 solo.ads.testDeviceIds=…             # optional: hashed IDs of your own devices (from logcat), which always get test ads
 ```
 
+### Releasing to Google Play
+
+`.github/workflows/release.yml` builds the signed bundle and uploads it to Google Play: to the **internal** track when a `vX.Y.Z` tag is pushed, or to any track and status when started by hand (Actions → Release to Google Play → Run workflow). It's **off** until the repository variable `PLAY_UPLOAD_ENABLED` is `true`; until then every run is skipped.
+
+To turn it on:
+
+1. **Upload the first release by hand** in Play Console. Google Play only accepts API uploads for an app that already exists there.
+2. **Create a service account.**
+   - In Google Cloud Console, create (or pick) a project and enable the **Google Play Android Developer API**.
+   - Under IAM & Admin → Service accounts, create an account and add a **JSON key**.
+3. **Give it access in Play Console.**
+   - In Users and permissions, invite the service account's email.
+   - Give it the Solo app with **Release to testing tracks** and, if CI should also release to production, **Release to production**.
+4. **Add the repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `SOLO_UPLOAD_KEYSTORE_BASE64` | `base64 -w0 /path/to/solo-upload.jks` |
+| `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS`, `SOLO_SIGNING_KEY_PASSWORD` | same as in `local.properties` |
+| `SOLO_ADS_APP_ID`, `SOLO_ADS_BANNER_ID` | the AdMob IDs |
+| `PLAY_SERVICE_ACCOUNT_JSON` | the whole JSON key file |
+
+5. **Add the repository variable** `PLAY_UPLOAD_ENABLED` = `true` (same page, Variables tab).
+
+The workflow stops before building if any secret is missing, so a release can never go out unsigned or with test ads. The bundle and the R8 mapping file are also attached to each run.
+
 ### Versions
 
 The version comes from git, so there is nothing to edit before a release:
