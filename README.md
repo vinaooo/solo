@@ -47,3 +47,12 @@ solo.signing.keyPassword=…
 ```
 
 On CI, set the same values as the `SOLO_SIGNING_STORE_FILE`, `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS` and `SOLO_SIGNING_KEY_PASSWORD` environment variables. Without them, `./gradlew :app:assembleRelease` builds an unsigned APK.
+
+### Versions
+
+The version comes from git, so there is nothing to edit before a release:
+
+- `versionCode` is the number of commits up to the built commit (`git rev-list --count HEAD`). It grows with every merge into `master`.
+- `versionName` comes from the latest `vMAJOR.MINOR.PATCH` tag. A tagged commit is `1.2.0`, a later one `1.2.0-3-gabc1234`, and before the first tag `0.0.0-gabc1234`.
+
+To release, tag the commit on `master` and push the tag: `git tag v1.0.0 && git push origin v1.0.0`. Build from a full clone: a shallow one fails the build, because its commit count would be too low for Play.
