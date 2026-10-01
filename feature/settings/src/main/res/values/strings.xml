@@ -18,6 +18,9 @@
     <string name="sound">Sound effects</string>
     <string name="haptics">Vibration</string>
     <string name="section_privacy">Privacy</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <!-- Jumps to the policy in this language. -->
+    <string name="privacy_policy_url">https://vinaooo.github.io/solo/privacy.html#en</string>
     <string name="privacy_options">Privacy options</string>
     <string name="privacy_options_note">Change your choices about ads and data</string>
 </resources>
