@@ -58,6 +58,16 @@ class BoardLayoutTest {
     }
 
     @Test
+    fun `a covered column card shows a strip as tall as the step to the next card, the top card none`() {
+        val placed = portrait.positions(dealt).values.filter { it.pile == PileRef.Tableau(6) }.sortedBy { it.index }
+        val strip = portrait.coveredStrip(dealt, placed[0])!!.toDouble()
+        strip shouldBe (portrait.faceDownStep.toDouble() plusOrMinus 0.01)
+        portrait.coveredStrip(dealt, placed.last()).shouldBeNull()
+        val stock = portrait.positions(dealt).values.first { it.pile == PileRef.Stock }
+        portrait.coveredStrip(dealt, stock).shouldBeNull()
+    }
+
+    @Test
     fun `every card of a deal gets a position`() {
         portrait.positions(dealt).size shouldBe 52
     }

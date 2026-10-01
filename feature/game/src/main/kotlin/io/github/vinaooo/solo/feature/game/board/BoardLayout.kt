@@ -77,6 +77,15 @@ class BoardLayout(val width: Float, val height: Float, val gap: Float, val hande
         }
     }
 
+    /** How much of a column card shows above the card on top of it, or null when nothing covers it. */
+    fun coveredStrip(state: GameState, placed: PlacedCard): Float? {
+        val pile = placed.pile as? PileRef.Tableau ?: return null
+        val column = state.tableau[pile.index]
+        if (placed.index >= column.lastIndex) return null
+        val offsets = columnOffsets(column)
+        return offsets[placed.index + 1] - offsets[placed.index]
+    }
+
     /** The pile a dragged card is dropped on. Tableau columns accept drops anywhere along their length. */
     fun pileAt(x: Float, y: Float, state: GameState): PileRef? {
         val topRow = listOf(PileRef.Stock, PileRef.Waste) + state.foundations.indices.map { PileRef.Foundation(it) }

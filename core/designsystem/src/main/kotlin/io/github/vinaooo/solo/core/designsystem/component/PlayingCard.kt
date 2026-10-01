@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -19,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -40,8 +44,8 @@ import io.github.vinaooo.solo.domain.model.SuitColor
 import kotlin.math.roundToInt
 
 /**
- * A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. [faceAtTop] slides the
- * rank and suit to the top edge, where they stay visible while another card covers the rest.
+ * A card; [contentDescription] replaces what TalkBack says for it, which is otherwise its name. When another card
+ * covers all but the top [coveredStrip] of it, the rank and suit shrink into a row centered in that strip.
  */
 @Composable
 fun PlayingCard(
@@ -49,7 +53,7 @@ fun PlayingCard(
     modifier: Modifier = Modifier,
     highlighted: Boolean = false,
     contentDescription: String? = null,
-    faceAtTop: Boolean = false,
+    coveredStrip: Dp? = null,
 ) {
     val colors = SoloThemeExtras.cardColors
     val description =
@@ -66,23 +70,26 @@ fun PlayingCard(
             )
             .clearAndSetSemantics { this.contentDescription = description },
     ) {
-        if (card.isFaceUp) CardFace(card, colors, maxWidth, faceAtTop) else CardBack(colors)
+        if (card.isFaceUp) CardFace(card, colors, maxWidth, coveredStrip) else CardBack(colors)
     }
 }
 
 @Composable
-private fun CardFace(card: Card, colors: CardColors, width: Dp, atTop: Boolean) {
+private fun CardFace(card: Card, colors: CardColors, width: Dp, coveredStrip: Dp?) {
     val ink = if (card.suit.color == SuitColor.RED) colors.redSuits else colors.blackSuits
     val density = LocalDensity.current
     val size = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
     val overlap = with(density) { (width * FACE_SPACING_RATIO).roundToPx() }
     // The same spring that moves cards, so the face changes while the card that covers or uncovers it travels.
     val progress by animateFloatAsState(
-        if (atTop) 1f else 0f,
+        if (coveredStrip != null) 1f else 0f,
         MaterialTheme.motionScheme.defaultSpatialSpec(),
         label = "face",
     )
-    // Uncovered: the suit under the rank, centered on the card. Covered: the suit beside the rank, along the top edge.
+    // Once uncovered, the row keeps its strip while it slides back to the center.
+    val lastStrip = remember { mutableStateOf(0.dp) }
+    SideEffect { if (coveredStrip != null) lastStrip.value = coveredStrip }
+    // Uncovered: the suit under the rank, centered on the card. Covered: the suit beside the rank, in the strip.
     Layout(
         modifier = Modifier.fillMaxSize(),
         content = {
@@ -98,8 +105,12 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp, atTop: Boolean) 
         val scale = lerp(1f, COVERED_FACE_SCALE, progress)
         val rankWidth = (rank.width * scale).roundToInt()
         val rowLeft = (width - rankWidth - (suit.width * scale).roundToInt()) / 2
-        val rowRank = IntOffset(rowLeft, 0)
-        val rowSuit = IntOffset(rowLeft + rankWidth, ((rank.height - suit.height) * scale / 2).roundToInt())
+        val strip = (coveredStrip ?: lastStrip.value).roundToPx()
+        // Center the letters' ink, not their line box, which carries empty descender space below them.
+        val inkCenter = (rank[FirstBaseline] - size.toPx() * CAP_HEIGHT / 2) * scale
+        val rowTop = (strip / 2 - inkCenter).roundToInt()
+        val rowRank = IntOffset(rowLeft, rowTop)
+        val rowSuit = IntOffset(rowLeft + rankWidth, rowTop + ((rank.height - suit.height) * scale / 2).roundToInt())
         val scaled: GraphicsLayerScope.() -> Unit = {
             scaleX = scale
             scaleY = scale
@@ -201,7 +212,10 @@ val Rank.nameRes: Int
 
 private const val CENTER_SUIT_RATIO = 0.4f
 private const val FACE_SPACING_RATIO = 0.08f
-private const val COVERED_FACE_SCALE = 0.75f
+private const val COVERED_FACE_SCALE = 0.65f
+
+/** Roboto's capital and digit height, as a fraction of the font size. */
+private const val CAP_HEIGHT = 0.71f
 private const val BACK_INSET_RATIO = 0.08f
 private const val BACK_CORNER_RATIO = 0.06f
 private const val DOTS_PER_ROW = 7f
