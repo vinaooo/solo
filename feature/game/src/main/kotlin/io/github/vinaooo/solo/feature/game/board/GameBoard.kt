@@ -236,7 +236,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     val density = LocalDensity.current
 
     @Composable
-    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null) {
+    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null, borderWidth: Dp = 2.dp) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
         Box(
@@ -251,7 +251,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 }
                 .clickable { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
-            EmptyPileSlot(Modifier.width(cardWidth), label = label)
+            EmptyPileSlot(Modifier.width(cardWidth), label = label, borderWidth = borderWidth)
         }
     }
     Slot(
@@ -265,6 +265,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
             PileRef.Foundation(it),
             stringResource(R.string.foundation_empty),
             isEmpty = state.foundations[it].isEmpty(),
+            borderWidth = 1.dp,
         )
     }
     state.tableau.indices.forEach { column ->

@@ -8,17 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
 
 /** Outline shown where a pile is empty (stock, foundations, tableau columns). */
 @Composable
-fun EmptyPileSlot(modifier: Modifier = Modifier, label: String? = null) {
+fun EmptyPileSlot(modifier: Modifier = Modifier, label: String? = null, borderWidth: Dp = 2.dp) {
     val colors = SoloThemeExtras.cardColors
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(CardDimensions.ASPECT_RATIO)
-            .border(2.dp, colors.emptySlot.copy(alpha = 0.5f), CardDimensions.shape),
+            .border(borderWidth, colors.emptySlot.copy(alpha = 0.5f), CardDimensions.shape),
         contentAlignment = Alignment.Center,
     ) {
         if (label != null) {
