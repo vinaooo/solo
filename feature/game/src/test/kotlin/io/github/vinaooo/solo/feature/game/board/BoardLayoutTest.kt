@@ -149,20 +149,20 @@ class BoardLayoutTest {
         xs[0] shouldBe xs[1]
         (xs[2] > xs[1]) shouldBe true
         (xs[3] > xs[2]) shouldBe true
-        // Right-handed, the fan grows leftward over the empty column and the top card sits on the waste slot.
+        // Right-handed, the fan grows leftward into the empty column and the top card sits on the waste slot.
         xs[3] shouldBe portrait.slot(PileRef.Waste).x
-        xs[1].toDouble() shouldBe (portrait.columnX(4).toDouble() plusOrMinus 0.01)
-        // Left-handed, it grows rightward from the waste slot to the empty column.
+        (xs[1] > portrait.columnX(4)) shouldBe true
+        // Left-handed, it grows rightward from the waste slot into the empty column.
         val left = BoardLayout(width = 1080f, height = 1800f, gap = 12f, handedness = Handedness.LEFT)
         val leftXs = waste.map { left.positions(state).getValue(it.identity()).position.x }
         leftXs[1] shouldBe left.slot(PileRef.Waste).x
-        leftXs[3].toDouble() shouldBe (left.columnX(2).toDouble() plusOrMinus 0.01)
+        (leftXs[3] < left.columnX(2)) shouldBe true
         // The two cards under the top one show their left side, as wide as the fan step; the one below them none.
         listOf(portrait, left).forEach { layout ->
             val placed = layout.positions(state)
             val step = layout.cover(state, placed.getValue(waste[2].identity()))!!
             step.edge shouldBe CardCover.Edge.LEFT
-            step.strip.toDouble() shouldBe (((layout.cardWidth + layout.columnGap) / 2).toDouble() plusOrMinus 0.01)
+            step.strip.toDouble() shouldBe ((layout.cardWidth * 0.4f).toDouble() plusOrMinus 0.01)
             val under = layout.cover(state, placed.getValue(waste[1].identity()))!!.strip.toDouble()
             under shouldBe (step.strip.toDouble() plusOrMinus 0.01)
             layout.cover(state, placed.getValue(waste[0].identity())).shouldBeNull()

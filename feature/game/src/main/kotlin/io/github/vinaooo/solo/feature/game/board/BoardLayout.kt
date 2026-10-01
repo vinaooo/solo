@@ -49,8 +49,8 @@ class BoardLayout(
     private val topRowY = gap
     private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
 
-    // The fan spreads over the empty column beside the waste, so the cards under the top one show as much as they can.
-    private val wasteFanStep = (cardWidth + columnGap) / (VISIBLE_WASTE_CARDS - 1)
+    // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
+    private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
@@ -166,6 +166,7 @@ class BoardLayout(
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
         const val FACE_UP_STEP = 0.28f
+        const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
         const val WASTE_Z = 100f
         const val FOUNDATION_Z = 200f
