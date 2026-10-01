@@ -4,11 +4,11 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -63,24 +63,14 @@ fun PlayingCard(
 private fun CardFace(card: Card, colors: CardColors, width: Dp) {
     val ink = if (card.suit.color == SuitColor.RED) colors.redSuits else colors.blackSuits
     val density = LocalDensity.current
-    val cornerSize = with(density) { (width * CORNER_TEXT_RATIO).toSp() }
-    val centerSize = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
-    Box(modifier = Modifier.fillMaxSize().padding(width * PADDING_RATIO)) {
-        Text(
-            text = card.rank.symbol,
-            color = ink,
-            fontSize = cornerSize,
-            fontWeight = FontWeight.Bold,
-            lineHeight = cornerSize,
-            modifier = Modifier.align(Alignment.TopStart),
-        )
-        Text(
-            text = card.suit.symbol,
-            color = ink,
-            fontSize = centerSize,
-            lineHeight = centerSize,
-            modifier = Modifier.align(Alignment.Center),
-        )
+    val size = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = card.rank.symbol, color = ink, fontSize = size, fontWeight = FontWeight.Bold, lineHeight = size)
+        Text(text = card.suit.symbol, color = ink, fontSize = size, lineHeight = size)
     }
 }
 
@@ -165,9 +155,7 @@ val Rank.nameRes: Int
         Rank.KING -> R.string.rank_king
     }
 
-private const val CORNER_TEXT_RATIO = 0.26f
 private const val CENTER_SUIT_RATIO = 0.5f
-private const val PADDING_RATIO = 0.06f
 private const val BACK_INSET_RATIO = 0.08f
 private const val BACK_CORNER_RATIO = 0.06f
 private const val DOTS_PER_ROW = 7f
