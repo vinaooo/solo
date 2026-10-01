@@ -66,7 +66,8 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp) {
     val size = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        // The glyphs carry blank space above and below them, so pull the suit up under the rank.
+        verticalArrangement = Arrangement.spacedBy(-width * FACE_SPACING_RATIO, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = card.rank.symbol, color = ink, fontSize = size, fontWeight = FontWeight.Bold, lineHeight = size)
@@ -155,7 +156,8 @@ val Rank.nameRes: Int
         Rank.KING -> R.string.rank_king
     }
 
-private const val CENTER_SUIT_RATIO = 0.5f
+private const val CENTER_SUIT_RATIO = 0.4f
+private const val FACE_SPACING_RATIO = 0.08f
 private const val BACK_INSET_RATIO = 0.08f
 private const val BACK_CORNER_RATIO = 0.06f
 private const val DOTS_PER_ROW = 7f
