@@ -145,7 +145,7 @@ internal fun BoxScope.DealGuard(deal: Deal) {
 private const val DECK_Z = 5_000f
 private const val GUARD_Z = 20_000f
 private const val GATHER_MILLIS = 500L
-private const val BAR_MILLIS = 120L
-private const val TABLEAU_STEP_MILLIS = 150L
+private const val BAR_MILLIS = 80L
+private const val TABLEAU_STEP_MILLIS = 100L
 private const val STOCK_STEP_MILLIS = 20L
 private const val SETTLE_MILLIS = 300L
