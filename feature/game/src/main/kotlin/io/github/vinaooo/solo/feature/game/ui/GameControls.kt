@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
@@ -182,7 +184,7 @@ private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
  * The first few times the button appears, a speech bubble points at it (from above, or from the left of the vertical
  * toolbar) until the player taps anywhere or a few seconds pass.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> Unit, vertical: Boolean) {
     val tip = rememberTooltipState(isPersistent = true)
@@ -198,9 +200,30 @@ private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> U
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
             if (vertical) TooltipAnchorPosition.Left else TooltipAnchorPosition.Above,
+            // Clears the toolbar's own padding around the button, so the bubble floats just off the toolbar.
+            spacingBetweenTooltipAndAnchor = 16.dp,
         ),
         tooltip = {
-            PlainTooltip(caretShape = TooltipDefaults.caretShape()) { Text(stringResource(R.string.auto_complete_tip)) }
+            // Expressive: a pill in the accent (tertiary) color, with the button's icon and emphasized text.
+            PlainTooltip(
+                caretShape = TooltipDefaults.caretShape(),
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary,
+                shadowElevation = 3.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.auto_complete_tip),
+                        style = MaterialTheme.typography.labelLargeEmphasized,
+                    )
+                }
+            }
         },
         state = tip,
     ) {
