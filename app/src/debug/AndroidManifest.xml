@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Debug builds only: `adb shell am start -S -n io.github.vinaooo.solo/.debug.NearAutoCompleteActivity` -->
+        <activity
+            android:name=".debug.NearAutoCompleteActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Solo" />
+    </application>
+
+</manifest>
