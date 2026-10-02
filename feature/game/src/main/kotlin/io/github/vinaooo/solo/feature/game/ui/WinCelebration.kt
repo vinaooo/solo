@@ -58,17 +58,24 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+/** The ways a win is celebrated; each win picks one at random. */
+internal enum class WinCelebration { BALLOONS, CONFETTI, FIREWORKS }
+
 /**
- * The win dialog: confetti, streamers and balloons fill the screen while the card springs in, and its trophy pops
- * out and keeps swinging.
+ * The win dialog: a celebration ([kind]) fills the screen while the card springs in, and its trophy pops out and
+ * keeps swinging.
  */
 @Composable
-internal fun WinDialog(record: ScoreRecord, onNewGame: () -> Unit) {
+internal fun WinDialog(
+    record: ScoreRecord,
+    onNewGame: () -> Unit,
+    kind: WinCelebration = remember { WinCelebration.entries.random() },
+) {
     Dialog(onDismissRequest = {}, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         val card = remember { Animatable(0f) }
         LaunchedEffect(Unit) { card.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow)) }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Celebration(Modifier.fillMaxSize())
+            Celebration(kind, Modifier.fillMaxSize())
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -143,11 +150,15 @@ private class Piece(random: Random, val color: Color) {
     val sway = random.nextFloat() * 2 * PI.toFloat()
     val spin = 2f + random.nextFloat() * 4f
     val size = 0.6f + random.nextFloat() * 0.8f
+    val heads = random.nextBoolean()
 }
 
-/** Confetti and streamers falling, balloons rising, forever: drawn every frame from the elapsed time alone. */
+/**
+ * Balloons rising, confetti and streamers falling, or fireworks bursting, forever: drawn every frame from the elapsed
+ * time alone.
+ */
 @Composable
-private fun Celebration(modifier: Modifier) {
+private fun Celebration(kind: WinCelebration, modifier: Modifier) {
     val palette = listOf(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.tertiary,
@@ -158,13 +169,14 @@ private fun Celebration(modifier: Modifier) {
         Color(0xFFFF5722),
         Color(0xFF9C27B0),
     )
-    val pieces = remember(palette) {
+    val pieces = remember(kind, palette) {
         val random = Random(seed = 7)
-        Triple(
-            List(CONFETTI) { Piece(random, palette[it % palette.size]) },
-            List(STREAMERS) { Piece(random, palette[(it + 3) % palette.size]) },
-            List(BALLOONS) { Piece(random, palette[(it + 5) % palette.size]) },
-        )
+        val count = when (kind) {
+            WinCelebration.BALLOONS -> BALLOONS
+            WinCelebration.CONFETTI -> CONFETTI
+            WinCelebration.FIREWORKS -> FIREWORKS
+        }
+        List(count) { Piece(random, palette[it % palette.size]) }
     }
     var seconds by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
@@ -174,9 +186,14 @@ private fun Celebration(modifier: Modifier) {
     }
     Canvas(modifier) {
         val t = seconds
-        pieces.third.forEach { drawBalloon(it, t) }
-        pieces.second.forEach { drawStreamer(it, t) }
-        pieces.first.forEach { drawConfetti(it, t) }
+        when (kind) {
+            WinCelebration.BALLOONS -> pieces.forEach { drawBalloon(it, t) }
+            // Every few pieces of confetti, a streamer.
+            WinCelebration.CONFETTI -> pieces.forEachIndexed { i, piece ->
+                if (i % CONFETTI_PER_STREAMER == 0) drawStreamer(piece, t) else drawConfetti(piece, t)
+            }
+            WinCelebration.FIREWORKS -> pieces.forEach { drawFirework(it, t) }
+        }
     }
 }
 
@@ -248,9 +265,55 @@ private fun DrawScope.drawBalloon(piece: Piece, t: Float) {
     )
 }
 
-private const val CONFETTI = 80
-private const val STREAMERS = 14
-private const val BALLOONS = 7
+/**
+ * A rocket that rises from the bottom, slowing down, to its burst height, then a ring of sparks that fly out, slow
+ * down, fall and fade; then a short pause before the next launch.
+ */
+private fun DrawScope.drawFirework(piece: Piece, t: Float) {
+    val cycle = (piece.phase * FIREWORK_PERIOD + t) % FIREWORK_PERIOD
+    val x = size.width * (FIREWORK_MARGIN + piece.x * (1 - 2 * FIREWORK_MARGIN))
+    // Half burst above the dialog card and half below it, where they can be seen.
+    val band = if (piece.heads) FIREWORK_TOP_BAND else FIREWORK_BOTTOM_BAND
+    val burstY = size.height * (band.start + piece.size / PIECE_SIZE_MAX * (band.endInclusive - band.start))
+    if (cycle < ROCKET_SECONDS) {
+        val rise = cycle / ROCKET_SECONDS
+        val eased = 1 - (1 - rise) * (1 - rise)
+        val y = size.height + (burstY - size.height) * eased
+        drawLine(
+            piece.color.copy(alpha = TRAIL_ALPHA),
+            start = Offset(x, y),
+            end = Offset(x, y + TRAIL_LENGTH.toPx()),
+            strokeWidth = SPARK_RADIUS.toPx(),
+            cap = StrokeCap.Round,
+        )
+        drawCircle(piece.color, radius = SPARK_RADIUS.toPx(), center = Offset(x, y))
+        return
+    }
+    val since = cycle - ROCKET_SECONDS
+    if (since > BURST_SECONDS) return
+    val fade = 1 - since / BURST_SECONDS
+    // Flies out fast and slows down, while gravity pulls it down more and more.
+    val distance = SPARK_SPEED.toPx() * since * (1 - since / (2 * BURST_SECONDS))
+    val drop = GRAVITY.toPx() * since * since
+    // Each spark is a short streak pointing away from the burst, like a real firework's.
+    for (i in 0 until SPARKS) {
+        val angle = 2 * PI.toFloat() * i / SPARKS + piece.sway
+        val direction = Offset(cos(angle), sin(angle))
+        val tip = Offset(x, burstY + drop) + direction * distance
+        drawLine(
+            piece.color.copy(alpha = fade),
+            start = tip - direction * (distance * STREAK_FRACTION),
+            end = tip,
+            strokeWidth = SPARK_RADIUS.toPx() * (FADE_MIN_SIZE + fade),
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+private const val CONFETTI = 100
+private const val CONFETTI_PER_STREAMER = 6
+private const val BALLOONS = 12
+private const val FIREWORKS = 8
 private const val NANOS_PER_SECOND = 1_000_000_000f
 
 /** Falling pieces loop over 1.2 screen heights, starting 0.1 above the top; balloons over 1.4, from 0.15 below. */
@@ -288,3 +351,19 @@ private val KNOT_SIZE = 5.dp
 private const val SHINE_ALPHA = 0.35f
 private val SHINE_INSET = Offset(0.3f, 0.35f)
 private val SHINE_SIZE = Size(0.22f, 0.3f)
+
+private const val FIREWORK_MARGIN = 0.15f
+private val FIREWORK_TOP_BAND = 0.08f..0.28f
+private val FIREWORK_BOTTOM_BAND = 0.72f..0.82f
+private const val PIECE_SIZE_MAX = 1.4f
+private const val STREAK_FRACTION = 0.35f
+private const val ROCKET_SECONDS = 0.9f
+private const val BURST_SECONDS = 1.4f
+private const val FIREWORK_PERIOD = ROCKET_SECONDS + BURST_SECONDS + 0.5f
+private const val SPARKS = 36
+private val SPARK_SPEED = 230.dp
+private val SPARK_RADIUS = 3.5.dp
+private const val FADE_MIN_SIZE = 0.3f
+private val GRAVITY = 40.dp
+private val TRAIL_LENGTH = 18.dp
+private const val TRAIL_ALPHA = 0.5f
