@@ -112,6 +112,5 @@ class SettingsScreenTest {
         compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
 
         compose.onNodeWithText("Sons e vibração").performScrollTo().assertExists()
-        compose.onNodeWithText("Vale a partir da próxima partida.").performScrollTo().assertExists()
     }
 }

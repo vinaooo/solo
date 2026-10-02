@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,6 +21,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,11 +47,24 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val pendingDrawMode by viewModel.pendingDrawMode.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions) {
         uriHandler.openUri(privacyPolicyUrl)
     }
+    if (pendingDrawMode != null) DrawModeDialog(viewModel::confirmDrawMode, viewModel::dismissDrawMode)
+}
+
+@Composable
+private fun DrawModeDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.draw_mode_confirm_title)) },
+        text = { Text(stringResource(R.string.draw_mode_confirm_text)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.draw_mode_confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.draw_mode_cancel)) } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,12 +89,6 @@ fun SettingsScreen(
                 options = listOf(DrawMode.ONE to R.string.draw_one, DrawMode.THREE to R.string.draw_three),
                 selected = settings.drawMode,
                 onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
-            )
-            Text(
-                stringResource(R.string.draw_mode_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
             )
             Choice(
                 title = stringResource(R.string.handedness),

@@ -7,7 +7,10 @@
     <string name="draw_mode">Cartas viradas do monte</string>
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
-    <string name="draw_mode_note">Vale a partir da próxima partida.</string>
+    <string name="draw_mode_confirm_title">Começar uma nova partida?</string>
+    <string name="draw_mode_confirm_text">Mudar quantas cartas são viradas encerra a partida atual, que conta como derrota.</string>
+    <string name="draw_mode_confirm">Nova partida</string>
+    <string name="draw_mode_cancel">Cancelar</string>
     <string name="show_timer">Mostrar cronômetro</string>
     <string name="theme">Tema</string>
     <string name="theme_system">Sistema</string>

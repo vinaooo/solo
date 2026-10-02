@@ -125,6 +125,31 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `switching the draw mode deals a new game in that mode`() = gameTest {
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+
+        settings.current.value = Settings(drawMode = DrawMode.THREE)
+        runCurrent()
+
+        vm.session.state.drawMode shouldBe DrawMode.THREE
+        vm.session.state.moves shouldBe 0
+        stats.stats.value.played shouldBe 1
+    }
+
+    @Test
+    fun `other settings changes keep the game`() = gameTest {
+        val vm = viewModel()
+        val before = vm.session
+
+        settings.current.value = Settings(showTimer = false)
+        runCurrent()
+
+        vm.session shouldBe before
+    }
+
+    @Test
     fun `tapping the stock draws, saves and gives feedback`() = gameTest {
         val vm = viewModel()
 

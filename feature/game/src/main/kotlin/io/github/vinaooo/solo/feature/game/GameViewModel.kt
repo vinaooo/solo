@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.rules.GameEngine
@@ -20,7 +21,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -56,6 +60,11 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             val session = resumeGame() ?: startNewGame(settingsRepository.settings.first().drawMode)
             show(session)
+        }
+        viewModelScope.launch {
+            // Switching the draw mode in Settings (confirmed there) deals a new game in that mode.
+            settingsRepository.settings.map { it.drawMode }.distinctUntilChanged().drop(1)
+                .collect { newGame(restart = false, drawMode = it) }
         }
     }
 
@@ -135,14 +144,14 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun newGame(restart: Boolean) {
+    private fun newGame(restart: Boolean, drawMode: DrawMode = state.value.settings.drawMode) {
         autoCompleteJob?.cancel()
         viewModelScope.launch {
             val replay = state.value.session?.takeIf { restart }
             val session = if (replay != null) {
                 startNewGame(replay.state.drawMode, replay.seed)
             } else {
-                startNewGame(state.value.settings.drawMode)
+                startNewGame(drawMode)
             }
             state.update { it.copy(winRecord = null, isAutoCompleting = false) }
             show(session)

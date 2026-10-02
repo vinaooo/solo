@@ -8,9 +8,12 @@ import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
+import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -47,13 +50,40 @@ sealed interface SettingsChange {
 }
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(private val repository: SettingsRepository) : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val repository: SettingsRepository,
+    private val resumeGame: ResumeGame,
+) : ViewModel() {
 
     val settings: StateFlow<Settings> = repository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), Settings())
 
+    private val pending = MutableStateFlow<DrawMode?>(null)
+
+    /** A draw mode waiting for the player to confirm abandoning the game in progress, which the switch would end. */
+    val pendingDrawMode: StateFlow<DrawMode?> = pending.asStateFlow()
+
     fun onChange(change: SettingsChange) {
-        viewModelScope.launch { repository.update(change::applyTo) }
+        viewModelScope.launch {
+            if (change is SettingsChange.DrawModeChanged &&
+                change.value != settings.value.drawMode &&
+                resumeGame()?.isInProgress == true
+            ) {
+                pending.value = change.value
+            } else {
+                repository.update(change::applyTo)
+            }
+        }
+    }
+
+    fun confirmDrawMode() {
+        val drawMode = pending.value ?: return
+        pending.value = null
+        viewModelScope.launch { repository.update { it.copy(drawMode = drawMode) } }
+    }
+
+    fun dismissDrawMode() {
+        pending.value = null
     }
 
     private companion object {
