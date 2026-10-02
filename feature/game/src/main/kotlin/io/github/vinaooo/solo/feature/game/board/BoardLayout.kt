@@ -53,12 +53,12 @@ class BoardLayout(
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
-    // With the board's 4dp gap: each bar is 0.88dp short of its cards' steps, and 2.5dp above its face-up cards.
-    private val hiddenBarShortfall = gap * HIDDEN_BAR_SHORTFALL
+    // With the board's 4dp gap: each bar is 0.12dp taller than its cards' steps, and 2.5dp above its face-up cards.
+    private val hiddenBarExtra = gap * HIDDEN_BAR_EXTRA
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
     // A column with a bar starts its face-up cards this much below its steps; one without starts at its top.
-    private val faceUpLift = hiddenBarGap - hiddenBarShortfall
+    private val faceUpLift = hiddenBarGap + hiddenBarExtra
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
@@ -159,7 +159,7 @@ class BoardLayout(
 
     /**
      * Height of the bar that stands in for a column's face-down cards; 0 when it has none. Each face-down card
-     * takes a [faceDownStep], and the bar is its cards' steps less a fixed shortfall. The face-up cards start a
+     * takes a [faceDownStep], and the bar is its cards' steps and a fixed extra. The face-up cards start a
      * gap below it; in a column without a bar they start at the top, level with the bars.
      */
     fun hiddenBarHeight(column: List<Card>): Float {
@@ -170,7 +170,7 @@ class BoardLayout(
         ) {
             0f
         } else {
-            columnOffsets(column).first() * (steps - hiddenBarShortfall) / (steps + faceUpLift)
+            columnOffsets(column).first() * (steps + hiddenBarExtra) / (steps + faceUpLift)
         }
     }
 
@@ -196,7 +196,7 @@ class BoardLayout(
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
-        const val HIDDEN_BAR_SHORTFALL = 0.22f
+        const val HIDDEN_BAR_EXTRA = 0.03f
         const val HIDDEN_BAR_GAP = 0.625f
         const val FACE_UP_STEP = 0.28f
         const val WASTE_FAN_STEP = 0.4f

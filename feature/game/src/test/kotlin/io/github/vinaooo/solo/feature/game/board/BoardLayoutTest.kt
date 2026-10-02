@@ -96,8 +96,8 @@ class BoardLayoutTest {
         val placed = portrait.positions(dealt)
         val ys = column.map { placed.getValue(it.identity()).position.y }
         val bar = portrait.hiddenBarHeight(column)
-        // Six steps less the bar's shortfall, then the gap before the face-up card.
-        bar.toDouble() shouldBe ((portrait.faceDownStep * 6 - portrait.gap * 0.22f).toDouble() plusOrMinus 0.01)
+        // Six steps and the bar's extra, then the gap before the face-up card.
+        bar.toDouble() shouldBe ((portrait.faceDownStep * 6 + portrait.gap * 0.03f).toDouble() plusOrMinus 0.01)
         val top = portrait.slot(PileRef.Tableau(6)).y
         (ys[6] - top).toDouble() shouldBe ((bar + portrait.gap * 0.625f).toDouble() plusOrMinus 0.01)
         // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
@@ -109,7 +109,7 @@ class BoardLayoutTest {
         }
         firsts.forEachIndexed { column, y ->
             val step = portrait.faceDownStep
-            val lift = if (column > 0) portrait.gap * (0.625f - 0.22f) else 0f
+            val lift = if (column > 0) portrait.gap * (0.625f + 0.03f) else 0f
             y.toDouble() shouldBe ((column * step + lift).toDouble() plusOrMinus 0.01)
         }
     }
