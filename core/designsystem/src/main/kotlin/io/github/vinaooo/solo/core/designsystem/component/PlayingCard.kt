@@ -72,6 +72,18 @@ fun PlayingCard(
     val colors = SoloThemeExtras.cardColors
     val description =
         contentDescription ?: if (card.isFaceUp) cardName(card) else stringResource(R.string.card_face_down)
+    // The face's animation lives out here, not in the BoxWithConstraints below: Compose sometimes rebuilds that box's
+    // content as cards move around the board, which would make a face jump instead of sliding between its covered
+    // strip and the center. The same spring that moves cards, so the face changes while the card that covers or
+    // uncovers it travels.
+    val progress = animateFloatAsState(
+        if (cover != null) 1f else 0f,
+        MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "face",
+    )
+    // Once uncovered, the face keeps its strip while it slides back to the center.
+    val lastCover = remember { mutableStateOf(CardCover(CardCover.Edge.TOP, 0.dp)) }
+    SideEffect { if (cover != null) lastCover.value = cover }
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(CardDimensions.ASPECT_RATIO)
@@ -85,24 +97,15 @@ fun PlayingCard(
             .clearAndSetSemantics { this.contentDescription = description },
     ) {
         // A face-down card is its back color alone, from the background above.
-        if (card.isFaceUp) CardFace(card, colors, maxWidth, cover)
+        if (card.isFaceUp) CardFace(card, colors, maxWidth, cover ?: lastCover.value) { progress.value }
     }
 }
 
 @Composable
-private fun CardFace(card: Card, colors: CardColors, width: Dp, cover: CardCover?) {
+private fun CardFace(card: Card, colors: CardColors, width: Dp, cover: CardCover, progress: () -> Float) {
     val ink = if (card.suit.color == SuitColor.RED) colors.redSuits else colors.blackSuits
     val density = LocalDensity.current
     val size = with(density) { (width * CENTER_SUIT_RATIO).toSp() }
-    // The same spring that moves cards, so the face changes while the card that covers or uncovers it travels.
-    val progress by animateFloatAsState(
-        if (cover != null) 1f else 0f,
-        MaterialTheme.motionScheme.defaultSpatialSpec(),
-        label = "face",
-    )
-    // Once uncovered, the face keeps its strip while it slides back to the center.
-    val lastCover = remember { mutableStateOf(CardCover(CardCover.Edge.TOP, 0.dp)) }
-    SideEffect { if (cover != null) lastCover.value = cover }
     Layout(
         modifier = Modifier.fillMaxSize(),
         content = {
@@ -111,6 +114,7 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp, cover: CardCover
         },
     ) { measurables, constraints ->
         val (rank, suit) = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
+        val progress = progress()
         val face = FaceGeometry(
             rank = rank,
             suit = suit,
@@ -120,11 +124,10 @@ private fun CardFace(card: Card, colors: CardColors, width: Dp, cover: CardCover
             // Center the letters' ink, not their line box, which carries empty descender space below them.
             inkCenter = rank[FirstBaseline] - size.toPx() * CAP_HEIGHT / 2,
         )
-        val shown = cover ?: lastCover.value
-        val (coveredRank, coveredSuit) = if (shown.edge == CardCover.Edge.TOP) {
-            face.row(shown.strip.roundToPx(), (width * COVERED_GAP_RATIO * progress).roundToPx())
+        val (coveredRank, coveredSuit) = if (cover.edge == CardCover.Edge.TOP) {
+            face.row(cover.strip.roundToPx(), (width * COVERED_GAP_RATIO * progress).roundToPx())
         } else {
-            face.stackedIn(shown.strip.roundToPx(), shown.edge)
+            face.stackedIn(cover.strip.roundToPx(), cover.edge)
         }
         val scaled: GraphicsLayerScope.() -> Unit = {
             scaleX = face.scale
