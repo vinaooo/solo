@@ -176,11 +176,8 @@ private fun BoardCard(
     val visible = deal.shows(placed)
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val stockReturn = rememberStockReturn(placed.pile)
-    val spec = stockReturn.motion(
-        placed.pile,
-        MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>(),
-        MaterialTheme.motionScheme.fastSpatialSpec(),
-    )
+    val fast = MaterialTheme.motionScheme.fastSpatialSpec<IntOffset>()
+    val spec = deal.motion(fast, stockReturn.motion(placed.pile, MaterialTheme.motionScheme.defaultSpatialSpec(), fast))
     val shown = remember { ShownFlag(visible, visible, placed.pile) }
     val appearing = shown.appearing(visible)
     val dragging = dragOffset != null

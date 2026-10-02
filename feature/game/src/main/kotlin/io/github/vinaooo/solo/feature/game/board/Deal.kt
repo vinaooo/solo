@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.feature.game.board
 
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
@@ -48,6 +49,9 @@ internal class Deal {
     fun shows(placed: PlacedCard) = placed.card.isFaceUp || placed.pile !is PileRef.Tableau
 
     fun hasBar(column: Int) = column < barred
+
+    /** Dealing, cards fly on the [fast] spring, so the deal is brisk; otherwise as the board says ([otherwise]). */
+    fun <T> motion(fast: FiniteAnimationSpec<T>, otherwise: FiniteAnimationSpec<T>) = if (active) fast else otherwise
 
     /** Into the deck: the cards still in it, and, while dealing, the columns' face-down cards (bars to come). */
     fun target(placed: PlacedCard): IntOffset = if (placed.card.identity() in held || (active && !shows(placed))) {
@@ -144,8 +148,8 @@ internal fun BoxScope.DealGuard(deal: Deal) {
 
 private const val DECK_Z = 5_000f
 private const val GUARD_Z = 20_000f
-private const val GATHER_MILLIS = 500L
+private const val GATHER_MILLIS = 300L
 private const val BAR_MILLIS = 50L
 private const val TABLEAU_STEP_MILLIS = 60L
-private const val STOCK_STEP_MILLIS = 20L
+private const val STOCK_STEP_MILLIS = 10L
 private const val SETTLE_MILLIS = 300L
