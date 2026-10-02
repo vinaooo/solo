@@ -30,6 +30,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             soundEnabled = this[Keys.SOUND] ?: defaults.soundEnabled,
             hapticsEnabled = this[Keys.HAPTICS] ?: defaults.hapticsEnabled,
             showTimer = this[Keys.SHOW_TIMER] ?: defaults.showTimer,
+            handedness = enumOrDefault(this[Keys.HANDEDNESS], defaults.handedness),
         )
     }
 
@@ -40,6 +41,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.SOUND] = settings.soundEnabled
         this[Keys.HAPTICS] = settings.hapticsEnabled
         this[Keys.SHOW_TIMER] = settings.showTimer
+        this[Keys.HANDEDNESS] = settings.handedness.name
     }
 
     private inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
@@ -52,5 +54,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val SOUND = booleanPreferencesKey("sound")
         val HAPTICS = booleanPreferencesKey("haptics")
         val SHOW_TIMER = booleanPreferencesKey("show_timer")
+        val HANDEDNESS = stringPreferencesKey("handedness")
     }
 }

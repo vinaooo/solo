@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -50,7 +52,7 @@ class DesignSystemScreenshotTest {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PlayingCard(Card(Suit.CLUBS, Rank.TWO, false), Modifier.width(64.dp))
                         PlayingCard(Card(Suit.HEARTS, Rank.QUEEN, true), Modifier.width(64.dp), highlighted = true)
-                        EmptyPileSlot(Modifier.width(64.dp), label = "A")
+                        EmptyPileSlot(Modifier.width(64.dp), icon = Icons.Rounded.Refresh)
                         EmptyPileSlot(Modifier.width(64.dp))
                     }
                 }

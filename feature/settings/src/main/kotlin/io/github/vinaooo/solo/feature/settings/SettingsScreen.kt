@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 
@@ -79,6 +80,12 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+            Choice(
+                title = stringResource(R.string.handedness),
+                options = listOf(Handedness.LEFT to R.string.hand_left, Handedness.RIGHT to R.string.hand_right),
+                selected = settings.handedness,
+                onSelect = { onChange(SettingsChange.HandednessChanged(it)) },
             )
             ToggleRow(stringResource(R.string.show_timer), settings.showTimer) {
                 onChange(SettingsChange.ShowTimerChanged(it))

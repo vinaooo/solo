@@ -23,4 +23,7 @@
     <string name="privacy_policy_url">https://vinaooo.github.io/solo/privacy.html#en</string>
     <string name="privacy_options">Privacy options</string>
     <string name="privacy_options_note">Change your choices about ads and data</string>
+    <string name="handedness">Preferred hand</string>
+    <string name="hand_left">Left</string>
+    <string name="hand_right">Right</string>
 </resources>

@@ -1,49 +1,69 @@
 package io.github.vinaooo.solo.feature.game.board
 
-import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import io.github.vinaooo.solo.core.designsystem.component.CardCover
+import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
-import io.github.vinaooo.solo.core.designsystem.component.cardName
+import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.CardSpot
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private data class DragState(val pile: PileRef, val index: Int, val offset: Offset)
@@ -55,21 +75,25 @@ fun GameBoard(
     onIntent: (GameIntent) -> Unit,
     modifier: Modifier = Modifier,
     destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
+    handedness: Handedness = Handedness.RIGHT,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
-        val layout = remember(constraints.maxWidth, constraints.maxHeight, density) {
-            BoardLayout(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat(), with(density) { GAP.toPx() })
-        }
+        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness)
         val cardWidth = with(density) { layout.cardWidth.toDp() }
         val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }
         var drag by remember { mutableStateOf<DragState?>(null) }
         val currentState by rememberUpdatedState(state)
         val currentOnIntent by rememberUpdatedState(onIntent)
 
-        EmptySlots(state, layout, cardWidth, onIntent)
+        val moving = remember { mutableStateMapOf<CardIdentity, Boolean>() }
+        val placedCards = layout.positions(state).values
+        val liftedFrom = liftedFrom(placedCards, moving)
 
-        layout.positions(state).values.forEach { placed ->
+        EmptySlots(state, layout, cardWidth, onIntent)
+        FaceDownPiles(state, layout, cardWidth)
+
+        placedCards.forEach { placed ->
             key(placed.card.identity()) {
                 val dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset
                 val isHighlighted = placed.card.identity() in highlighted
@@ -78,13 +102,23 @@ fun GameBoard(
                     placed = placed,
                     hinted = isHighlighted,
                     destinations = destinations[CardSpot(placed.pile, placed.index)].orEmpty(),
+                    handedness = handedness,
                     onIntent = onIntent,
                 )
                 BoardCard(
                     placed = placed,
                     cardWidth = cardWidth,
                     highlighted = isHighlighted,
+                    cover = layout.cover(state, placed)?.let { CardCover(it.edge, with(density) { it.strip.toDp() }) },
+                    // The edge this card lies along on the card under it, where that card still shows.
+                    shadow = placedCards.find { it.pile == placed.pile && it.index == placed.index - 1 }
+                        ?.takeIf { it.position != placed.position }
+                        ?.let { layout.cover(state, it)?.edge },
                     dragOffset = dragOffset,
+                    lifted = placed.index >= (liftedFrom[placed.pile] ?: Int.MAX_VALUE),
+                    onMovingChange = { moving[placed.card.identity()] = it },
+                    // A column's face-down cards are drawn as its bar instead.
+                    visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
                     description = accessibility.description,
                     gestures = accessibility.modifier.then(
                         if (!isDraggable(state, placed)) {
@@ -107,74 +141,12 @@ fun GameBoard(
     }
 }
 
-/** What TalkBack says for a card, and the semantics and tap that go with it. */
-private class CardAccessibility(val description: String?, val modifier: Modifier)
-
 @Composable
-private fun cardAccessibility(
-    role: CardRole,
-    placed: PlacedCard,
-    hinted: Boolean,
-    destinations: List<PileRef>,
-    onIntent: (GameIntent) -> Unit,
-): CardAccessibility {
-    val hintLabel = stringResource(R.string.a11y_hinted)
-    val actions = moveActions(placed, destinations, onIntent)
-    val modifier = Modifier
-        .semantics {
-            traversalIndex = traversalOrder(placed.pile, placed.index)
-            if (role == CardRole.Hidden) hideFromAccessibility()
-            if (hinted) stateDescription = hintLabel
-            if (actions.isNotEmpty()) customActions = actions
-        }
-        .clickable(
-            onClickLabel = stringResource(
-                if (placed.pile == PileRef.Stock) R.string.a11y_click_draw else R.string.a11y_click_move,
-            ),
-        ) { onIntent(GameIntent.Tap(placed.pile, placed.index)) }
-    return CardAccessibility(roleDescription(role), modifier)
-}
-
-@Composable
-private fun roleDescription(role: CardRole): String? = when (role) {
-    CardRole.Hidden -> null
-    is CardRole.StockTop -> pluralStringResource(R.plurals.a11y_stock, role.count, role.count)
-    is CardRole.WasteTop -> stringResource(R.string.a11y_card_in_waste, cardName(role.card))
-    is CardRole.FoundationTop -> stringResource(R.string.a11y_card_in_foundation, cardName(role.card))
-    is CardRole.InColumn -> if (role.faceDownBelow > 0) {
-        pluralStringResource(
-            R.plurals.a11y_card_in_column_above_hidden,
-            role.faceDownBelow,
-            cardName(role.card),
-            role.column + 1,
-            role.faceDownBelow,
-        )
-    } else {
-        stringResource(R.string.a11y_card_in_column, cardName(role.card), role.column + 1)
-    }
-}
-
-/**
- * TalkBack actions that move the card to each pile it can go to, so a player can pick the destination without
- * dragging. One foundation action is enough: a card fits a single foundation, or any empty one for an ace.
- */
-@Composable
-private fun moveActions(
-    placed: PlacedCard,
-    destinations: List<PileRef>,
-    onIntent: (GameIntent) -> Unit,
-): List<CustomAccessibilityAction> {
-    val targets = destinations.filterIsInstance<PileRef.Foundation>().take(1) +
-        destinations.filterIsInstance<PileRef.Tableau>()
-    return targets.map { to ->
-        val label = if (to is PileRef.Tableau) {
-            stringResource(R.string.a11y_move_to_column, to.index + 1)
-        } else {
-            stringResource(R.string.a11y_move_to_foundation)
-        }
-        CustomAccessibilityAction(label) {
-            onIntent(GameIntent.Drop(placed.pile, placed.index, to))
-            true
+private fun rememberBoardLayout(width: Int, height: Int, handedness: Handedness): BoardLayout {
+    val density = LocalDensity.current
+    return remember(width, height, density, handedness) {
+        with(density) {
+            BoardLayout(width.toFloat(), height.toFloat(), GAP.toPx(), handedness, COLUMN_GAP.toPx())
         }
     }
 }
@@ -185,23 +157,49 @@ private fun BoardCard(
     placed: PlacedCard,
     cardWidth: Dp,
     highlighted: Boolean,
+    cover: CardCover?,
+    shadow: CardCover.Edge?,
     dragOffset: Offset?,
+    lifted: Boolean,
+    onMovingChange: (Boolean) -> Unit,
+    visible: Boolean,
     description: String?,
     gestures: Modifier,
 ) {
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
-    val animated by animateIntOffsetAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "card")
+    val animated = remember { Animatable(target, IntOffset.VectorConverter) }
+    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
+    val stockReturn = rememberStockReturn(placed.pile)
+    // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
+    LaunchedEffect(target) {
+        onMovingChange(true)
+        // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
+        animated.animateTo(target, spec) {
+            if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) stockReturn.landed()
+        }
+        onMovingChange(false)
+        stockReturn.settled()
+    }
     val dragging = dragOffset != null
-    // A card on its way to a new pile flies above every other card, like a dragged one; stacks keep their order.
-    val lifted = dragging || animated != target
     PlayingCard(
-        card = placed.card,
+        card = if (stockReturn.showsFace(placed.pile)) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
         contentDescription = description,
+        cover = cover,
+        shadow = shadow,
         modifier = Modifier
-            .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated }
-            .zIndex(if (lifted) LIFTED_Z + placed.z else placed.z)
+            .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
+            // A card on its way to a new pile flies above every other card, like a dragged one.
+            // One going back to the stock slides under the stock's cards, still above the waste it leaves.
+            .zIndex(
+                when {
+                    stockReturn.slidesUnder(placed.pile) -> placed.z - placed.index - 0.5f
+                    dragging || lifted -> LIFTED_Z + placed.z
+                    else -> placed.z
+                },
+            )
             .scale(if (dragging) DRAG_SCALE else 1f)
+            .alpha(if (visible) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
             .then(gestures),
@@ -231,12 +229,74 @@ private fun Modifier.cardDrag(
     )
 }
 
+/**
+ * Each column's face-down cards as one bar, as tall as they are many, growing and shrinking with the cards, with
+ * their count in the middle; and the count of cards left in the stock, on top of it. TalkBack already reads both
+ * counts from the cards, so the labels are left out of it.
+ */
+@Composable
+private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) {
+    val density = LocalDensity.current
+    val color = SoloThemeExtras.cardColors.back
+    // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
+    val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
+    val count: @Composable (Int) -> Unit = { value ->
+        Text(
+            text = value.toString(),
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontSize = COUNT_SIZE,
+            style = LocalTextStyle.current.copy(
+                lineHeight = COUNT_SIZE,
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+            ),
+            modifier = Modifier
+                .clearAndSetSemantics {}
+                // Centered on the digits' ink, not their line box, which is taller than a thin bar and carries empty
+                // space below the digits: free to overflow, it is placed so the ink's middle is the box's middle.
+                .layout { measurable, constraints ->
+                    val text = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+                    val inkCenter = text[FirstBaseline] - COUNT_SIZE.toPx() * DIGIT_HEIGHT / 2
+                    val height = text.height.coerceAtMost(constraints.maxHeight)
+                    layout(text.width, height) { text.place(0, (height / 2f - inkCenter).roundToInt()) }
+                },
+        )
+    }
+    state.tableau.forEachIndexed { column, pile ->
+        key(column) {
+            val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
+            val height by animateDpAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "hidden")
+            val hidden = pile.count { !it.isFaceUp }
+            if (height > 0.dp) {
+                val slot = layout.slot(PileRef.Tableau(column))
+                Box(
+                    Modifier
+                        .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
+                        .size(cardWidth, height)
+                        .background(color, shape),
+                    contentAlignment = Alignment.Center,
+                ) { if (hidden > 0) count(hidden) }
+            }
+        }
+    }
+    if (state.stock.isNotEmpty()) {
+        val slot = layout.slot(PileRef.Stock)
+        val cardHeight = with(density) { layout.cardHeight.toDp() }
+        Box(
+            Modifier
+                .offset { IntOffset(slot.x.roundToInt(), slot.y.roundToInt()) }
+                .size(cardWidth, cardHeight)
+                .zIndex(STOCK_COUNT_Z),
+            contentAlignment = Alignment.Center,
+        ) { count(state.stock.size) }
+    }
+}
+
 @Composable
 private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onIntent: (GameIntent) -> Unit) {
     val density = LocalDensity.current
 
     @Composable
-    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, label: String? = null) {
+    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, icon: ImageVector? = null, borderWidth: Dp? = null) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
         Box(
@@ -245,27 +305,27 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 .width(cardWidth)
                 .semantics {
                     contentDescription = description
-                    traversalIndex = traversalOrder(pile, 0)
+                    traversalIndex = traversalOrder(pile, 0, layout.handedness)
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
                 .clickable { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
-            EmptyPileSlot(Modifier.width(cardWidth), label = label)
+            EmptyPileSlot(Modifier.width(cardWidth), icon = icon, borderWidth = borderWidth)
         }
     }
     Slot(
         PileRef.Stock,
         stringResource(if (state.waste.isEmpty()) R.string.stock_empty else R.string.stock_recycle),
         isEmpty = state.stock.isEmpty(),
-        label = "↻",
+        icon = Icons.Rounded.Refresh,
     )
     state.foundations.indices.forEach {
         Slot(
             PileRef.Foundation(it),
             stringResource(R.string.foundation_empty),
             isEmpty = state.foundations[it].isEmpty(),
-            label = "A",
+            borderWidth = 1.dp,
         )
     }
     state.tableau.indices.forEach { column ->
@@ -288,6 +348,15 @@ private fun Offset.plusTouchSlop(touchSlop: Float): Offset {
     return if (distance == 0f) this else this + this / distance * touchSlop
 }
 
+/**
+ * For each pile, the lowest card still on its way to its slot. A card flies above the board while it, or any card
+ * under it in its pile, is [moving]: a pile keeps its order when its top card lands before the cards under it.
+ */
+private fun liftedFrom(placed: Collection<PlacedCard>, moving: Map<CardIdentity, Boolean>): Map<PileRef, Int> =
+    placed.filter { moving[it.card.identity()] == true }
+        .groupBy { it.pile }
+        .mapValues { (_, cards) -> cards.minOf { it.index } }
+
 private fun isDraggable(state: GameState, placed: PlacedCard): Boolean = placed.card.isFaceUp &&
     when (placed.pile) {
         PileRef.Stock -> false
@@ -308,5 +377,14 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 }
 
 private val GAP = 4.dp
+private val COLUMN_GAP = 8.dp
 private const val LIFTED_Z = 10_000f
+private const val LANDED_PX = 2
+
+/** Above the stock's cards, under the foundations'. */
+private const val STOCK_COUNT_Z = 199f
+private val COUNT_SIZE = 9.sp
+
+/** Roboto's digit height, as a fraction of the font size. */
+private const val DIGIT_HEIGHT = 0.71f
 private const val DRAG_SCALE = 1.05f

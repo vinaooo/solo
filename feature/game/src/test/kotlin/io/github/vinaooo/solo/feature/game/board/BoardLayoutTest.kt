@@ -1,11 +1,13 @@
 package io.github.vinaooo.solo.feature.game.board
 
+import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
@@ -35,11 +37,52 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `top row has stock, waste, a gap, then the four foundations`() {
+    fun `right-handed, the top row has the four foundations, a gap, then waste and stock`() {
         val y = portrait.gap
-        portrait.slot(PileRef.Stock) shouldBe Position(portrait.columnX(0), y)
-        portrait.slot(PileRef.Waste) shouldBe Position(portrait.columnX(1), y)
-        (0 until 4).forEach { portrait.slot(PileRef.Foundation(it)) shouldBe Position(portrait.columnX(3 + it), y) }
+        (0 until 4).forEach { portrait.slot(PileRef.Foundation(it)) shouldBe Position(portrait.columnX(it), y) }
+        portrait.slot(PileRef.Waste) shouldBe Position(portrait.columnX(5), y)
+        portrait.slot(PileRef.Stock) shouldBe Position(portrait.columnX(6), y)
+    }
+
+    @Test
+    fun `left-handed, the top row has stock, waste, a gap, then the four foundations`() {
+        val left = BoardLayout(width = 1080f, height = 1800f, gap = 12f, handedness = Handedness.LEFT)
+        val y = left.gap
+        left.slot(PileRef.Stock) shouldBe Position(left.columnX(0), y)
+        left.slot(PileRef.Waste) shouldBe Position(left.columnX(1), y)
+        (0 until 4).forEach { left.slot(PileRef.Foundation(it)) shouldBe Position(left.columnX(3 + it), y) }
+    }
+
+    @Test
+    fun `columns sit a column gap apart, inside a plain gap margin`() {
+        val wide = BoardLayout(width = 1080f, height = 1800f, gap = 12f, columnGap = 24f)
+        (wide.cardWidth * 7 + 12f * 2 + 24f * 6).toDouble() shouldBe (1080.0 plusOrMinus 0.5)
+        wide.columnX(0) shouldBe 12f
+        (wide.columnX(1) - wide.columnX(0)).toDouble() shouldBe ((wide.cardWidth + 24f).toDouble() plusOrMinus 0.01)
+    }
+
+    @Test
+    fun `three gaps separate the top row from the tableau`() {
+        portrait.slot(PileRef.Tableau(0)).y shouldBe portrait.gap + portrait.cardHeight + portrait.gap * 3
+    }
+
+    @Test
+    fun `a covered column card shows a strip as tall as the step to the next card, the top card none`() {
+        val run = listOf(Card(Suit.SPADES, Rank.KING, true), Card(Suit.HEARTS, Rank.QUEEN, true))
+        val state = GameState(
+            stock = emptyList(),
+            waste = emptyList(),
+            foundations = List(4) { emptyList() },
+            tableau = List(7) { if (it == 0) run else emptyList() },
+            drawMode = DrawMode.ONE,
+        )
+        val placed = portrait.positions(state).values.filter { it.pile == PileRef.Tableau(0) }.sortedBy { it.index }
+        val cover = portrait.cover(state, placed[0])!!
+        cover.edge shouldBe CardCover.Edge.TOP
+        cover.strip.toDouble() shouldBe (portrait.faceUpStep.toDouble() plusOrMinus 0.01)
+        portrait.cover(state, placed.last()).shouldBeNull()
+        val stock = portrait.positions(dealt).values.first { it.pile == PileRef.Stock }
+        portrait.cover(dealt, stock).shouldBeNull()
     }
 
     @Test
@@ -48,14 +91,32 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `tableau cards fan downward, face-up cards further apart than face-down ones`() {
+    fun `face-down cards make a bar a step per card tall, and the face-up card starts a gap below it`() {
         val column = dealt.tableau[6]
         val placed = portrait.positions(dealt)
         val ys = column.map { placed.getValue(it.identity()).position.y }
-        val downStep = ys[1] - ys[0]
-        val upStep = ys[6] - ys[5]
-        downStep.toDouble() shouldBe (portrait.faceDownStep.toDouble() plusOrMinus 0.01)
-        upStep.toDouble() shouldBe (downStep.toDouble() plusOrMinus 0.01)
+        val bar = portrait.hiddenBarHeight(column)
+        // Six steps, the bar's extra and five spreads, then the gap before the face-up card.
+        val expected = portrait.faceDownStep * 6 + portrait.gap * 0.03f + portrait.gap * 0.131f * 5
+        bar.toDouble() shouldBe (expected.toDouble() plusOrMinus 0.01)
+        val top = portrait.slot(PileRef.Tableau(6)).y
+        (ys[6] - top).toDouble() shouldBe ((bar + portrait.gap * 0.625f).toDouble() plusOrMinus 0.01)
+        // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
+        ys.take(6).forEach { it shouldBe ys[6] }
+        portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
+        // Each first face-up card is a step per face-down card down, lifted when there is a bar; level with it if not.
+        val firsts = dealt.tableau.mapIndexed { column, pile ->
+            placed.getValue(pile.last().identity()).position.y - portrait.slot(PileRef.Tableau(column)).y
+        }
+        firsts.forEachIndexed { column, y ->
+            val step = portrait.faceDownStep
+            val lift = if (column > 0) portrait.gap * (0.625f + 0.03f + 0.131f * (column - 1)) else 0f
+            y.toDouble() shouldBe ((column * step + lift).toDouble() plusOrMinus 0.01)
+        }
+    }
+
+    @Test
+    fun `face-up cards in a column fan downward a step apart`() {
         val withRun = GameState(
             stock = emptyList(),
             waste = emptyList(),
@@ -91,6 +152,7 @@ class BoardLayoutTest {
         val last = landscape.positions(state).values.maxOf { it.position.y }
 
         (last + landscape.cardHeight) shouldBeLessThanOrEqual landscape.height
+        landscape.hiddenBarHeight(tall) shouldBeLessThanOrEqual landscape.faceDownStep * 6
     }
 
     @Test
@@ -114,6 +176,31 @@ class BoardLayoutTest {
         xs[0] shouldBe xs[1]
         (xs[2] > xs[1]) shouldBe true
         (xs[3] > xs[2]) shouldBe true
+        // Right-handed, the fan grows leftward into the empty column and the top card sits on the waste slot.
+        xs[3] shouldBe portrait.slot(PileRef.Waste).x
+        (xs[1] > portrait.columnX(4)) shouldBe true
+        // Left-handed, it grows rightward from the waste slot into the empty column.
+        val left = BoardLayout(width = 1080f, height = 1800f, gap = 12f, handedness = Handedness.LEFT)
+        val leftXs = waste.map { left.positions(state).getValue(it.identity()).position.x }
+        leftXs[1] shouldBe left.slot(PileRef.Waste).x
+        (leftXs[3] < left.columnX(2)) shouldBe true
+        // The two cards under the top one show their left side, as wide as the fan step. The one below them is
+        // hidden, but keeps the same face so it doesn't spring back while drawn cards fly over it.
+        listOf(portrait, left).forEach { layout ->
+            val placed = layout.positions(state)
+            val step = layout.cover(state, placed.getValue(waste[2].identity()))!!
+            step.edge shouldBe CardCover.Edge.LEFT
+            step.strip.toDouble() shouldBe ((layout.cardWidth * 0.4f).toDouble() plusOrMinus 0.01)
+            val under = layout.cover(state, placed.getValue(waste[1].identity()))!!.strip.toDouble()
+            under shouldBe (step.strip.toDouble() plusOrMinus 0.01)
+            val hidden = layout.cover(state, placed.getValue(waste[0].identity()))!!
+            hidden.edge shouldBe CardCover.Edge.LEFT
+            hidden.strip.toDouble() shouldBe (step.strip.toDouble() plusOrMinus 0.01)
+            layout.cover(state, placed.getValue(waste[3].identity())).shouldBeNull()
+        }
+        // Drawing one, the waste is a plain pile: the cards under the top one keep a centered face.
+        val drawOne = state.copy(drawMode = DrawMode.ONE)
+        portrait.cover(drawOne, portrait.positions(drawOne).getValue(waste[2].identity())).shouldBeNull()
     }
 
     @Test
@@ -122,7 +209,7 @@ class BoardLayoutTest {
         portrait.pileAt(slot.x + 5, slot.y + portrait.cardHeight * 2, dealt) shouldBe PileRef.Tableau(3)
         val foundation = portrait.slot(PileRef.Foundation(1))
         portrait.pileAt(foundation.x + 5, foundation.y + 5, dealt) shouldBe PileRef.Foundation(1)
-        portrait.pileAt(portrait.columnX(2) + 5, portrait.gap + 5, dealt).shouldBeNull()
+        portrait.pileAt(portrait.columnX(4) + 5, portrait.gap + 5, dealt).shouldBeNull()
     }
 
     @Test
@@ -141,6 +228,6 @@ class BoardLayoutTest {
         val top = portrait.positions(dealt).values.single { it.pile == PileRef.Tableau(0) }
 
         portrait.dropTarget(dealt, top, 3f, 3f).shouldBeNull()
-        portrait.dropTarget(dealt, top, portrait.columnX(2) - top.position.x, -top.position.y).shouldBeNull()
+        portrait.dropTarget(dealt, top, portrait.columnX(4) - top.position.x, -top.position.y).shouldBeNull()
     }
 }

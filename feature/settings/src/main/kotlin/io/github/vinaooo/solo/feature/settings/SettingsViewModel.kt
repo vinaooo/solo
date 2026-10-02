@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
@@ -38,6 +39,10 @@ sealed interface SettingsChange {
 
     data class ShowTimerChanged(val value: Boolean) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(showTimer = value)
+    }
+
+    data class HandednessChanged(val value: Handedness) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(handedness = value)
     }
 }
 

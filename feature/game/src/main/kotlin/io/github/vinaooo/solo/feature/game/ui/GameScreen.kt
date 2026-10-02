@@ -124,7 +124,11 @@ private fun PortraitGame(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             GameTopBar(uiState, onOpenScores, onOpenSettings)
-            BoardOrLoading(uiState, onIntent, Modifier.fillMaxWidth().weight(1f).padding(bottom = TOOLBAR_SPACE))
+            BoardOrLoading(
+                uiState,
+                onIntent,
+                Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = TOOLBAR_SPACE),
+            )
         }
         HorizontalGameToolbar(
             uiState = uiState,
@@ -172,6 +176,7 @@ private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
             onIntent = onIntent,
             modifier = modifier,
             destinations = uiState.destinations,
+            handedness = uiState.settings.handedness,
         )
     }
 }

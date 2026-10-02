@@ -8,6 +8,8 @@ import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Handedness
+import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
@@ -27,12 +29,21 @@ class GameScreenScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun capture(name: String, themeMode: ThemeMode = ThemeMode.LIGHT, drawMode: DrawMode = DrawMode.ONE) {
+    private fun capture(
+        name: String,
+        themeMode: ThemeMode = ThemeMode.LIGHT,
+        drawMode: DrawMode = DrawMode.ONE,
+        handedness: Handedness = Handedness.RIGHT,
+    ) {
         val session = midGame(drawMode)
         compose.setContent {
             SoloTheme(themeMode = themeMode, dynamicColor = false) {
                 GameScreen(
-                    uiState = GameUiState(session = session, hint = HintEngine().bestHint(session.state)),
+                    uiState = GameUiState(
+                        session = session,
+                        hint = HintEngine().bestHint(session.state),
+                        settings = Settings(handedness = handedness),
+                    ),
                     onIntent = {},
                     onOpenScores = {},
                     onOpenSettings = {},
@@ -50,6 +61,10 @@ class GameScreenScreenshotTest {
 
     @Test
     fun game_phone_draw_three() = capture("game_phone_draw_three", drawMode = DrawMode.THREE)
+
+    @Test
+    fun game_phone_left_handed() =
+        capture("game_phone_left_handed", drawMode = DrawMode.THREE, handedness = Handedness.LEFT)
 
     @Test
     @Config(qualifiers = PHONE_LANDSCAPE)

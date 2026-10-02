@@ -2,6 +2,7 @@ package io.github.vinaooo.solo.data.settings
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.shouldBe
@@ -39,6 +40,7 @@ class DataStoreSettingsRepositoryTest {
             soundEnabled = false,
             hapticsEnabled = false,
             showTimer = false,
+            handedness = Handedness.LEFT,
         )
 
         repository.update { changed }
