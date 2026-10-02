@@ -24,12 +24,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,8 +56,12 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
-    var menuOpen by remember { mutableStateOf(false) }
+internal fun NewGameMenu(
+    menuOpen: Boolean,
+    onMenuOpenChange: (Boolean) -> Unit,
+    onIntent: (GameIntent) -> Unit,
+    vertical: Boolean,
+) {
     val options = listOf(
         Triple(Icons.Rounded.Style, R.string.new_game, GameIntent.NewGame),
         Triple(Icons.Rounded.Refresh, R.string.restart_deal, GameIntent.RestartDeal),
@@ -74,7 +79,7 @@ internal fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
         }
     }
     Box {
-        IconButton(onClick = { menuOpen = !menuOpen }) {
+        IconButton(onClick = { onMenuOpenChange(!menuOpen) }) {
             Crossfade(menuOpen, animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(), label = "menu icon") {
                 if (it) {
                     Icon(Icons.Rounded.Close, stringResource(R.string.close_menu))
@@ -88,7 +93,7 @@ internal fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
                 popupPositionProvider = with(LocalDensity.current) {
                     MenuBesideAnchor(vertical, gap = 16.dp.roundToPx(), toolbarInset = 8.dp.roundToPx())
                 },
-                onDismissRequest = { menuOpen = false },
+                onDismissRequest = { onMenuOpenChange(false) },
                 properties = PopupProperties(focusable = menuOpen),
             ) {
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -100,7 +105,7 @@ internal fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
                             options.lastIndex - index,
                             vertical,
                         ) {
-                            menuOpen = false
+                            onMenuOpenChange(false)
                             onIntent(intent)
                         }
                     }
@@ -175,3 +180,28 @@ private data class MenuBesideAnchor(private val beside: Boolean, private val gap
 /** A clearly bouncy spring, so each pill overshoots and settles like Keep's. */
 private val MENU_BOUNCE = spring<Float>(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
 private const val MENU_STAGGER_MILLIS = 60L
+
+/**
+ * Draws a [color] scrim, [alpha] opaque, over everything drawn before this element: the whole game, when it modifies
+ * the toolbar, which comes last. The toolbar itself draws on top, so it stays undimmed.
+ */
+internal fun Modifier.scrimBehind(color: Color, alpha: () -> Float): Modifier = drawBehind {
+    val a = alpha()
+    // ponytail: a rectangle far larger than any screen instead of measuring the window; the root clips it anyway.
+    if (a >
+        0f
+    ) {
+        drawRect(
+            color.copy(alpha = a),
+            topLeft = Offset(-SCRIM_REACH, -SCRIM_REACH),
+            size = Size(
+                2 * SCRIM_REACH,
+                2 * SCRIM_REACH,
+            ),
+        )
+    }
+}
+
+/** Stronger than Material's standard 0.32 scrim, so the menu stands out clearly from the game. */
+internal const val MENU_SCRIM_ALPHA = 0.6f
+private const val SCRIM_REACH = 100_000f

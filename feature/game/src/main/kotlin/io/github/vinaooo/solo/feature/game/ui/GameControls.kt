@@ -1,6 +1,7 @@
 package io.github.vinaooo.solo.feature.game.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -41,6 +42,10 @@ import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -121,26 +126,45 @@ internal fun HorizontalGameToolbar(
     onIntent: (GameIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val dim by animateFloatAsState(
+        if (menuOpen) MENU_SCRIM_ALPHA else 0f,
+        MaterialTheme.motionScheme.defaultEffectsSpec(),
+    )
     HorizontalFloatingToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier,
-    ) { ToolbarActions(uiState, onIntent, vertical = false) }
+        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim },
+    ) { ToolbarActions(uiState, onIntent, vertical = false, menuOpen) { menuOpen = it } }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun VerticalGameToolbar(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier = Modifier) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val dim by animateFloatAsState(
+        if (menuOpen) MENU_SCRIM_ALPHA else 0f,
+        MaterialTheme.motionScheme.defaultEffectsSpec(),
+    )
     VerticalFloatingToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier,
-    ) { ToolbarActions(uiState, onIntent, vertical = true) }
+        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim },
+    ) { ToolbarActions(uiState, onIntent, vertical = true, menuOpen) { menuOpen = it } }
 }
 
-/** Undo, redo, hint, auto-complete (when possible) and the new game menu, in either toolbar. */
+/**
+ * Undo, redo, hint, auto-complete (when possible) and the new game menu, in either toolbar. The toolbar owns whether
+ * the menu is open, because it dims the game behind itself meanwhile.
+ */
 @Composable
-private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit, vertical: Boolean) {
+private fun ToolbarActions(
+    uiState: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    vertical: Boolean,
+    menuOpen: Boolean,
+    onMenuOpenChange: (Boolean) -> Unit,
+) {
     IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
         Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
     }
@@ -168,7 +192,7 @@ private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
             shrinkHorizontally(size, Alignment.CenterHorizontally)
         } + scaleOut(scale) + fadeOut(fade),
     ) { AutoCompleteButton(uiState, onIntent, vertical) }
-    NewGameMenu(onIntent, vertical)
+    NewGameMenu(menuOpen, onMenuOpenChange, onIntent, vertical)
 }
 
 /**
