@@ -60,7 +60,6 @@ fun SettingsRoute(
 private fun DrawModeDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.draw_mode_confirm_title)) },
         text = { Text(stringResource(R.string.draw_mode_confirm_text)) },
         confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.draw_mode_confirm)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.draw_mode_cancel)) } },
