@@ -14,6 +14,10 @@ data class GameUiState(
     val isAutoCompleting: Boolean = false,
     /** Point out the auto-complete button that just appeared, the first few times it does. */
     val showAutoCompleteTip: Boolean = false,
+    /** No sequence of moves can make progress any more. */
+    val isStuck: Boolean = false,
+    /** Tell the player the game just got stuck. */
+    val showStuckTip: Boolean = false,
     val winRecord: ScoreRecord? = null,
     val message: GameMessage? = null,
     /** Where each face-up card can legally go; TalkBack offers these as actions. */
@@ -46,6 +50,8 @@ sealed interface GameIntent {
     data object MessageShown : GameIntent
 
     data object AutoCompleteTipShown : GameIntent
+
+    data object StuckTipShown : GameIntent
 
     /** The screen became visible: the clock may run. */
     data object Resume : GameIntent

@@ -7,6 +7,7 @@ import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.Card
@@ -83,6 +84,8 @@ class GameViewModelTest {
         hints = HintEngine(),
         autoCompleter = AutoCompleter(),
         feedback = feedback,
+        deadEndDetector = DeadEndDetector(),
+        searchDispatcher = dispatcher,
     ).also {
         created += it
         runCurrent()
@@ -179,6 +182,54 @@ class GameViewModelTest {
         vm.uiState.value.canAutoComplete.shouldBeTrue()
         vm.uiState.value.showAutoCompleteTip.shouldBeFalse()
         settings.current.value.autoCompleteTipsShown shouldBe 3
+    }
+
+    /** No empty column, every ace face down under a red top that can't move, and nothing useful in the stock. */
+    private val stuck = GameState(
+        stock = listOf(Card(Suit.CLUBS, Rank.THREE), Card(Suit.SPADES, Rank.FIVE)),
+        waste = emptyList(),
+        foundations = List(GameState.FOUNDATION_COUNT) { emptyList() },
+        tableau = listOf(
+            Rank.KING to Suit.HEARTS,
+            Rank.KING to Suit.DIAMONDS,
+            Rank.QUEEN to Suit.HEARTS,
+            Rank.QUEEN to Suit.DIAMONDS,
+            Rank.JACK to Suit.HEARTS,
+            Rank.JACK to Suit.DIAMONDS,
+            Rank.TEN to Suit.HEARTS,
+        ).mapIndexed { i, (rank, suit) ->
+            listOf(Card(Suit.entries[i % Suit.entries.size], if (i < 4) Rank.ACE else Rank.TWO), Card(suit, rank, true))
+        },
+        drawMode = DrawMode.ONE,
+        moves = 30,
+    )
+
+    @Test
+    fun `a stuck game says so once`() = gameTest {
+        savedGames.saved = sessionWith(stuck)
+
+        val vm = viewModel()
+        runCurrent()
+
+        vm.uiState.value.isStuck.shouldBeTrue()
+        vm.uiState.value.showStuckTip.shouldBeTrue()
+        vm.onIntent(GameIntent.StuckTipShown)
+        vm.uiState.value.showStuckTip.shouldBeFalse()
+
+        // Still stuck after drawing: no second tip.
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        vm.uiState.value.isStuck.shouldBeTrue()
+        vm.uiState.value.showStuckTip.shouldBeFalse()
+    }
+
+    @Test
+    fun `a game with moves left is not stuck`() = gameTest {
+        val vm = viewModel()
+        runCurrent()
+
+        vm.uiState.value.isStuck.shouldBeFalse()
+        vm.uiState.value.showStuckTip.shouldBeFalse()
     }
 
     @Test

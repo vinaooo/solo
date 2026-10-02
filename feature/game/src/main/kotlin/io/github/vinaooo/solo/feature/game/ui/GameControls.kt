@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -165,8 +167,17 @@ private fun ToolbarActions(
     menuOpen: Boolean,
     onMenuOpenChange: (Boolean) -> Unit,
 ) {
-    IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
-        Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
+    // When the game gets stuck, a bubble on Undo says so; what to do about it is up to the player.
+    TipBox(
+        show = uiState.showStuckTip,
+        text = stringResource(R.string.stuck_tip),
+        icon = Icons.Rounded.Info,
+        vertical = vertical,
+        onShown = { onIntent(GameIntent.StuckTipShown) },
+    ) {
+        IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
+            Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
+        }
     }
     IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
         Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
@@ -191,25 +202,45 @@ private fun ToolbarActions(
         } else {
             shrinkHorizontally(size, Alignment.CenterHorizontally)
         } + scaleOut(scale) + fadeOut(fade),
-    ) { AutoCompleteButton(uiState, onIntent, vertical) }
+    ) {
+        // The first few times the button appears, a bubble points it out.
+        TipBox(
+            show = uiState.showAutoCompleteTip,
+            text = stringResource(R.string.auto_complete_tip),
+            icon = Icons.Rounded.AutoAwesome,
+            vertical = vertical,
+            onShown = { onIntent(GameIntent.AutoCompleteTipShown) },
+        ) {
+            IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
+                Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
+            }
+        }
+    }
     NewGameMenu(menuOpen, onMenuOpenChange, onIntent, vertical)
 }
 
 /**
- * The first few times the button appears, a speech bubble points at it (from above, or from the left of the vertical
- * toolbar) until the player taps anywhere or a few seconds pass.
+ * A toolbar button ([content]) that, when [show] turns true, gets a speech bubble pointing at it (from above, or from
+ * the left of the vertical toolbar) until the player taps anywhere or a few seconds pass; then [onShown].
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> Unit, vertical: Boolean) {
+private fun TipBox(
+    show: Boolean,
+    text: String,
+    icon: ImageVector,
+    vertical: Boolean,
+    onShown: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     val tip = rememberTooltipState(isPersistent = true)
-    LaunchedEffect(uiState.showAutoCompleteTip) {
-        if (!uiState.showAutoCompleteTip) return@LaunchedEffect
+    LaunchedEffect(show) {
+        if (!show) return@LaunchedEffect
         try {
-            withTimeoutOrNull(AUTO_COMPLETE_TIP_MILLIS) { tip.show() }
+            withTimeoutOrNull(TIP_MILLIS) { tip.show() }
         } finally {
             tip.dismiss()
-            onIntent(GameIntent.AutoCompleteTipShown)
+            onShown()
         }
     }
     TooltipBox(
@@ -232,20 +263,14 @@ private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> U
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(
-                        stringResource(R.string.auto_complete_tip),
-                        style = MaterialTheme.typography.labelLargeEmphasized,
-                    )
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(text, style = MaterialTheme.typography.labelLargeEmphasized)
                 }
             }
         },
         state = tip,
-    ) {
-        IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
-            Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
-        }
-    }
+        content = content,
+    )
 }
 
-private const val AUTO_COMPLETE_TIP_MILLIS = 5_000L
+private const val TIP_MILLIS = 5_000L

@@ -7,6 +7,7 @@
     <string name="hint">Hint</string>
     <string name="auto_complete">Auto-complete</string>
     <string name="auto_complete_tip">Tap to auto-complete</string>
+    <string name="stuck_tip">No moves left. Undo, or start a new game.</string>
     <string name="new_game">New game</string>
     <string name="restart_deal">Restart this deal</string>
     <string name="close_menu">Close menu</string>

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
+import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.DrawMode
@@ -16,6 +17,7 @@ import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,8 @@ class GameViewModel @Inject constructor(
     private val hints: HintEngine,
     private val autoCompleter: AutoCompleter,
     private val feedback: GameFeedback,
+    deadEndDetector: DeadEndDetector,
+    @SearchDispatcher searchDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val state = MutableStateFlow(GameUiState())
@@ -52,6 +56,16 @@ class GameViewModel @Inject constructor(
         }
     }
     private var autoCompleteJob: Job? = null
+
+    // A result for a position the game has already left is stale and dropped.
+    private val deadEnds = DeadEndWatcher(viewModelScope, deadEndDetector, searchDispatcher) { position, stuck ->
+        state.update {
+            when {
+                it.session?.state?.hasSamePilesAs(position) != true -> it
+                else -> it.copy(isStuck = stuck, showStuckTip = it.showStuckTip || (stuck && !it.isStuck))
+            }
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -82,6 +96,7 @@ class GameViewModel @Inject constructor(
             GameIntent.RestartDeal -> newGame(restart = true)
             GameIntent.MessageShown -> state.update { it.copy(message = null) }
             GameIntent.AutoCompleteTipShown -> state.update { it.copy(showAutoCompleteTip = false) }
+            GameIntent.StuckTipShown -> state.update { it.copy(showStuckTip = false) }
             GameIntent.Resume -> clock.start()
             GameIntent.Pause -> pause()
         }
@@ -174,6 +189,8 @@ class GameViewModel @Inject constructor(
                 settingsRepository.update { it.copy(autoCompleteTipsShown = it.autoCompleteTipsShown + 1) }
             }
         }
+        // A clock tick leaves the cards where they are: no need to look for a dead end again.
+        if (state.value.session?.state?.hasSamePilesAs(session.state) != true) deadEnds.check(session.state)
         state.update {
             it.copy(
                 session = session,
