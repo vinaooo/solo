@@ -190,7 +190,9 @@ private fun BoardCard(
             onMovingChange(false)
             return@LaunchedEffect
         }
-        onMovingChange(true)
+        // Only a card that is drawn: face-down cards shifting under their bar would otherwise lift their whole column,
+        // a card just turned up over the one flying away from it.
+        onMovingChange(shown.value)
         // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
         animated.animateTo(target, spec) {
             if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) stockReturn.landed()
