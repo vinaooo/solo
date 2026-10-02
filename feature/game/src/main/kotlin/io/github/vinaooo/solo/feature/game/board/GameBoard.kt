@@ -179,13 +179,13 @@ private fun BoardCard(
         MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>(),
         MaterialTheme.motionScheme.fastSpatialSpec(),
     )
-    val shown = remember { ShownFlag(visible, visible) }
+    val shown = remember { ShownFlag(visible, visible, placed.pile) }
     val appearing = shown.appearing(visible)
-    // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     val dragging = dragOffset != null
     // Its position follows the finger, so a card let go continues from where it was dropped (to its new slot, or
     // back to its old one) instead of jumping back to its old slot first.
     val dragPosition = dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) }
+    // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     LaunchedEffect(target, dragPosition) {
         if (dragPosition != null) {
             animated.snapTo(dragPosition)
@@ -208,6 +208,7 @@ private fun BoardCard(
         }
         onMovingChange(false)
         stockReturn.settled()
+        shown.arriving = false
     }
     // Its new slot is set but the animation hasn't started yet: already flying, from the first frame, so a card it
     // uncovers never shows on top of it.
@@ -216,10 +217,8 @@ private fun BoardCard(
     val lifted = placed.index >= (pileMoving?.first ?: Int.MAX_VALUE)
     val awaitingCover = placed.index < (pileMoving?.last ?: -1)
     val drawn = shown.drawn(visible, departing, animated.isRunning, awaitingCover)
-    SideEffect {
-        shown.value = drawn
-        shown.faceUp = visible
-    }
+    val flying = shown.flying(placed.pile, appearing, dragging, lifted || departing)
+    SideEffect { shown.update(drawn, visible, placed.pile) }
     PlayingCard(
         card = if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
@@ -230,7 +229,7 @@ private fun BoardCard(
         shadow = shadow,
         modifier = Modifier
             .offset { dragPosition ?: animated.value }
-            .zIndex(stockReturn.zIndex(placed, flying = shown.flying(appearing, dragging, lifted || departing)))
+            .zIndex(stockReturn.zIndex(placed, flying))
             .scale(if (dragging) DRAG_SCALE else 1f)
             .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
@@ -240,10 +239,23 @@ private fun BoardCard(
 }
 
 /**
- * Whether a card was drawn ([value]) and face up ([faceUp]) the last time it was composed (not state: nothing redraws
- * when they change), so a column card turned up or down keeps in step with the cards moving around it.
+ * Whether a card was drawn ([value]) and face up ([faceUp]), and its [pile], the last time it was composed (not
+ * state: nothing redraws when they change), so a card turned up or down, or moved, keeps in step with the cards
+ * moving around it.
  */
-private class ShownFlag(var value: Boolean, var faceUp: Boolean) {
+private class ShownFlag(var value: Boolean, var faceUp: Boolean, var pile: PileRef) {
+    /** On its way to a new pile, from the composition that moved it there until its spring settles. */
+    var arriving = false
+
+    fun arriving(pile: PileRef) = arriving || pile != this.pile
+
+    fun update(drawn: Boolean, visible: Boolean, pile: PileRef) {
+        value = drawn
+        faceUp = visible
+        arriving = arriving(pile)
+        this.pile = pile
+    }
+
     /**
      * A card turned up is already in its place, under the card that uncovers it, instead of flying there (and over
      * that card) from where it lay face down. That holds even if it was still drawn, turned down by an undo whose
@@ -252,10 +264,13 @@ private class ShownFlag(var value: Boolean, var faceUp: Boolean) {
     fun appearing(visible: Boolean) = visible && !faceUp
 
     /**
-     * Flying above the other cards: dragged, or on its way somewhere ([moving]). Never while [appearing], even if its
-     * pile still counts as moving from a moment ago: it belongs under the card leaving it.
+     * Flying above the other cards: dragged, or [moving] on its way to a new pile. Not a card only shifting within its
+     * own pile (the waste's fan closing up as three new cards arrive over it, a column spacing out), which keeps its
+     * place among the cards. Never while [appearing], even if its pile still counts as moving from a moment ago: it
+     * belongs under the card leaving it.
      */
-    fun flying(appearing: Boolean, dragging: Boolean, moving: Boolean) = dragging || (!appearing && moving)
+    fun flying(pile: PileRef, appearing: Boolean, dragging: Boolean, moving: Boolean) =
+        dragging || (!appearing && arriving(pile) && moving)
 
     /**
      * A card turned face down (by an undo) stays drawn, face up, while it is still settling: about to slide or
