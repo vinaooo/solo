@@ -103,13 +103,13 @@ class BoardLayoutTest {
         // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
         ys.take(6).forEach { it shouldBe ys[6] }
         portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
-        // Every first face-up card keeps to one staircase: a step per face-down card, all lifted alike.
+        // Each first face-up card is a step per face-down card down, lifted when there is a bar; level with it if not.
         val firsts = dealt.tableau.mapIndexed { column, pile ->
             placed.getValue(pile.last().identity()).position.y - portrait.slot(PileRef.Tableau(column)).y
         }
         firsts.forEachIndexed { column, y ->
             val step = portrait.faceDownStep
-            val lift = portrait.gap * (0.625f - 0.22f)
+            val lift = if (column > 0) portrait.gap * (0.625f - 0.22f) else 0f
             y.toDouble() shouldBe ((column * step + lift).toDouble() plusOrMinus 0.01)
         }
     }
