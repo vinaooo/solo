@@ -29,5 +29,5 @@
     <string name="hand_right">Direita</string>
     <string name="board_alignment">Posição da mesa</string>
     <string name="board_top">Topo</string>
-    <string name="board_center">Centro</string>
+    <string name="board_bottom">Base</string>
 </resources>

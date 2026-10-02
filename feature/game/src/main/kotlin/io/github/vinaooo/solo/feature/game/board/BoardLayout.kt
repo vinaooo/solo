@@ -26,8 +26,8 @@ data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val pos
 /**
  * Pure geometry of the table, in pixels. Cards fill the width in portrait and shrink to fit the height in
  * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
- * [handedness] side of the top row, the foundations on the other. Centered by [alignment], the board is as tall as
- * the top row and the tallest column a game can have: a bar of six face-down cards and a run from king to ace.
+ * [handedness] side of the top row, the foundations on the other. At the [alignment] bottom, the board sits as low
+ * as it can with room for the tallest column a game can have: a bar of six face-down cards and a run from king to ace.
  */
 class BoardLayout(
     val width: Float,
@@ -57,12 +57,12 @@ class BoardLayout(
     private val left = (width - boardWidth) / 2
     private val topRowY = gap + when (alignment) {
         BoardAlignment.TOP -> 0f
-        BoardAlignment.CENTER -> {
+        BoardAlignment.BOTTOM -> {
             // As columnOffsets lays it out, unsqueezed.
             val bar = MAX_HIDDEN * faceDownStep + hiddenBarExtra + (MAX_HIDDEN - 1) * hiddenBarSpread + hiddenBarGap
             val tallestColumn = bar + (Rank.entries.size - 1) * faceUpStep + cardHeight
             val boardHeight = gap + cardHeight + gap * TOP_ROW_GAPS + tallestColumn + gap
-            ((height - boardHeight) / 2).coerceAtLeast(0f)
+            (height - boardHeight).coerceAtLeast(0f)
         }
     }
     private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS

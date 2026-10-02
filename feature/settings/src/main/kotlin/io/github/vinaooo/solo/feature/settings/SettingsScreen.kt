@@ -135,7 +135,7 @@ private fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit) 
         title = stringResource(R.string.board_alignment),
         options = listOf(
             BoardAlignment.TOP to R.string.board_top,
-            BoardAlignment.CENTER to R.string.board_center,
+            BoardAlignment.BOTTOM to R.string.board_bottom,
         ),
         selected = settings.boardAlignment,
         onSelect = { onChange(SettingsChange.BoardAlignmentChanged(it)) },

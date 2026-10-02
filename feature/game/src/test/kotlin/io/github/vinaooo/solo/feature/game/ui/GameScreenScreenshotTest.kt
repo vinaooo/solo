@@ -69,7 +69,7 @@ class GameScreenScreenshotTest {
         capture("game_phone_left_handed", drawMode = DrawMode.THREE, handedness = Handedness.LEFT)
 
     @Test
-    fun game_phone_centered() = capture("game_phone_centered", alignment = BoardAlignment.CENTER)
+    fun game_phone_board_bottom() = capture("game_phone_board_bottom", alignment = BoardAlignment.BOTTOM)
 
     @Test
     @Config(qualifiers = PHONE_LANDSCAPE)

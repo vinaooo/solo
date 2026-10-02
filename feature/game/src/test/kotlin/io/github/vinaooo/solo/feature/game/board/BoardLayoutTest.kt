@@ -158,8 +158,8 @@ class BoardLayoutTest {
     }
 
     @Test
-    fun `centered, the tallest possible column has the same margin below as the top row above`() {
-        val centered = BoardLayout(width = 1080f, height = 1800f, gap = 12f, alignment = BoardAlignment.CENTER)
+    fun `at the bottom, the tallest possible column ends a gap above the bottom edge`() {
+        val low = BoardLayout(width = 1080f, height = 1800f, gap = 12f, alignment = BoardAlignment.BOTTOM)
         val tallest = List(6) { Card(Suit.CLUBS, Rank.entries[it], isFaceUp = false) } +
             Rank.entries.reversed().map { Card(Suit.HEARTS, it, isFaceUp = true) }
         val state = GameState(
@@ -169,20 +169,19 @@ class BoardLayoutTest {
             tableau = List(7) { if (it == 6) tallest else emptyList() },
             drawMode = DrawMode.ONE,
         )
-        val column = centered.positions(state).values.filter { it.pile == PileRef.Tableau(6) }.sortedBy { it.index }
+        val column = low.positions(state).values.filter { it.pile == PileRef.Tableau(6) }.sortedBy { it.index }
 
-        val top = centered.slot(PileRef.Stock).y
-        val bottom = centered.height - (column.last().position.y + centered.cardHeight)
-        top.toDouble() shouldBe (bottom.toDouble() plusOrMinus 0.5)
-        top shouldBeGreaterThan centered.gap
+        val bottom = low.height - (column.last().position.y + low.cardHeight)
+        bottom.toDouble() shouldBe (low.gap.toDouble() plusOrMinus 0.5)
+        low.slot(PileRef.Stock).y shouldBeGreaterThan low.gap
         // Not squeezed: every face-up card a full step below the one before.
         (column.last().position.y - column[6].position.y).toDouble() shouldBe
-            ((centered.faceUpStep * 12).toDouble() plusOrMinus 0.5)
+            ((low.faceUpStep * 12).toDouble() plusOrMinus 0.5)
     }
 
     @Test
-    fun `centered, a board with no height to spare stays at the top`() {
-        BoardLayout(width = 2200f, height = 900f, gap = 12f, alignment = BoardAlignment.CENTER)
+    fun `at the bottom, a board with no height to spare stays at the top`() {
+        BoardLayout(width = 2200f, height = 900f, gap = 12f, alignment = BoardAlignment.BOTTOM)
             .slot(PileRef.Stock).y shouldBe 12f
     }
 

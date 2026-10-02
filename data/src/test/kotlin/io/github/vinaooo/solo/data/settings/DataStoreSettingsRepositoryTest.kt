@@ -42,7 +42,7 @@ class DataStoreSettingsRepositoryTest {
             hapticsEnabled = false,
             showTimer = false,
             handedness = Handedness.LEFT,
-            boardAlignment = BoardAlignment.CENTER,
+            boardAlignment = BoardAlignment.BOTTOM,
         )
 
         repository.update { changed }

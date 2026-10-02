@@ -2,8 +2,8 @@ package io.github.vinaooo.solo.domain.model
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-/** Where the board sits in the height it has: at the top, or centered as if its tallest possible column were dealt. */
-enum class BoardAlignment { TOP, CENTER }
+/** Where the board sits in the height it has: at the top, or as low as the tallest possible column lets it. */
+enum class BoardAlignment { TOP, BOTTOM }
 
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,

@@ -30,5 +30,5 @@
     <string name="hand_right">Right</string>
     <string name="board_alignment">Board position</string>
     <string name="board_top">Top</string>
-    <string name="board_center">Center</string>
+    <string name="board_bottom">Bottom</string>
 </resources>
