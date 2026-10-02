@@ -1,12 +1,14 @@
 package io.github.vinaooo.solo.feature.game.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandIn
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -122,7 +124,7 @@ internal fun HorizontalGameToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
         modifier = modifier,
-    ) { ToolbarActions(uiState, onIntent) }
+    ) { ToolbarActions(uiState, onIntent, vertical = false) }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -132,12 +134,12 @@ internal fun VerticalGameToolbar(uiState: GameUiState, onIntent: (GameIntent) ->
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
         modifier = modifier,
-    ) { ToolbarActions(uiState, onIntent) }
+    ) { ToolbarActions(uiState, onIntent, vertical = true) }
 }
 
 /** Undo, redo, hint, auto-complete (when possible) and the new game menu, in either toolbar. */
 @Composable
-private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit) {
+private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit, vertical: Boolean) {
     IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
         Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
     }
@@ -148,13 +150,22 @@ private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit)
         Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
     }
     // The button grows out of its slot, widening the toolbar (lengthening it in landscape), and scales up into place.
+    // Only along the toolbar: growing across it too leaves the toolbar's balanced padding, and so its thickness, wrong.
     val size = MaterialTheme.motionScheme.defaultSpatialSpec<IntSize>()
     val scale = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
     val fade = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
     AnimatedVisibility(
         visible = uiState.canAutoComplete,
-        enter = expandIn(size, Alignment.Center) + scaleIn(scale) + fadeIn(fade),
-        exit = shrinkOut(size, Alignment.Center) + scaleOut(scale) + fadeOut(fade),
+        enter = if (vertical) {
+            expandVertically(size, Alignment.CenterVertically)
+        } else {
+            expandHorizontally(size, Alignment.CenterHorizontally)
+        } + scaleIn(scale) + fadeIn(fade),
+        exit = if (vertical) {
+            shrinkVertically(size, Alignment.CenterVertically)
+        } else {
+            shrinkHorizontally(size, Alignment.CenterHorizontally)
+        } + scaleOut(scale) + fadeOut(fade),
     ) {
         IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
