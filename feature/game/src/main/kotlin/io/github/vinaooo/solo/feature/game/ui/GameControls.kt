@@ -1,5 +1,12 @@
 package io.github.vinaooo.solo.feature.game.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.spokenElapsed
@@ -139,7 +147,15 @@ private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit)
     IconButton(onClick = { onIntent(GameIntent.Hint) }) {
         Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
     }
-    if (uiState.canAutoComplete) {
+    // The button grows out of its slot, widening the toolbar (lengthening it in landscape), and scales up into place.
+    val size = MaterialTheme.motionScheme.defaultSpatialSpec<IntSize>()
+    val scale = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    val fade = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+    AnimatedVisibility(
+        visible = uiState.canAutoComplete,
+        enter = expandIn(size, Alignment.Center) + scaleIn(scale) + fadeIn(fade),
+        exit = shrinkOut(size, Alignment.Center) + scaleOut(scale) + fadeOut(fade),
+    ) {
         IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
         }
