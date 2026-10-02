@@ -7,7 +7,8 @@
     <string name="hint">Dica</string>
     <string name="auto_complete">Auto completar</string>
     <string name="auto_complete_tip">Toque para auto completar</string>
-    <string name="stuck_tip">Sem jogadas. Desfaça ou comece uma nova partida.</string>
+    <string name="stuck_title">Sem jogadas</string>
+    <string name="stuck_body">Desfaça ou comece uma nova partida.</string>
     <string name="new_game">Nova partida</string>
     <string name="restart_deal">Reiniciar partida</string>
     <string name="close_menu">Fechar menu</string>

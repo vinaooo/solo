@@ -24,7 +24,6 @@ import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -167,17 +166,8 @@ private fun ToolbarActions(
     menuOpen: Boolean,
     onMenuOpenChange: (Boolean) -> Unit,
 ) {
-    // When the game gets stuck, a bubble on Undo says so; what to do about it is up to the player.
-    TipBox(
-        show = uiState.showStuckTip,
-        text = stringResource(R.string.stuck_tip),
-        icon = Icons.Rounded.Info,
-        vertical = vertical,
-        onShown = { onIntent(GameIntent.StuckTipShown) },
-    ) {
-        IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
-            Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
-        }
+    IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
+        Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
     }
     IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
         Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
