@@ -24,7 +24,7 @@ internal class StockReturn(pile: PileRef) {
 
     fun showsFace(pile: PileRef) = isReturning(pile) || keepFace
 
-    fun slidesUnder(pile: PileRef) = isReturning(pile) || underStock
+    fun slidesUnder(pile: PileRef) = isReturning(pile) || (underStock && pile == PileRef.Stock)
 
     /**
      * Where [placed] sits among the cards: one on its way to a new pile ([flying]) is above every other card, like a
@@ -58,6 +58,9 @@ internal fun rememberStockReturn(pile: PileRef): StockReturn {
     val returning = stockReturn.isReturning(pile)
     SideEffect {
         if (returning) stockReturn.start()
+        // Drawn again before its return settled (that animation was cut short, so never said so): it is no longer
+        // returning, and must not slide under the waste it now joins.
+        if (pile != PileRef.Stock) stockReturn.settled()
         stockReturn.lastPile = pile
     }
     return stockReturn
