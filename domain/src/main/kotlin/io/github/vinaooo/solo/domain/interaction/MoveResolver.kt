@@ -21,11 +21,7 @@ class MoveResolver(private val rules: RuleSet = KlondikeRules()) {
      */
     fun destinations(state: GameState, from: PileRef, cardIndex: Int): List<PileRef> {
         if (!canPickUp(state, from, cardIndex)) return emptyList()
-        return targets.filter { to ->
-            to != from &&
-                !isWholeColumnToEmpty(state, from, cardIndex, to) &&
-                resolveDrop(state, from, cardIndex, to) != null
-        }
+        return targets.filter { to -> to != from && resolveDrop(state, from, cardIndex, to) != null }
     }
 
     private fun canPickUp(state: GameState, from: PileRef, cardIndex: Int): Boolean = when (from) {
@@ -34,10 +30,6 @@ class MoveResolver(private val rules: RuleSet = KlondikeRules()) {
         is PileRef.Foundation -> cardIndex == state.foundations[from.index].lastIndex
         is PileRef.Tableau -> cardIndex in state.tableau[from.index].indices
     }
-
-    // Moving a whole column into an empty one changes nothing.
-    private fun isWholeColumnToEmpty(state: GameState, from: PileRef, cardIndex: Int, to: PileRef): Boolean =
-        from is PileRef.Tableau && cardIndex == 0 && to is PileRef.Tableau && state.tableau[to.index].isEmpty()
 
     private fun tapCandidates(state: GameState, pile: PileRef, cardIndex: Int): List<Move> = when (pile) {
         PileRef.Stock -> listOf(Move.Draw, Move.Recycle)
@@ -58,8 +50,13 @@ class MoveResolver(private val rules: RuleSet = KlondikeRules()) {
         } else {
             emptyList()
         }
-        // Moving a whole column into an empty one changes nothing.
-        val targets = tableauIndexes.filterNot { cardIndex == 0 && state.tableau[it].isEmpty() }
+        // A whole column (a king filling it) can only go to an empty one: the next to its right, wrapping around, so
+        // tapping it again and again walks it through every free column.
+        val targets = if (cardIndex == 0) {
+            tableauIndexes.sortedBy { (it - column - 1).mod(GameState.TABLEAU_COUNT) }
+        } else {
+            tableauIndexes
+        }
         return toFoundation + targets.map { Move.TableauToTableau(column, it, count) }
     }
 

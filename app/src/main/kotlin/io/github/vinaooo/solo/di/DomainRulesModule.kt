@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
 import io.github.vinaooo.solo.domain.deal.Dealer
+import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.rules.GameEngine
@@ -23,4 +24,6 @@ object DomainRulesModule {
     @Provides fun hintEngine() = HintEngine()
 
     @Provides fun autoCompleter() = AutoCompleter()
+
+    @Provides fun deadEndDetector() = DeadEndDetector()
 }

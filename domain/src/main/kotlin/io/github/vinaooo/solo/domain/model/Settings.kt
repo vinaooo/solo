@@ -10,4 +10,6 @@ data class Settings(
     val hapticsEnabled: Boolean = true,
     val showTimer: Boolean = true,
     val handedness: Handedness = Handedness.RIGHT,
+    /** How many times the game has pointed out the auto-complete button; it stops after the first few. */
+    val autoCompleteTipsShown: Int = 0,
 )

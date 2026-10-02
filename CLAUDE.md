@@ -21,6 +21,7 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
 ./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
 ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest   # on-device UI tests (emulator; not part of the gate or CI)
+adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck)
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.

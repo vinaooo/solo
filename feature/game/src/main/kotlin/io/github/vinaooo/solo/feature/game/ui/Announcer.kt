@@ -51,6 +51,7 @@ internal fun announcementText(announcement: Announcement): String = when (announ
     is Announcement.Drew -> stringResource(R.string.a11y_drew, cardName(announcement.card))
     Announcement.Recycled -> stringResource(R.string.a11y_recycled)
     Announcement.Undone -> stringResource(R.string.a11y_undone)
+    Announcement.Redone -> stringResource(R.string.a11y_redone)
     is Announcement.HintMove ->
         stringResource(R.string.a11y_hint_move, cardName(announcement.card), placeName(announcement.to))
     Announcement.HintDraw -> stringResource(R.string.a11y_hint_draw)

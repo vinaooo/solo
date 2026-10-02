@@ -3,10 +3,15 @@
     <string name="moves">Jogadas</string>
     <string name="time">Tempo</string>
     <string name="undo">Desfazer</string>
+    <string name="redo">Refazer</string>
     <string name="hint">Dica</string>
     <string name="auto_complete">Auto completar</string>
+    <string name="auto_complete_tip">Toque para auto completar</string>
+    <string name="stuck_title">Sem jogadas</string>
+    <string name="stuck_body">Desfaça ou comece uma nova partida.</string>
     <string name="new_game">Nova partida</string>
     <string name="restart_deal">Reiniciar partida</string>
+    <string name="close_menu">Fechar menu</string>
     <string name="open_scores">Pontuações</string>
     <string name="open_settings">Configurações</string>
     <string name="no_moves">Não há jogadas úteis. Tente uma nova partida.</string>
@@ -24,6 +29,7 @@
     <string name="a11y_drew">Virou %1$s</string>
     <string name="a11y_recycled">Descarte devolvido ao monte</string>
     <string name="a11y_undone">Jogada desfeita</string>
+    <string name="a11y_redone">Jogada refeita</string>
     <string name="a11y_hint_move">Dica: %1$s para %2$s</string>
     <string name="a11y_hint_draw">Dica: vire uma carta do monte</string>
     <string name="a11y_hint_recycle">Dica: devolva o descarte ao monte</string>

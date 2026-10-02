@@ -7,6 +7,7 @@ import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.Card
@@ -83,6 +84,8 @@ class GameViewModelTest {
         hints = HintEngine(),
         autoCompleter = AutoCompleter(),
         feedback = feedback,
+        deadEndDetector = DeadEndDetector(),
+        searchDispatcher = dispatcher,
     ).also {
         created += it
         runCurrent()
@@ -122,6 +125,142 @@ class GameViewModelTest {
 
         vm.session.seed shouldBe 42
         vm.session.state.drawMode shouldBe DrawMode.THREE
+    }
+
+    @Test
+    fun `switching the draw mode deals a new game in that mode`() = gameTest {
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+
+        settings.current.value = Settings(drawMode = DrawMode.THREE)
+        runCurrent()
+
+        vm.session.state.drawMode shouldBe DrawMode.THREE
+        vm.session.state.moves shouldBe 0
+        stats.stats.value.played shouldBe 1
+    }
+
+    @Test
+    fun `redo replays the undone move and is enabled only after an undo`() = gameTest {
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        val drawn = vm.session.state.waste
+        vm.session.canRedo.shouldBeFalse()
+
+        vm.onIntent(GameIntent.Undo)
+        runCurrent()
+        vm.session.canRedo.shouldBeTrue()
+
+        vm.onIntent(GameIntent.Redo)
+        runCurrent()
+        vm.session.state.waste shouldBe drawn
+        vm.session.canRedo.shouldBeFalse()
+        savedGames.saved shouldBe vm.session
+    }
+
+    @Test
+    fun `the auto-complete button is pointed out, and counted, when it appears`() = gameTest {
+        savedGames.saved = sessionWith(readyToAutoComplete)
+
+        val vm = viewModel()
+
+        vm.uiState.value.showAutoCompleteTip.shouldBeTrue()
+        settings.current.value.autoCompleteTipsShown shouldBe 1
+        vm.onIntent(GameIntent.AutoCompleteTipShown)
+        vm.uiState.value.showAutoCompleteTip.shouldBeFalse()
+    }
+
+    @Test
+    fun `the auto-complete button is pointed out only the first few times`() = gameTest {
+        settings.current.value = Settings(autoCompleteTipsShown = 3)
+        savedGames.saved = sessionWith(readyToAutoComplete)
+
+        val vm = viewModel()
+
+        vm.uiState.value.canAutoComplete.shouldBeTrue()
+        vm.uiState.value.showAutoCompleteTip.shouldBeFalse()
+        settings.current.value.autoCompleteTipsShown shouldBe 3
+    }
+
+    /** No empty column, every ace face down under a red top that can't move, and nothing useful in the stock. */
+    private val stuck = GameState(
+        stock = listOf(Card(Suit.CLUBS, Rank.THREE), Card(Suit.SPADES, Rank.FIVE)),
+        waste = emptyList(),
+        foundations = List(GameState.FOUNDATION_COUNT) { emptyList() },
+        tableau = listOf(
+            Rank.KING to Suit.HEARTS,
+            Rank.KING to Suit.DIAMONDS,
+            Rank.QUEEN to Suit.HEARTS,
+            Rank.QUEEN to Suit.DIAMONDS,
+            Rank.JACK to Suit.HEARTS,
+            Rank.JACK to Suit.DIAMONDS,
+            Rank.TEN to Suit.HEARTS,
+        ).mapIndexed { i, (rank, suit) ->
+            listOf(Card(Suit.entries[i % Suit.entries.size], if (i < 4) Rank.ACE else Rank.TWO), Card(suit, rank, true))
+        },
+        drawMode = DrawMode.ONE,
+        moves = 30,
+    )
+
+    @Test
+    fun `a stuck game says so once`() = gameTest {
+        savedGames.saved = sessionWith(stuck)
+
+        val vm = viewModel()
+        runCurrent()
+
+        vm.uiState.value.isStuck.shouldBeTrue()
+        vm.uiState.value.showStuckTip.shouldBeTrue()
+        vm.onIntent(GameIntent.StuckTipShown)
+        vm.uiState.value.showStuckTip.shouldBeFalse()
+
+        // Still stuck after drawing: no second tip.
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        vm.uiState.value.isStuck.shouldBeTrue()
+        vm.uiState.value.showStuckTip.shouldBeFalse()
+    }
+
+    @Test
+    fun `a game with moves left is not stuck`() = gameTest {
+        val vm = viewModel()
+        runCurrent()
+
+        vm.uiState.value.isStuck.shouldBeFalse()
+        vm.uiState.value.showStuckTip.shouldBeFalse()
+    }
+
+    @Test
+    fun `a fresh game is dealt on the board, a resumed one is not`() = gameTest {
+        viewModel().uiState.value.deals shouldBe 1
+
+        savedGames.saved = sessionWith(Dealer().deal(SeededShuffler(9), DrawMode.ONE).copy(moves = 3))
+        viewModel().uiState.value.deals shouldBe 0
+    }
+
+    @Test
+    fun `a new game is dealt on the board, a restarted deal is not`() = gameTest {
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.NewGame)
+        runCurrent()
+        vm.uiState.value.deals shouldBe 2
+        vm.onIntent(GameIntent.RestartDeal)
+        runCurrent()
+        vm.uiState.value.deals shouldBe 2
+    }
+
+    @Test
+    fun `other settings changes keep the game`() = gameTest {
+        val vm = viewModel()
+        val before = vm.session
+
+        settings.current.value = Settings(showTimer = false)
+        runCurrent()
+
+        vm.session shouldBe before
     }
 
     @Test

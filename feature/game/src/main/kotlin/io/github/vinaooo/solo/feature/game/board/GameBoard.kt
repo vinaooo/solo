@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
@@ -17,8 +19,10 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -29,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -76,6 +81,7 @@ fun GameBoard(
     modifier: Modifier = Modifier,
     destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
     handedness: Handedness = Handedness.RIGHT,
+    deals: Int = 0,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
@@ -88,14 +94,13 @@ fun GameBoard(
 
         val moving = remember { mutableStateMapOf<CardIdentity, Boolean>() }
         val placedCards = layout.positions(state).values
-        val liftedFrom = liftedFrom(placedCards, moving)
+        val deal = rememberDeal(deals, state, layout)
 
         EmptySlots(state, layout, cardWidth, onIntent)
-        FaceDownPiles(state, layout, cardWidth)
+        FaceDownPiles(state, layout, cardWidth, highlighted, deal)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
-                val dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset
                 val isHighlighted = placed.card.identity() in highlighted
                 val accessibility = cardAccessibility(
                     role = cardRole(state, placed),
@@ -114,12 +119,11 @@ fun GameBoard(
                     shadow = placedCards.find { it.pile == placed.pile && it.index == placed.index - 1 }
                         ?.takeIf { it.position != placed.position }
                         ?.let { layout.cover(state, it)?.edge },
-                    dragOffset = dragOffset,
-                    lifted = placed.index >= (liftedFrom[placed.pile] ?: Int.MAX_VALUE),
+                    dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset,
+                    pileMoving = stillMoving(placedCards, moving)[placed.pile],
                     onMovingChange = { moving[placed.card.identity()] = it },
-                    // A column's face-down cards are drawn as its bar instead.
-                    visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
-                    description = accessibility.description,
+                    deal = deal,
+                    accessibility = accessibility,
                     gestures = accessibility.modifier.then(
                         if (!isDraggable(state, placed)) {
                             Modifier
@@ -138,6 +142,7 @@ fun GameBoard(
                 )
             }
         }
+        DealGuard(deal)
     }
 }
 
@@ -160,50 +165,119 @@ private fun BoardCard(
     cover: CardCover?,
     shadow: CardCover.Edge?,
     dragOffset: Offset?,
-    lifted: Boolean,
+    pileMoving: IntRange?,
     onMovingChange: (Boolean) -> Unit,
-    visible: Boolean,
-    description: String?,
+    accessibility: CardAccessibility,
     gestures: Modifier,
+    deal: Deal,
 ) {
-    val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
+    val target = deal.target(placed)
+    // A column's face-down cards are drawn as its bar instead, once dealt.
+    val visible = deal.shows(placed)
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
-    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
     val stockReturn = rememberStockReturn(placed.pile)
+    val fast = MaterialTheme.motionScheme.fastSpatialSpec<IntOffset>()
+    val spec = deal.motion(fast, stockReturn.motion(placed.pile, MaterialTheme.motionScheme.defaultSpatialSpec(), fast))
+    val shown = remember { ShownFlag(visible, visible, placed.pile) }
+    val appearing = shown.appearing(visible)
+    val dragging = dragOffset != null
+    // Its position follows the finger, so a card let go continues from where it was dropped (to its new slot, or
+    // back to its old one) instead of jumping back to its old slot first.
+    val dragPosition = dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) }
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
-    LaunchedEffect(target) {
-        onMovingChange(true)
+    LaunchedEffect(target, dragPosition) {
+        if (dragPosition != null) {
+            animated.snapTo(dragPosition)
+            onMovingChange(false)
+            return@LaunchedEffect
+        }
+        if (appearing) {
+            animated.snapTo(target)
+            // It may have been flying when this replaced that animation (a new deal right after another): it isn't
+            // now, or it would stay lifted over everything, the stock's count included.
+            onMovingChange(false)
+            return@LaunchedEffect
+        }
+        // Only a card that is drawn: face-down cards shifting under their bar would otherwise lift their whole column,
+        // a card just turned up over the one flying away from it.
+        onMovingChange(shown.value)
         // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
         animated.animateTo(target, spec) {
             if (abs(value.x - target.x) + abs(value.y - target.y) <= LANDED_PX) stockReturn.landed()
         }
         onMovingChange(false)
         stockReturn.settled()
+        shown.arriving = false
     }
-    val dragging = dragOffset != null
+    // Its new slot is set but the animation hasn't started yet: already flying, from the first frame, so a card it
+    // uncovers never shows on top of it.
+    val departing = !appearing && animated.targetValue != target
+    // Cards of its pile still on their way: it flies with them if one is under it, and waits for them if above.
+    val lifted = placed.index >= (pileMoving?.first ?: Int.MAX_VALUE)
+    val awaitingCover = placed.index < (pileMoving?.last ?: -1)
+    val drawn = shown.drawn(visible, departing, animated.isRunning, awaitingCover)
+    val flying = shown.flying(placed.pile, appearing, dragging, lifted || departing)
+    SideEffect { shown.update(drawn, visible, placed.pile) }
     PlayingCard(
-        card = if (stockReturn.showsFace(placed.pile)) placed.card.faceUp() else placed.card,
+        card = deal.face(placed, showFace = stockReturn.showsFace(placed.pile) || !visible),
         highlighted = highlighted,
-        contentDescription = description,
-        cover = cover,
+        contentDescription = accessibility.description,
+        interactionSource = accessibility.touches,
+        // A card turned face down but still drawn shows whole: the layout already counts it under its bar.
+        cover = cover.takeIf { visible },
         shadow = shadow,
         modifier = Modifier
-            .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
-            // A card on its way to a new pile flies above every other card, like a dragged one.
-            // One going back to the stock slides under the stock's cards, still above the waste it leaves.
-            .zIndex(
-                when {
-                    stockReturn.slidesUnder(placed.pile) -> placed.z - placed.index - 0.5f
-                    dragging || lifted -> LIFTED_Z + placed.z
-                    else -> placed.z
-                },
-            )
+            .offset { dragPosition ?: animated.value }
+            .zIndex(deal.zIndex(placed, animated.isRunning, otherwise = stockReturn.zIndex(placed, flying)))
             .scale(if (dragging) DRAG_SCALE else 1f)
-            .alpha(if (visible) 1f else 0f)
+            .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
             .then(gestures),
     )
+}
+
+/**
+ * Whether a card was drawn ([value]) and face up ([faceUp]), and its [pile], the last time it was composed (not
+ * state: nothing redraws when they change), so a card turned up or down, or moved, keeps in step with the cards
+ * moving around it.
+ */
+private class ShownFlag(var value: Boolean, var faceUp: Boolean, var pile: PileRef) {
+    /** On its way to a new pile, from the composition that moved it there until its spring settles. */
+    var arriving = false
+
+    fun arriving(pile: PileRef) = arriving || pile != this.pile
+
+    fun update(drawn: Boolean, visible: Boolean, pile: PileRef) {
+        value = drawn
+        faceUp = visible
+        arriving = arriving(pile)
+        this.pile = pile
+    }
+
+    /**
+     * A card turned up is already in its place, under the card that uncovers it, instead of flying there (and over
+     * that card) from where it lay face down. That holds even if it was still drawn, turned down by an undo whose
+     * animation the new move cut short: it was face down all the same.
+     */
+    fun appearing(visible: Boolean) = visible && !faceUp
+
+    /**
+     * Flying above the other cards: dragged, or [moving] on its way to a new pile. Not a card only shifting within its
+     * own pile (the waste's fan closing up as three new cards arrive over it, a column spacing out), which keeps its
+     * place among the cards. Never while [appearing], even if its pile still counts as moving from a moment ago: it
+     * belongs under the card leaving it.
+     */
+    fun flying(pile: PileRef, appearing: Boolean, dragging: Boolean, moving: Boolean) =
+        dragging || (!appearing && arriving(pile) && moving)
+
+    /**
+     * A card turned face down (by an undo) stays drawn, face up, while it is still settling: about to slide or
+     * [sliding] into its face-down place, or [awaitingCover] from the card coming back. It hides once covered, so it
+     * never just vanishes.
+     */
+    fun drawn(visible: Boolean, departing: Boolean, sliding: Boolean, awaitingCover: Boolean) =
+        visible || (value && (departing || sliding || awaitingCover))
 }
 
 /** Drags the card (and the cards on top of it); [onDrop] gets the total offset when the finger lifts. */
@@ -235,7 +309,13 @@ private fun Modifier.cardDrag(
  * counts from the cards, so the labels are left out of it.
  */
 @Composable
-private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) {
+private fun FaceDownPiles(
+    state: GameState,
+    layout: BoardLayout,
+    cardWidth: Dp,
+    highlighted: Set<CardIdentity>,
+    deal: Deal,
+) {
     val density = LocalDensity.current
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
@@ -263,7 +343,8 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
     }
     state.tableau.forEachIndexed { column, pile ->
         key(column) {
-            val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
+            // Dealing, a column has no bar until its turn: it shrinks away, then grows from nothing.
+            val target = if (deal.hasBar(column)) with(density) { layout.hiddenBarHeight(pile).toDp() } else 0.dp
             val height by animateDpAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "hidden")
             val hidden = pile.count { !it.isFaceUp }
             if (height > 0.dp) {
@@ -278,6 +359,9 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
             }
         }
     }
+    // Dealing, the stock is still in the deck.
+    if (deal.active) return
+    StockCover(state, layout, cardWidth, highlighted)
     if (state.stock.isNotEmpty()) {
         val slot = layout.slot(PileRef.Stock)
         val cardHeight = with(density) { layout.cardHeight.toDp() }
@@ -299,6 +383,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     fun Slot(pile: PileRef, description: String, isEmpty: Boolean, icon: ImageVector? = null, borderWidth: Dp? = null) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
+        val touches = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
                 .offset { offset }
@@ -309,9 +394,11 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
-                .clickable { onIntent(GameIntent.Tap(pile, 0)) },
+                .clickable(touches, indication = null) { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
             EmptyPileSlot(Modifier.width(cardWidth), icon = icon, borderWidth = borderWidth)
+            // Its touch ripple follows the slot's rounded corners, over the outline instead of clipping it.
+            Box(Modifier.matchParentSize().clip(CardDimensions.shape).indication(touches, ripple()))
         }
     }
     Slot(
@@ -349,13 +436,14 @@ private fun Offset.plusTouchSlop(touchSlop: Float): Offset {
 }
 
 /**
- * For each pile, the lowest card still on its way to its slot. A card flies above the board while it, or any card
- * under it in its pile, is [moving]: a pile keeps its order when its top card lands before the cards under it.
+ * For each pile, the lowest and highest cards still on their way to their slots ([moving]). A card flies above the
+ * board while it, or any card under it in its pile, is moving: a pile keeps its order when its top card lands before
+ * the cards under it. And a card turned face down waits, still drawn, for the cards coming to cover it.
  */
-private fun liftedFrom(placed: Collection<PlacedCard>, moving: Map<CardIdentity, Boolean>): Map<PileRef, Int> =
+private fun stillMoving(placed: Collection<PlacedCard>, moving: Map<CardIdentity, Boolean>): Map<PileRef, IntRange> =
     placed.filter { moving[it.card.identity()] == true }
         .groupBy { it.pile }
-        .mapValues { (_, cards) -> cards.minOf { it.index } }
+        .mapValues { (_, cards) -> cards.minOf { it.index }..cards.maxOf { it.index } }
 
 private fun isDraggable(state: GameState, placed: PlacedCard): Boolean = placed.card.isFaceUp &&
     when (placed.pile) {
@@ -378,7 +466,7 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 
 private val GAP = 4.dp
 private val COLUMN_GAP = 8.dp
-private const val LIFTED_Z = 10_000f
+internal const val LIFTED_Z = 10_000f
 private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */

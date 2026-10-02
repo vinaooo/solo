@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
+import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.rules.GameEngine
@@ -15,12 +17,16 @@ import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -37,6 +43,8 @@ class GameViewModel @Inject constructor(
     private val hints: HintEngine,
     private val autoCompleter: AutoCompleter,
     private val feedback: GameFeedback,
+    deadEndDetector: DeadEndDetector,
+    @SearchDispatcher searchDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val state = MutableStateFlow(GameUiState())
@@ -49,13 +57,30 @@ class GameViewModel @Inject constructor(
     }
     private var autoCompleteJob: Job? = null
 
+    // A result for a position the game has already left is stale and dropped.
+    private val deadEnds = DeadEndWatcher(viewModelScope, deadEndDetector, searchDispatcher) { position, stuck ->
+        state.update {
+            when {
+                it.session?.state?.hasSamePilesAs(position) != true -> it
+                else -> it.copy(isStuck = stuck, showStuckTip = it.showStuckTip || (stuck && !it.isStuck))
+            }
+        }
+    }
+
     init {
         viewModelScope.launch {
             settingsRepository.settings.collect { settings -> state.update { it.copy(settings = settings) } }
         }
         viewModelScope.launch {
-            val session = resumeGame() ?: startNewGame(settingsRepository.settings.first().drawMode)
-            show(session)
+            val resumed = resumeGame()
+            show(resumed ?: startNewGame(settingsRepository.settings.first().drawMode))
+            // A game dealt now, not one picked up where it was left, is dealt on the board.
+            if (resumed == null) state.update { it.copy(deals = it.deals + 1) }
+        }
+        viewModelScope.launch {
+            // Switching the draw mode in Settings (confirmed there) deals a new game in that mode.
+            settingsRepository.settings.map { it.drawMode }.distinctUntilChanged().drop(1)
+                .collect { newGame(restart = false, drawMode = it) }
         }
     }
 
@@ -65,12 +90,15 @@ class GameViewModel @Inject constructor(
             is GameIntent.Drop -> withSession {
                 resolver.resolveDrop(it.state, intent.from, intent.cardIndex, intent.to)
             }
-            GameIntent.Undo -> undo()
+            GameIntent.Undo -> step(GameSession::undo, Announcement.Undone)
+            GameIntent.Redo -> step(GameSession::redo, Announcement.Redone)
             GameIntent.Hint -> showHint()
             GameIntent.AutoComplete -> autoComplete()
             GameIntent.NewGame -> newGame(restart = false)
             GameIntent.RestartDeal -> newGame(restart = true)
             GameIntent.MessageShown -> state.update { it.copy(message = null) }
+            GameIntent.AutoCompleteTipShown -> state.update { it.copy(showAutoCompleteTip = false) }
+            GameIntent.StuckTipShown -> state.update { it.copy(showStuckTip = false) }
             GameIntent.Resume -> clock.start()
             GameIntent.Pause -> pause()
         }
@@ -102,12 +130,11 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun undo() {
-        val undone = state.value.session?.undo() ?: return
-        show(undone)
-        state.announce(Announcement.Undone)
-        feedback.give(FeedbackEvent.MOVE, state.value.settings)
-        persist(undone)
+    /** Undo or redo: it plays out like a move (a redo can even win), then says what it did. */
+    private fun step(move: (GameSession) -> GameSession?, announcement: Announcement) {
+        val next = state.value.session?.let(move) ?: return
+        onPlayed(next)
+        state.announce(announcement)
     }
 
     private fun showHint() {
@@ -135,16 +162,19 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun newGame(restart: Boolean) {
+    private fun newGame(restart: Boolean, drawMode: DrawMode = state.value.settings.drawMode) {
         autoCompleteJob?.cancel()
         viewModelScope.launch {
             val replay = state.value.session?.takeIf { restart }
             val session = if (replay != null) {
                 startNewGame(replay.state.drawMode, replay.seed)
             } else {
-                startNewGame(state.value.settings.drawMode)
+                startNewGame(drawMode)
             }
-            state.update { it.copy(winRecord = null, isAutoCompleting = false) }
+            // A new game is dealt on the board; a restarted deal just goes back to its start.
+            state.update {
+                it.copy(winRecord = null, isAutoCompleting = false, deals = it.deals + if (restart) 0 else 1)
+            }
             show(session)
         }
     }
@@ -155,11 +185,23 @@ class GameViewModel @Inject constructor(
     }
 
     private fun show(session: GameSession, keepHint: Boolean = false) {
+        val canAutoComplete = autoCompleter.canAutoComplete(session.state)
+        val tip = canAutoComplete &&
+            !state.value.canAutoComplete &&
+            state.value.settings.autoCompleteTipsShown < AUTO_COMPLETE_TIPS
+        if (tip) {
+            viewModelScope.launch {
+                settingsRepository.update { it.copy(autoCompleteTipsShown = it.autoCompleteTipsShown + 1) }
+            }
+        }
+        // A clock tick leaves the cards where they are: no need to look for a dead end again.
+        if (state.value.session?.state?.hasSamePilesAs(session.state) != true) deadEnds.check(session.state)
         state.update {
             it.copy(
                 session = session,
                 hint = if (keepHint) it.hint else null,
-                canAutoComplete = autoCompleter.canAutoComplete(session.state),
+                canAutoComplete = canAutoComplete,
+                showAutoCompleteTip = canAutoComplete && (it.showAutoCompleteTip || tip),
                 // A clock tick leaves the cards where they are, so their destinations don't change.
                 destinations = if (it.session?.state?.hasSamePilesAs(session.state) == true) {
                     it.destinations
@@ -177,6 +219,7 @@ class GameViewModel @Inject constructor(
     private companion object {
         const val CLOCK_TICK_MILLIS = 1_000L
         const val AUTO_COMPLETE_STEP_MILLIS = 120L
+        const val AUTO_COMPLETE_TIPS = 3
     }
 }
 

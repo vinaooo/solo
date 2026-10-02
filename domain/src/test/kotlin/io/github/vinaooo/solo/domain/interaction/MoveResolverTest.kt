@@ -87,10 +87,26 @@ class MoveResolverTest {
         }
 
         @Test
-        fun `a king already at the bottom of a column is not moved to another empty column`() {
-            val state = emptyState().withTableau(0, up("KH", "QS"))
+        fun `a king filling its column goes to the next empty column to its right`() {
+            val state = emptyState()
+                .withTableau(0, up("9C"))
+                .withTableau(2, up("KH", "QS"))
+                .withTableau(3, up("9D"))
 
-            resolver.resolveTap(state, PileRef.Tableau(0), 0).shouldBeNull()
+            resolver.resolveTap(state, PileRef.Tableau(2), 0) shouldBe Move.TableauToTableau(2, 4, 2)
+        }
+
+        @Test
+        fun `past the last column, a king filling its column wraps around to the first empty one`() {
+            val state = emptyState()
+                .withTableau(0, up("9C"))
+                .withTableau(2, up("9D"))
+                .withTableau(3, up("9H"))
+                .withTableau(4, up("9S"))
+                .withTableau(5, up("8C"))
+                .withTableau(6, up("KH"))
+
+            resolver.resolveTap(state, PileRef.Tableau(6), 0) shouldBe Move.TableauToTableau(6, 1, 1)
         }
 
         @Test
@@ -176,10 +192,16 @@ class MoveResolverTest {
         }
 
         @Test
-        fun `a king that already fills a column is not offered the empty columns`() {
-            val state = emptyState().withTableau(0, up("KD"))
+        fun `a king that already fills a column is offered the other empty columns`() {
+            val state = emptyState()
+                .withTableau(0, up("KD"))
+                .withTableau(1, up("9S"))
+                .withTableau(2, up("9C"))
+                .withTableau(3, up("9H"))
+                .withTableau(4, up("9D"))
 
-            resolver.destinations(state, PileRef.Tableau(0), 0).shouldBeEmpty()
+            resolver.destinations(state, PileRef.Tableau(0), 0) shouldContainExactly
+                listOf(PileRef.Tableau(5), PileRef.Tableau(6))
         }
 
         @Test
