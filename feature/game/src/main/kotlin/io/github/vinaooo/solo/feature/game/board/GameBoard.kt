@@ -97,8 +97,7 @@ fun GameBoard(
         val deal = rememberDeal(deals, state, layout)
 
         EmptySlots(state, layout, cardWidth, onIntent)
-        // While the deal plays, the face-down cards are cards on their way, not bars yet, and the stock isn't there.
-        if (!deal.active) FaceDownPiles(state, layout, cardWidth, highlighted)
+        FaceDownPiles(state, layout, cardWidth, highlighted, deal)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
@@ -223,7 +222,7 @@ private fun BoardCard(
     val flying = shown.flying(placed.pile, appearing, dragging, lifted || departing)
     SideEffect { shown.update(drawn, visible, placed.pile) }
     PlayingCard(
-        card = deal.face(if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card),
+        card = deal.face(placed, showFace = stockReturn.showsFace(placed.pile) || !visible),
         highlighted = highlighted,
         contentDescription = accessibility.description,
         interactionSource = accessibility.touches,
@@ -234,7 +233,6 @@ private fun BoardCard(
             .offset { dragPosition ?: animated.value }
             .zIndex(deal.zIndex(placed, animated.isRunning, otherwise = stockReturn.zIndex(placed, flying)))
             .scale(if (dragging) DRAG_SCALE else 1f)
-            .scale(scaleX = deal.flipScale(placed.card), scaleY = 1f)
             .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
@@ -314,7 +312,13 @@ private fun Modifier.cardDrag(
  * counts from the cards, so the labels are left out of it.
  */
 @Composable
-private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp, highlighted: Set<CardIdentity>) {
+private fun FaceDownPiles(
+    state: GameState,
+    layout: BoardLayout,
+    cardWidth: Dp,
+    highlighted: Set<CardIdentity>,
+    deal: Deal,
+) {
     val density = LocalDensity.current
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
@@ -342,7 +346,8 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp, 
     }
     state.tableau.forEachIndexed { column, pile ->
         key(column) {
-            val target = with(density) { layout.hiddenBarHeight(pile).toDp() }
+            // Dealing, a column has no bar until its turn: it shrinks away, then grows from nothing.
+            val target = if (deal.hasBar(column)) with(density) { layout.hiddenBarHeight(pile).toDp() } else 0.dp
             val height by animateDpAsState(target, MaterialTheme.motionScheme.defaultSpatialSpec(), label = "hidden")
             val hidden = pile.count { !it.isFaceUp }
             if (height > 0.dp) {
@@ -357,6 +362,8 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp, 
             }
         }
     }
+    // Dealing, the stock is still in the deck.
+    if (deal.active) return
     StockCover(state, layout, cardWidth, highlighted)
     if (state.stock.isNotEmpty()) {
         val slot = layout.slot(PileRef.Stock)
