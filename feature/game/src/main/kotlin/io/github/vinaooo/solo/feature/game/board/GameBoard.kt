@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -170,8 +171,17 @@ private fun BoardCard(
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
     val stockReturn = rememberStockReturn(placed.pile)
+    // A card turned up in a column wasn't drawn until now: it is already in its place, under the card that uncovers
+    // it, instead of flying there (and over that card) from where it lay face down.
+    val shown = remember { ShownFlag(visible) }
+    val appearing = visible && !shown.value
+    SideEffect { shown.value = visible }
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     LaunchedEffect(target) {
+        if (appearing) {
+            animated.snapTo(target)
+            return@LaunchedEffect
+        }
         onMovingChange(true)
         // A returning card turns face down as it reaches the stock, not after the spring's last wobble.
         animated.animateTo(target, spec) {
@@ -181,6 +191,9 @@ private fun BoardCard(
         stockReturn.settled()
     }
     val dragging = dragOffset != null
+    // Its new slot is set but the animation hasn't started yet: already flying, from the first frame, so a card it
+    // uncovers never shows on top of it.
+    val departing = !appearing && animated.targetValue != target
     PlayingCard(
         card = if (stockReturn.showsFace(placed.pile)) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
@@ -189,15 +202,7 @@ private fun BoardCard(
         shadow = shadow,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
-            // A card on its way to a new pile flies above every other card, like a dragged one.
-            // One going back to the stock slides under the stock's cards, still above the waste it leaves.
-            .zIndex(
-                when {
-                    stockReturn.slidesUnder(placed.pile) -> placed.z - placed.index - 0.5f
-                    dragging || lifted -> LIFTED_Z + placed.z
-                    else -> placed.z
-                },
-            )
+            .zIndex(stockReturn.zIndex(placed, flying = dragging || lifted || departing))
             .scale(if (dragging) DRAG_SCALE else 1f)
             .alpha(if (visible) 1f else 0f)
             .width(cardWidth)
@@ -205,6 +210,9 @@ private fun BoardCard(
             .then(gestures),
     )
 }
+
+/** Whether a card was drawn the last time it was composed; not state, as nothing redraws when it changes. */
+private class ShownFlag(var value: Boolean)
 
 /** Drags the card (and the cards on top of it); [onDrop] gets the total offset when the finger lifts. */
 private fun Modifier.cardDrag(
@@ -378,7 +386,7 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 
 private val GAP = 4.dp
 private val COLUMN_GAP = 8.dp
-private const val LIFTED_Z = 10_000f
+internal const val LIFTED_Z = 10_000f
 private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */

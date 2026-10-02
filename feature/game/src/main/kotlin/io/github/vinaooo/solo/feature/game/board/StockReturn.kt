@@ -26,6 +26,16 @@ internal class StockReturn(pile: PileRef) {
 
     fun slidesUnder(pile: PileRef) = isReturning(pile) || underStock
 
+    /**
+     * Where [placed] sits among the cards: one on its way to a new pile ([flying]) is above every other card, like a
+     * dragged one; one going back to the stock slides under the stock's cards, still above the waste it leaves.
+     */
+    fun zIndex(placed: PlacedCard, flying: Boolean): Float = when {
+        slidesUnder(placed.pile) -> placed.z - placed.index - UNDER_STOCK_OFFSET
+        flying -> LIFTED_Z + placed.z
+        else -> placed.z
+    }
+
     fun start() {
         keepFace = true
         underStock = true
@@ -52,3 +62,6 @@ internal fun rememberStockReturn(pile: PileRef): StockReturn {
     }
     return stockReturn
 }
+
+/** Below every card of the stock, which a returning card is about to join, and above the waste. */
+private const val UNDER_STOCK_OFFSET = 0.5f
