@@ -96,7 +96,7 @@ fun GameBoard(
         val stillMoving = stillMoving(placedCards, moving)
 
         EmptySlots(state, layout, cardWidth, onIntent)
-        FaceDownPiles(state, layout, cardWidth)
+        FaceDownPiles(state, layout, cardWidth, highlighted)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
@@ -173,8 +173,12 @@ private fun BoardCard(
 ) {
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
-    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
     val stockReturn = rememberStockReturn(placed.pile)
+    val spec = stockReturn.motion(
+        placed.pile,
+        MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>(),
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+    )
     val shown = remember { ShownFlag(visible) }
     val appearing = shown.appearing(visible)
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
@@ -271,7 +275,7 @@ private fun Modifier.cardDrag(
  * counts from the cards, so the labels are left out of it.
  */
 @Composable
-private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) {
+private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp, highlighted: Set<CardIdentity>) {
     val density = LocalDensity.current
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
@@ -314,6 +318,7 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
             }
         }
     }
+    StockCover(state, layout, cardWidth, highlighted)
     if (state.stock.isNotEmpty()) {
         val slot = layout.slot(PileRef.Stock)
         val cardHeight = with(density) { layout.cardHeight.toDp() }
