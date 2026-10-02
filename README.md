@@ -2,7 +2,7 @@
 
 Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressive.
 
-> Proprietary software. All rights reserved. See [LICENSE](LICENSE).
+> Open source under the [MIT License](LICENSE).
 
 ## Modules
 
