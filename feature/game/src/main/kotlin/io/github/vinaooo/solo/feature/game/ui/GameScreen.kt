@@ -1,6 +1,5 @@
 package io.github.vinaooo.solo.feature.game.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.LoadingIndicator
@@ -22,8 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,8 +32,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
-import io.github.vinaooo.solo.core.ui.formatElapsed
-import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
@@ -179,22 +173,6 @@ private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
             handedness = uiState.settings.handedness,
         )
     }
-}
-
-@Composable
-private fun WinDialog(record: ScoreRecord, onNewGame: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = {},
-        title = { Text(stringResource(R.string.you_won)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.win_score, record.points))
-                Text(stringResource(R.string.win_time, formatElapsed(record.elapsedSeconds)))
-                Text(stringResource(R.string.win_moves, record.moves))
-            }
-        },
-        confirmButton = { TextButton(onClick = onNewGame) { Text(stringResource(R.string.new_game)) } },
-    )
 }
 
 private val TOOLBAR_SPACE = 88.dp
