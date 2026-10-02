@@ -53,7 +53,7 @@ class BoardLayout(
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
-    // 0.88dp with the board's 4dp gap.
+    // 1.5dp with the board's 4dp gap.
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
@@ -186,7 +186,7 @@ class BoardLayout(
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
-        const val HIDDEN_BAR_GAP = 0.22f
+        const val HIDDEN_BAR_GAP = 0.375f
         const val FACE_UP_STEP = 0.28f
         const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
