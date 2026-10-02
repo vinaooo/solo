@@ -9,6 +9,7 @@
     <string name="auto_complete_tip">Toque para auto completar</string>
     <string name="new_game">Nova partida</string>
     <string name="restart_deal">Reiniciar partida</string>
+    <string name="close_menu">Fechar menu</string>
     <string name="open_scores">Pontuações</string>
     <string name="open_settings">Configurações</string>
     <string name="no_moves">Não há jogadas úteis. Tente uma nova partida.</string>

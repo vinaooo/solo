@@ -9,6 +9,7 @@
     <string name="auto_complete_tip">Tap to auto-complete</string>
     <string name="new_game">New game</string>
     <string name="restart_deal">Restart this deal</string>
+    <string name="close_menu">Close menu</string>
     <string name="open_scores">Scores</string>
     <string name="open_settings">Settings</string>
     <string name="no_moves">No useful moves left. Try a new game.</string>
