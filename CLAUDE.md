@@ -69,8 +69,11 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Domain (`:domain`)**
 - `GameState` is immutable: stock, waste, 4 foundations, 7 tableau columns, score, moves and time.
 - `GameEngine.apply(state, move)` returns `MoveOutcome.Applied` or `Rejected`. The rules sit behind `RuleSet` (`KlondikeRules`, with one small rule per move type) and scoring behind `ScoringStrategy` (`StandardScoring`, Windows Standard scoring), so new variants and scoring modes plug in without touching the engine.
-- `GameSession` (a seed, the state and an `UndoHistory`) is the unit that gets played, undone and saved as JSON with kotlinx.serialization. Deals are reproducible from the seed (`SeededShuffler`), which is how "restart this deal" works.
-- `MoveResolver` turns a tap or drop into a `Move`. `HintEngine` ranks the legal moves, and `AutoCompleter` finishes a game that can no longer get stuck.
+- `GameSession` (a seed, the state and an `UndoHistory`) is the unit that gets played, undone, redone and saved as JSON with kotlinx.serialization. Deals are reproducible from the seed (`SeededShuffler`), which is how "restart this deal" works.
+- `UndoHistory` keeps undo and redo stacks. A redo earns the move's points back and counts as a move, but the undo penalty stays. A new move clears the redo stack.
+- `MoveResolver` turns a tap or drop into a `Move`. A tapped king that fills its column goes to the next empty column to its right, wrapping around.
+- `HintEngine` ranks the legal moves, and `AutoCompleter` finishes a game that can no longer get stuck.
+- `DeadEndDetector` searches every position reachable by drawing, recycling and moving between columns for one that puts a card on a foundation or turns one up. It is a cancellable `suspend` search that gives up (says "not stuck") past 5,000 positions, because a real dead end takes the whole search.
 - The use cases (`StartNewGame`, `FinishGame`, …) own the rules about scores and stats. For example, starting a new game counts the unfinished one as a loss.
 
 **Data (`:data`)**
@@ -84,10 +87,25 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - The clock is a `Ticker` that runs only while the screen is resumed and the game is in progress.
 - Auto-complete steps every 120 ms and must read the latest session on each step, or it overwrites clock ticks that happened in between.
 - Sound and haptics sit behind `GameFeedback`, and whether they play depends on the settings.
+- `DeadEndWatcher` runs the dead-end search after every move on the injected `@SearchDispatcher` (`Dispatchers.Default`; tests pass the test dispatcher). A new move cancels the previous search.
+- `GameUiState.deals` counts the games dealt (new game, first game; not a restarted deal or a resumed game). The board plays each new deal once and remembers what it played in `rememberSaveable`, so a draw mode changed in Settings, which starts a new game, is dealt on coming back.
+- Changing the draw mode in Settings starts a new game. `SettingsViewModel` asks for confirmation first if a game is in progress.
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).
 - `GameBoard` keys every card by its identity and animates it to its position with the motion scheme's spatial spring.
+- **Layers:** waste 100+, stock 150+, stock cover 198, stock count 199, foundations 200+, columns 300+ (by depth), and in-flight cards `LIFTED_Z` (10 000) + their layer.
+  - Only a card arriving in a new pile is lifted. A card shifting within its own pile (the Draw 3 fan closing up, a column re-spacing) keeps its layer, or it covers newer cards.
+  - A card counts as flying from the frame its target changes (`departing`), not from when its animation starts.
+  - A card turning face up (`appearing`) snaps into place under the card leaving it and is never lifted.
+  - A card turned face down by an undo stays drawn until the card coming back covers it.
+  - Drawn cards keep the waste's layer and come out from under the `StockCover`. Changing a card's layer as it settles made card faces blink.
+  - Known gap: two cards in flight at once are layered by destination depth, not by launch order.
+- `Deal` plays the new-game deal: the cards gather into a deck, then each column's bar grows and its top card flies out face up, then the stock. It uses the fast spring, and pauses are timed with `animate()` rather than `delay()` so the device's animation speed scales them.
+- **Pitfalls:**
+  - `PlayingCard` keeps its face animation (covered strip ↔ center) outside its `BoxWithConstraints`, because Compose sometimes rebuilds that box's content when cards move and resets any state inside it.
+  - Tap ripples are drawn by `PlayingCard` from the tap handler's `InteractionSource`, inside the card's clip.
+  - To check animations, record the phone (`adb shell screenrecord`), step through the frames (`ffmpeg … -fps_mode passthrough`), and check `adb shell settings get global animator_duration_scale` first.
 - The drag adds back the touch slop that `detectDragGestures` leaves out of the first drag amount, so the card stays under the finger.
 - **TalkBack:**
   - `CardRole` decides what each card says. Face-down column cards and cards under the top of a pile are hidden and counted by the card above them.
@@ -97,6 +115,10 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Layouts**
 - Portrait: stats and the Scores/Settings buttons on top, the board below, and a horizontal floating toolbar at the bottom.
 - Landscape: `CenteredRow` puts stats and buttons on the left, the board centered, and a vertical floating toolbar on the right. Both sides get the width of the wider one, so the board stays centered.
+- **Toolbar:**
+  - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
+  - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.
+  - The new-game menu (`NewGameMenu.kt`) draws its own FAB-menu pills in a popup with 40dp of room around them, because Material's `FloatingActionButtonMenu` clips its items. The toolbar draws a 60% scrim behind itself while the menu is open.
 
 **App shell (`:app`)**
 - The manifest declares `android:appCategory="game"` (checked by `AppCategoryTest`).
