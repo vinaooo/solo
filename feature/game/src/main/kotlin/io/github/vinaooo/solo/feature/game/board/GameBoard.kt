@@ -89,7 +89,7 @@ fun GameBoard(
 
         val moving = remember { mutableStateMapOf<CardIdentity, Boolean>() }
         val placedCards = layout.positions(state).values
-        val liftedFrom = liftedFrom(placedCards, moving)
+        val stillMoving = stillMoving(placedCards, moving)
 
         EmptySlots(state, layout, cardWidth, onIntent)
         FaceDownPiles(state, layout, cardWidth)
@@ -116,7 +116,7 @@ fun GameBoard(
                         ?.takeIf { it.position != placed.position }
                         ?.let { layout.cover(state, it)?.edge },
                     dragOffset = dragOffset,
-                    lifted = placed.index >= (liftedFrom[placed.pile] ?: Int.MAX_VALUE),
+                    pileMoving = stillMoving[placed.pile],
                     onMovingChange = { moving[placed.card.identity()] = it },
                     // A column's face-down cards are drawn as its bar instead.
                     visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
@@ -161,7 +161,7 @@ private fun BoardCard(
     cover: CardCover?,
     shadow: CardCover.Edge?,
     dragOffset: Offset?,
-    lifted: Boolean,
+    pileMoving: IntRange?,
     onMovingChange: (Boolean) -> Unit,
     visible: Boolean,
     description: String?,
@@ -171,11 +171,8 @@ private fun BoardCard(
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val spec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
     val stockReturn = rememberStockReturn(placed.pile)
-    // A card turned up in a column wasn't drawn until now: it is already in its place, under the card that uncovers
-    // it, instead of flying there (and over that card) from where it lay face down.
     val shown = remember { ShownFlag(visible) }
-    val appearing = visible && !shown.value
-    SideEffect { shown.value = visible }
+    val appearing = shown.appearing(visible)
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
     LaunchedEffect(target) {
         if (appearing) {
@@ -194,25 +191,48 @@ private fun BoardCard(
     // Its new slot is set but the animation hasn't started yet: already flying, from the first frame, so a card it
     // uncovers never shows on top of it.
     val departing = !appearing && animated.targetValue != target
+    // Cards of its pile still on their way: it flies with them if one is under it, and waits for them if above.
+    val lifted = placed.index >= (pileMoving?.first ?: Int.MAX_VALUE)
+    val awaitingCover = placed.index < (pileMoving?.last ?: -1)
+    val drawn = shown.drawn(visible, departing, animated.isRunning, awaitingCover)
+    SideEffect { shown.value = drawn }
     PlayingCard(
-        card = if (stockReturn.showsFace(placed.pile)) placed.card.faceUp() else placed.card,
+        card = if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
         contentDescription = description,
-        cover = cover,
+        // A card turned face down but still drawn shows whole: the layout already counts it under its bar.
+        cover = cover.takeIf { visible },
         shadow = shadow,
         modifier = Modifier
             .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
             .zIndex(stockReturn.zIndex(placed, flying = dragging || lifted || departing))
             .scale(if (dragging) DRAG_SCALE else 1f)
-            .alpha(if (visible) 1f else 0f)
+            .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
             .then(gestures),
     )
 }
 
-/** Whether a card was drawn the last time it was composed; not state, as nothing redraws when it changes. */
-private class ShownFlag(var value: Boolean)
+/**
+ * Whether a card was drawn the last time it was composed (not state: nothing redraws when it changes), so a column
+ * card turned up or down keeps in step with the cards moving around it.
+ */
+private class ShownFlag(var value: Boolean) {
+    /**
+     * A card turned up wasn't drawn until now: it is already in its place, under the card that uncovers it, instead
+     * of flying there (and over that card) from where it lay face down.
+     */
+    fun appearing(visible: Boolean) = visible && !value
+
+    /**
+     * A card turned face down (by an undo) stays drawn, face up, while it is still settling: about to slide or
+     * [sliding] into its face-down place, or [awaitingCover] from the card coming back. It hides once covered, so it
+     * never just vanishes.
+     */
+    fun drawn(visible: Boolean, departing: Boolean, sliding: Boolean, awaitingCover: Boolean) =
+        visible || (value && (departing || sliding || awaitingCover))
+}
 
 /** Drags the card (and the cards on top of it); [onDrop] gets the total offset when the finger lifts. */
 private fun Modifier.cardDrag(
@@ -357,13 +377,14 @@ private fun Offset.plusTouchSlop(touchSlop: Float): Offset {
 }
 
 /**
- * For each pile, the lowest card still on its way to its slot. A card flies above the board while it, or any card
- * under it in its pile, is [moving]: a pile keeps its order when its top card lands before the cards under it.
+ * For each pile, the lowest and highest cards still on their way to their slots ([moving]). A card flies above the
+ * board while it, or any card under it in its pile, is moving: a pile keeps its order when its top card lands before
+ * the cards under it. And a card turned face down waits, still drawn, for the cards coming to cover it.
  */
-private fun liftedFrom(placed: Collection<PlacedCard>, moving: Map<CardIdentity, Boolean>): Map<PileRef, Int> =
+private fun stillMoving(placed: Collection<PlacedCard>, moving: Map<CardIdentity, Boolean>): Map<PileRef, IntRange> =
     placed.filter { moving[it.card.identity()] == true }
         .groupBy { it.pile }
-        .mapValues { (_, cards) -> cards.minOf { it.index } }
+        .mapValues { (_, cards) -> cards.minOf { it.index }..cards.maxOf { it.index } }
 
 private fun isDraggable(state: GameState, placed: PlacedCard): Boolean = placed.card.isFaceUp &&
     when (placed.pile) {
