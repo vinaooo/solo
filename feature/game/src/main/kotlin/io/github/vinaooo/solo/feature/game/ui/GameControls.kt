@@ -1,7 +1,6 @@
 package io.github.vinaooo.solo.feature.game.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,7 +10,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,16 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -48,25 +41,14 @@ import androidx.compose.material3.VerticalFloatingToolbar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.window.PopupProperties
 import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.feature.game.GameIntent
@@ -239,86 +221,6 @@ private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> U
         IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
         }
-    }
-}
-
-/**
- * New game or restart, as an Expressive FAB menu: the options pop out of the button as a staggered stack of pills
- * (above it, or to its left in the vertical toolbar), and the button turns into a close button meanwhile.
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val options = listOf(
-        Triple(Icons.Rounded.Style, R.string.new_game, GameIntent.NewGame),
-        Triple(Icons.Rounded.Refresh, R.string.restart_deal, GameIntent.RestartDeal),
-    )
-    Box {
-        IconButton(onClick = { menuOpen = !menuOpen }) {
-            Crossfade(menuOpen, animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(), label = "menu icon") {
-                if (it) {
-                    Icon(Icons.Rounded.Close, stringResource(R.string.close_menu))
-                } else {
-                    Icon(Icons.Rounded.Style, stringResource(R.string.new_game))
-                }
-            }
-        }
-        // Always composed, so the items can animate out; it only takes touches while open.
-        Popup(
-            popupPositionProvider = with(LocalDensity.current) {
-                MenuBesideAnchor(
-                    vertical,
-                    gap = 16.dp.roundToPx(),
-                    toolbarInset = 8.dp.roundToPx(),
-                    menuInset = 16.dp.roundToPx(),
-                )
-            },
-            onDismissRequest = { menuOpen = false },
-            properties = PopupProperties(focusable = menuOpen),
-        ) {
-            FloatingActionButtonMenu(expanded = menuOpen, button = {}) {
-                options.forEach { (icon, label, intent) ->
-                    FloatingActionButtonMenuItem(
-                        onClick = {
-                            menuOpen = false
-                            onIntent(intent)
-                        },
-                        text = { Text(stringResource(label)) },
-                        icon = { Icon(icon, null) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Places the menu above the button, its pills' right edge on the toolbar's, or to its left when [beside], its bottom
- * on the toolbar's. [gap] clears the toolbar, [toolbarInset] is the toolbar's padding around the button and
- * [menuInset] the FAB menu's own side padding.
- */
-private data class MenuBesideAnchor(
-    private val beside: Boolean,
-    private val gap: Int,
-    private val toolbarInset: Int,
-    private val menuInset: Int,
-) : PopupPositionProvider {
-    override fun calculatePosition(
-        anchorBounds: IntRect,
-        windowSize: IntSize,
-        layoutDirection: LayoutDirection,
-        popupContentSize: IntSize,
-    ): IntOffset = if (beside) {
-        IntOffset(
-            anchorBounds.left - gap + menuInset - popupContentSize.width,
-            anchorBounds.bottom + toolbarInset - popupContentSize.height,
-        )
-    } else {
-        IntOffset(
-            anchorBounds.right + toolbarInset + menuInset - popupContentSize.width,
-            anchorBounds.top - gap - popupContentSize.height,
-        )
     }
 }
 
