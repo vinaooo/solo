@@ -182,7 +182,16 @@ private fun BoardCard(
     val shown = remember { ShownFlag(visible, visible) }
     val appearing = shown.appearing(visible)
     // Moving until the spring settles, not when it first reaches the slot: springs overshoot and come back.
-    LaunchedEffect(target) {
+    val dragging = dragOffset != null
+    // Its position follows the finger, so a card let go continues from where it was dropped (to its new slot, or
+    // back to its old one) instead of jumping back to its old slot first.
+    val dragPosition = dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) }
+    LaunchedEffect(target, dragPosition) {
+        if (dragPosition != null) {
+            animated.snapTo(dragPosition)
+            onMovingChange(false)
+            return@LaunchedEffect
+        }
         if (appearing) {
             animated.snapTo(target)
             // It may have been flying when this replaced that animation (a new deal right after another): it isn't
@@ -200,7 +209,6 @@ private fun BoardCard(
         onMovingChange(false)
         stockReturn.settled()
     }
-    val dragging = dragOffset != null
     // Its new slot is set but the animation hasn't started yet: already flying, from the first frame, so a card it
     // uncovers never shows on top of it.
     val departing = !appearing && animated.targetValue != target
@@ -221,7 +229,7 @@ private fun BoardCard(
         cover = cover.takeIf { visible },
         shadow = shadow,
         modifier = Modifier
-            .offset { dragOffset?.let { target + IntOffset(it.x.roundToInt(), it.y.roundToInt()) } ?: animated.value }
+            .offset { dragPosition ?: animated.value }
             .zIndex(stockReturn.zIndex(placed, flying = shown.flying(appearing, dragging, lifted || departing)))
             .scale(if (dragging) DRAG_SCALE else 1f)
             .alpha(if (drawn) 1f else 0f)
