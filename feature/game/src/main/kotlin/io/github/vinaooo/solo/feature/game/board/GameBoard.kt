@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -30,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -120,7 +124,7 @@ fun GameBoard(
                     onMovingChange = { moving[placed.card.identity()] = it },
                     // A column's face-down cards are drawn as its bar instead.
                     visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
-                    description = accessibility.description,
+                    accessibility = accessibility,
                     gestures = accessibility.modifier.then(
                         if (!isDraggable(state, placed)) {
                             Modifier
@@ -164,7 +168,7 @@ private fun BoardCard(
     pileMoving: IntRange?,
     onMovingChange: (Boolean) -> Unit,
     visible: Boolean,
-    description: String?,
+    accessibility: CardAccessibility,
     gestures: Modifier,
 ) {
     val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
@@ -199,7 +203,8 @@ private fun BoardCard(
     PlayingCard(
         card = if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card,
         highlighted = highlighted,
-        contentDescription = description,
+        contentDescription = accessibility.description,
+        interactionSource = accessibility.touches,
         // A card turned face down but still drawn shows whole: the layout already counts it under its bar.
         cover = cover.takeIf { visible },
         shadow = shadow,
@@ -327,6 +332,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     fun Slot(pile: PileRef, description: String, isEmpty: Boolean, icon: ImageVector? = null, borderWidth: Dp? = null) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
+        val touches = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
                 .offset { offset }
@@ -337,9 +343,11 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
-                .clickable { onIntent(GameIntent.Tap(pile, 0)) },
+                .clickable(touches, indication = null) { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
             EmptyPileSlot(Modifier.width(cardWidth), icon = icon, borderWidth = borderWidth)
+            // Its touch ripple follows the slot's rounded corners, over the outline instead of clipping it.
+            Box(Modifier.matchParentSize().clip(CardDimensions.shape).indication(touches, ripple()))
         }
     }
     Slot(

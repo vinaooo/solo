@@ -5,11 +5,14 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -64,6 +67,7 @@ fun PlayingCard(
     contentDescription: String? = null,
     cover: CardCover? = null,
     shadow: CardCover.Edge? = null,
+    interactionSource: InteractionSource? = null,
 ) {
     val colors = SoloThemeExtras.cardColors
     val description =
@@ -74,6 +78,8 @@ fun PlayingCard(
             .drawBehind { shadow?.let { drawEdgeShadow(it, SHADOW_WIDTH.toPx()) } }
             .clip(CardDimensions.shape)
             .background(if (card.isFaceUp) colors.face else colors.back)
+            // The touch ripple of whoever handles taps ([interactionSource]), inside the card's rounded corners.
+            .then(interactionSource?.let { Modifier.indication(it, ripple()) } ?: Modifier)
             // No outline of its own: only a hinted card is outlined.
             .then(if (highlighted) Modifier.border(3.dp, colors.highlight, CardDimensions.shape) else Modifier)
             .clearAndSetSemantics { this.contentDescription = description },

@@ -1,7 +1,10 @@
 package io.github.vinaooo.solo.feature.game.board
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -18,7 +21,8 @@ import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
 
 /** What TalkBack says for a card, and the semantics and tap that go with it. */
-internal class CardAccessibility(val description: String?, val modifier: Modifier)
+/** [modifier] handles taps; the card draws their ripple from [touches], so it follows its rounded corners. */
+internal class CardAccessibility(val description: String?, val modifier: Modifier, val touches: InteractionSource)
 
 @Composable
 internal fun cardAccessibility(
@@ -31,6 +35,7 @@ internal fun cardAccessibility(
 ): CardAccessibility {
     val hintLabel = stringResource(R.string.a11y_hinted)
     val actions = moveActions(placed, destinations, onIntent)
+    val touches = remember { MutableInteractionSource() }
     val modifier = Modifier
         .semantics {
             traversalIndex = traversalOrder(placed.pile, placed.index, handedness)
@@ -39,11 +44,13 @@ internal fun cardAccessibility(
             if (actions.isNotEmpty()) customActions = actions
         }
         .clickable(
+            interactionSource = touches,
+            indication = null,
             onClickLabel = stringResource(
                 if (placed.pile == PileRef.Stock) R.string.a11y_click_draw else R.string.a11y_click_move,
             ),
         ) { onIntent(GameIntent.Tap(placed.pile, placed.index)) }
-    return CardAccessibility(roleDescription(role), modifier)
+    return CardAccessibility(roleDescription(role), modifier, touches)
 }
 
 @Composable
