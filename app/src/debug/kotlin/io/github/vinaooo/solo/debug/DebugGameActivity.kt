@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
  * `adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity --es game near_stuck`
  * - `near_win` (the default): one move away from auto-complete.
  * - `near_stuck`: one card (the five of spades, in the stock) can still go to its foundation; then the game is stuck.
+ * - `tallest`: the last column as tall as a column gets, six face-down cards and a run from king to ace.
  */
 @AndroidEntryPoint
 class DebugGameActivity : ComponentActivity() {
@@ -29,7 +30,11 @@ class DebugGameActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val game = if (intent.getStringExtra("game") == "near_stuck") nearStuck() else nearWin()
+        val game = when (intent.getStringExtra("game")) {
+            "near_stuck" -> nearStuck()
+            "tallest" -> tallest()
+            else -> nearWin()
+        }
         runBlocking { savedGames.save(GameSession(seed = 0, state = game)) }
         startActivity(
             Intent(this, MainActivity::class.java).addFlags(
@@ -81,6 +86,28 @@ class DebugGameActivity : ComponentActivity() {
             },
             drawMode = DrawMode.ONE,
             moves = 40,
+        )
+    }
+
+    /**
+     * The last column holds six face-down cards and a run from the king of spades down to an ace, alternating
+     * colours; the other columns are dealt as usual from what's left, and the rest is the stock.
+     */
+    private fun tallest(): GameState {
+        val suits = listOf(Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS)
+        val run = Rank.entries.reversed().mapIndexed { i, rank -> up(suits[i % suits.size], rank) }
+        val rest = Suit.entries.flatMap { suit -> Rank.entries.map { Card(suit, it) } }
+            .filterNot { card -> run.any { it.suit == card.suit && it.rank == card.rank } }
+            .iterator()
+        val columns = (0 until 6).map { i -> List(i) { rest.next() } + rest.next().copy(isFaceUp = true) }
+        val last = List(6) { rest.next() } + run
+        return GameState(
+            stock = rest.asSequence().toList(),
+            waste = emptyList(),
+            foundations = List(4) { emptyList() },
+            tableau = columns + listOf(last),
+            drawMode = DrawMode.ONE,
+            moves = 60,
         )
     }
 }
