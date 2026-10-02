@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -90,13 +91,17 @@ internal fun NewGameMenu(
         }
         if (menuOpen || progress.any { it.value != 0f }) {
             Popup(
-                popupPositionProvider = with(LocalDensity.current) {
-                    MenuBesideAnchor(vertical, gap = 16.dp.roundToPx(), toolbarInset = 8.dp.roundToPx())
-                },
+                popupPositionProvider = MenuBesideAnchor(vertical, LocalDensity.current),
                 onDismissRequest = { onMenuOpenChange(false) },
                 properties = PopupProperties(focusable = menuOpen),
             ) {
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Room all around the pills: the popup's window ends at its content, and a pill bouncing past its
+                // place, or growing past its size, would be cut off there until it settles.
+                Column(
+                    modifier = Modifier.padding(BOUNCE_ROOM),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     options.forEachIndexed { index, (icon, label, intent) ->
                         MenuPill(
                             icon,
@@ -155,10 +160,14 @@ private fun MenuPill(
 
 /**
  * Places the menu above the button, its right edge on the toolbar's, or to its left when [beside], its bottom on the
- * toolbar's. [gap] clears the toolbar and [toolbarInset] is the toolbar's padding around the button.
+ * toolbar's. [gap] clears the toolbar, [toolbarInset] is the toolbar's padding around the button, and [room] the
+ * empty space around the pills, which this lines up as if it weren't there.
  */
-private data class MenuBesideAnchor(private val beside: Boolean, private val gap: Int, private val toolbarInset: Int) :
-    PopupPositionProvider {
+private data class MenuBesideAnchor(private val beside: Boolean, private val density: Density) : PopupPositionProvider {
+    private val gap = with(density) { 16.dp.roundToPx() }
+    private val toolbarInset = with(density) { 8.dp.roundToPx() }
+    private val room = with(density) { BOUNCE_ROOM.roundToPx() }
+
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
@@ -166,13 +175,13 @@ private data class MenuBesideAnchor(private val beside: Boolean, private val gap
         popupContentSize: IntSize,
     ): IntOffset = if (beside) {
         IntOffset(
-            anchorBounds.left - gap - popupContentSize.width,
-            anchorBounds.bottom + toolbarInset - popupContentSize.height,
+            anchorBounds.left - gap - popupContentSize.width + room,
+            anchorBounds.bottom + toolbarInset - popupContentSize.height + room,
         )
     } else {
         IntOffset(
-            anchorBounds.right + toolbarInset - popupContentSize.width,
-            anchorBounds.top - gap - popupContentSize.height,
+            anchorBounds.right + toolbarInset - popupContentSize.width + room,
+            anchorBounds.top - gap - popupContentSize.height + room,
         )
     }
 }
@@ -180,6 +189,9 @@ private data class MenuBesideAnchor(private val beside: Boolean, private val gap
 /** A clearly bouncy spring, so each pill overshoots and settles like Keep's. */
 private val MENU_BOUNCE = spring<Float>(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
 private const val MENU_STAGGER_MILLIS = 60L
+
+/** More than the farthest a pill overshoots, from its place or in size, on [MENU_BOUNCE]. */
+private val BOUNCE_ROOM = 40.dp
 
 /**
  * Draws a [color] scrim, [alpha] opaque, over everything drawn before this element: the whole game, when it modifies
