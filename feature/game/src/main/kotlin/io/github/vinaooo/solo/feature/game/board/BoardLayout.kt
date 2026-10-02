@@ -2,6 +2,7 @@ package io.github.vinaooo.solo.feature.game.board
 
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
@@ -25,7 +26,8 @@ data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val pos
 /**
  * Pure geometry of the table, in pixels. Cards fill the width in portrait and shrink to fit the height in
  * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
- * [handedness] side of the top row, the foundations on the other.
+ * [handedness] side of the top row, the foundations on the other. At the [alignment] bottom, the board sits as low
+ * as it can with room for the tallest column a game can have: a bar of six face-down cards and a run from king to ace.
  */
 class BoardLayout(
     val width: Float,
@@ -34,6 +36,7 @@ class BoardLayout(
     val handedness: Handedness = Handedness.RIGHT,
     /** Space between neighbouring columns (and top-row piles); [gap] is the margin and the vertical spacing. */
     val columnGap: Float = gap,
+    val alignment: BoardAlignment = BoardAlignment.TOP,
 ) {
 
     val cardWidth: Float = minOf(
@@ -45,19 +48,28 @@ class BoardLayout(
     val faceDownStep: Float = cardHeight * FACE_DOWN_STEP
     val faceUpStep: Float = cardHeight * FACE_UP_STEP
 
-    private val left = (width - boardWidth) / 2
-    private val topRowY = gap
-    private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
-
-    // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
-    private val wasteFanStep = cardWidth * WASTE_FAN_STEP
-    private val rightHanded = handedness == Handedness.RIGHT
-
     // With the board's 4dp gap: each bar is 0.12dp taller than its cards' steps, plus 0.524dp for every card past
     // the first, and 2.5dp above its face-up cards.
     private val hiddenBarExtra = gap * HIDDEN_BAR_EXTRA
     private val hiddenBarSpread = gap * HIDDEN_BAR_SPREAD
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
+
+    private val left = (width - boardWidth) / 2
+    private val topRowY = gap + when (alignment) {
+        BoardAlignment.TOP -> 0f
+        BoardAlignment.BOTTOM -> {
+            // As columnOffsets lays it out, unsqueezed.
+            val bar = MAX_HIDDEN * faceDownStep + hiddenBarExtra + (MAX_HIDDEN - 1) * hiddenBarSpread + hiddenBarGap
+            val tallestColumn = bar + (Rank.entries.size - 1) * faceUpStep + cardHeight
+            val boardHeight = gap + cardHeight + gap * TOP_ROW_GAPS + tallestColumn + gap
+            (height - boardHeight).coerceAtLeast(0f)
+        }
+    }
+    private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
+
+    // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
+    private val wasteFanStep = cardWidth * WASTE_FAN_STEP
+    private val rightHanded = handedness == Handedness.RIGHT
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
@@ -188,6 +200,9 @@ class BoardLayout(
 
     private companion object {
         const val COLUMNS = 7
+
+        /** Face-down cards in the last column of the deal, the most any column can have. */
+        const val MAX_HIDDEN = 6
         const val FIRST_FOUNDATION_COLUMN = 3
 
         /** Gaps between the top row and the tableau. */

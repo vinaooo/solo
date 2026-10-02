@@ -28,4 +28,7 @@
     <string name="handedness">Preferred hand</string>
     <string name="hand_left">Left</string>
     <string name="hand_right">Right</string>
+    <string name="board_alignment">Board position</string>
+    <string name="board_top">Top</string>
+    <string name="board_bottom">Bottom</string>
 </resources>

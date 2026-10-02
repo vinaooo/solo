@@ -4,6 +4,7 @@ import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
@@ -12,6 +13,7 @@ import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.kotest.matchers.doubles.plusOrMinus
+import io.kotest.matchers.floats.shouldBeGreaterThan
 import io.kotest.matchers.floats.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -153,6 +155,34 @@ class BoardLayoutTest {
 
         (last + landscape.cardHeight) shouldBeLessThanOrEqual landscape.height
         landscape.hiddenBarHeight(tall) shouldBeLessThanOrEqual landscape.faceDownStep * 6
+    }
+
+    @Test
+    fun `at the bottom, the tallest possible column ends a gap above the bottom edge`() {
+        val low = BoardLayout(width = 1080f, height = 1800f, gap = 12f, alignment = BoardAlignment.BOTTOM)
+        val tallest = List(6) { Card(Suit.CLUBS, Rank.entries[it], isFaceUp = false) } +
+            Rank.entries.reversed().map { Card(Suit.HEARTS, it, isFaceUp = true) }
+        val state = GameState(
+            stock = emptyList(),
+            waste = emptyList(),
+            foundations = List(4) { emptyList() },
+            tableau = List(7) { if (it == 6) tallest else emptyList() },
+            drawMode = DrawMode.ONE,
+        )
+        val column = low.positions(state).values.filter { it.pile == PileRef.Tableau(6) }.sortedBy { it.index }
+
+        val bottom = low.height - (column.last().position.y + low.cardHeight)
+        bottom.toDouble() shouldBe (low.gap.toDouble() plusOrMinus 0.5)
+        low.slot(PileRef.Stock).y shouldBeGreaterThan low.gap
+        // Not squeezed: every face-up card a full step below the one before.
+        (column.last().position.y - column[6].position.y).toDouble() shouldBe
+            ((low.faceUpStep * 12).toDouble() plusOrMinus 0.5)
+    }
+
+    @Test
+    fun `at the bottom, a board with no height to spare stays at the top`() {
+        BoardLayout(width = 2200f, height = 900f, gap = 12f, alignment = BoardAlignment.BOTTOM)
+            .slot(PileRef.Stock).y shouldBe 12f
     }
 
     @Test

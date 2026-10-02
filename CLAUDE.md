@@ -21,7 +21,7 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
 ./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
 ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest   # on-device UI tests (emulator; not part of the gate or CI)
-adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck)
+adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck; tallest: the tallest possible column)
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.
@@ -93,6 +93,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).
+- The board sits at the top or, with Settings' board position on Bottom, as low as it can while leaving room for the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Landscape has no height to spare, so it stays put.
 - `GameBoard` keys every card by its identity and animates it to its position with the motion scheme's spatial spring.
 - **Layers:** waste 100+, stock 150+, stock cover 198, stock count 199, foundations 200+, columns 300+ (by depth), and in-flight cards `LIFTED_Z` (10 000) + their layer.
   - Only a card arriving in a new pile is lifted. A card shifting within its own pile (the Draw 3 fan closing up, a column re-spacing) keeps its layer, or it covers newer cards.

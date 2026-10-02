@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
@@ -82,22 +83,7 @@ fun SettingsScreen(
         topBar = { SettingsTopBar(onBack) },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            SectionTitle(stringResource(R.string.section_game))
-            Choice(
-                title = stringResource(R.string.draw_mode),
-                options = listOf(DrawMode.ONE to R.string.draw_one, DrawMode.THREE to R.string.draw_three),
-                selected = settings.drawMode,
-                onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
-            )
-            Choice(
-                title = stringResource(R.string.handedness),
-                options = listOf(Handedness.LEFT to R.string.hand_left, Handedness.RIGHT to R.string.hand_right),
-                selected = settings.handedness,
-                onSelect = { onChange(SettingsChange.HandednessChanged(it)) },
-            )
-            ToggleRow(stringResource(R.string.show_timer), settings.showTimer) {
-                onChange(SettingsChange.ShowTimerChanged(it))
-            }
+            GameSection(settings, onChange)
 
             SectionTitle(stringResource(R.string.section_appearance))
             Choice(
@@ -127,6 +113,35 @@ fun SettingsScreen(
             }
             PrivacySection(privacyOptionsRequired, onOpenPrivacyOptions, onOpenPrivacyPolicy)
         }
+    }
+}
+
+@Composable
+private fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit) {
+    SectionTitle(stringResource(R.string.section_game))
+    Choice(
+        title = stringResource(R.string.draw_mode),
+        options = listOf(DrawMode.ONE to R.string.draw_one, DrawMode.THREE to R.string.draw_three),
+        selected = settings.drawMode,
+        onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
+    )
+    Choice(
+        title = stringResource(R.string.handedness),
+        options = listOf(Handedness.LEFT to R.string.hand_left, Handedness.RIGHT to R.string.hand_right),
+        selected = settings.handedness,
+        onSelect = { onChange(SettingsChange.HandednessChanged(it)) },
+    )
+    Choice(
+        title = stringResource(R.string.board_alignment),
+        options = listOf(
+            BoardAlignment.TOP to R.string.board_top,
+            BoardAlignment.BOTTOM to R.string.board_bottom,
+        ),
+        selected = settings.boardAlignment,
+        onSelect = { onChange(SettingsChange.BoardAlignmentChanged(it)) },
+    )
+    ToggleRow(stringResource(R.string.show_timer), settings.showTimer) {
+        onChange(SettingsChange.ShowTimerChanged(it))
     }
 }
 

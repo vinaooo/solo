@@ -27,4 +27,7 @@
     <string name="handedness">Mão preferida</string>
     <string name="hand_left">Esquerda</string>
     <string name="hand_right">Direita</string>
+    <string name="board_alignment">Posição da mesa</string>
+    <string name="board_top">Topo</string>
+    <string name="board_bottom">Base</string>
 </resources>

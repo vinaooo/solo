@@ -1,6 +1,7 @@
 package io.github.vinaooo.solo.data.settings
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
@@ -41,6 +42,7 @@ class DataStoreSettingsRepositoryTest {
             hapticsEnabled = false,
             showTimer = false,
             handedness = Handedness.LEFT,
+            boardAlignment = BoardAlignment.BOTTOM,
         )
 
         repository.update { changed }
