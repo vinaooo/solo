@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Solo is a closed-source Klondike solitaire for Android, to be published on Google Play: Kotlin, Jetpack Compose, Material 3 Expressive with dynamic color, and Hilt. It uses a multi-module Clean Architecture. The UI is in pt-BR and English: every user-facing string lives in `values/strings.xml` and `values-pt-rBR/strings.xml` of its module, never hard-coded. The user makes the product and design decisions (rules, layout, libraries, visuals), so ask before choosing one instead of picking a default.
+Solo is an open-source (MIT) Klondike solitaire for Android, to be published on Google Play: Kotlin, Jetpack Compose, Material 3 Expressive with dynamic color, and Hilt. It uses a multi-module Clean Architecture. The UI is in pt-BR and English: every user-facing string lives in `values/strings.xml` and `values-pt-rBR/strings.xml` of its module, never hard-coded. The user makes the product and design decisions (rules, layout, libraries, visuals), so ask before choosing one instead of picking a default.
 
 ## Commands
 
@@ -119,4 +119,4 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 ## Git
 
-Only `master` is long-lived: branch from `master` and open the PR against `master`. The user merges PRs from their own account (GitHub won't let them approve their own PRs), using merge commits. CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `master`, and a separate nightly workflow runs Pitest. The repository is private and proprietary ("All rights reserved"); signing keys and ad unit IDs go in `local.properties` or GitHub Secrets and are never committed.
+Only `master` is long-lived: branch from `master` and open the PR against `master`. The user merges PRs from their own account (GitHub won't let them approve their own PRs), using merge commits. CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `master`, and a separate nightly workflow runs Pitest. The repository is public and MIT-licensed; signing keys and ad unit IDs go in `local.properties` or GitHub Secrets and are never committed.
