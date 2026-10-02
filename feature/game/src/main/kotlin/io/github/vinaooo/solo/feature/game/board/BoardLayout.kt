@@ -53,8 +53,12 @@ class BoardLayout(
     private val wasteFanStep = cardWidth * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
-    // 2dp with the board's 4dp gap.
+    // With the board's 4dp gap: each bar is 0.88dp short of its cards' steps, and 2.5dp above its face-up cards.
+    private val hiddenBarShortfall = gap * HIDDEN_BAR_SHORTFALL
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
+
+    // Every column's face-up cards, a bar or not, start this much below its steps, so they keep to one staircase.
+    private val faceUpLift = hiddenBarGap - hiddenBarShortfall
 
     fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
 
@@ -155,18 +159,24 @@ class BoardLayout(
 
     /**
      * Height of the bar that stands in for a column's face-down cards; 0 when it has none. Each face-down card
-     * takes a [faceDownStep] of the column's staircase, which starts at the column's top so a column without a bar
-     * keeps to it. The bar is its cards' steps less the gap between it and the face-up cards.
+     * takes a [faceDownStep], and the bar is its cards' steps less a fixed shortfall. The face-up cards start a
+     * gap below it, and every column, a bar or not, starts its face-up cards that same lift below its steps.
      */
     fun hiddenBarHeight(column: List<Card>): Float {
         val steps = column.count { !it.isFaceUp } * faceDownStep
         // The face-down cards sit where the first face-up card is: below the bar and its gap, squeezed alike.
-        return if (steps == 0f) 0f else columnOffsets(column).first() * (steps - hiddenBarGap) / steps
+        return if (steps ==
+            0f
+        ) {
+            0f
+        } else {
+            columnOffsets(column).first() * (steps - hiddenBarShortfall) / (steps + faceUpLift)
+        }
     }
 
     private fun columnOffsets(pile: List<Card>): List<Float> {
         val hidden = pile.count { !it.isFaceUp }
-        val bar = hidden * faceDownStep
+        val bar = hidden * faceDownStep + faceUpLift
         // Squeezed when the column would run off the board.
         val total = bar + (pile.size - hidden - 1).coerceAtLeast(0) * faceUpStep
         val available = height - tableauY - gap - cardHeight
@@ -186,7 +196,8 @@ class BoardLayout(
         /** Top row + a tableau of at least 2.2 card heights must fit in landscape. */
         const val HEIGHT_IN_CARDS = 3.2f
         const val FACE_DOWN_STEP = 0.12f
-        const val HIDDEN_BAR_GAP = 0.5f
+        const val HIDDEN_BAR_SHORTFALL = 0.22f
+        const val HIDDEN_BAR_GAP = 0.625f
         const val FACE_UP_STEP = 0.28f
         const val WASTE_FAN_STEP = 0.4f
         const val VISIBLE_WASTE_CARDS = 3
