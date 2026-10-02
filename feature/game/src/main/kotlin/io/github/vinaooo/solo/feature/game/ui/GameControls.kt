@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.EmojiEvents
@@ -126,11 +127,14 @@ internal fun VerticalGameToolbar(uiState: GameUiState, onIntent: (GameIntent) ->
     ) { ToolbarActions(uiState, onIntent) }
 }
 
-/** Undo, hint, auto-complete (when possible) and the new game menu, in either toolbar. */
+/** Undo, redo, hint, auto-complete (when possible) and the new game menu, in either toolbar. */
 @Composable
 private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit) {
     IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
         Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
+    }
+    IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
+        Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
     }
     IconButton(onClick = { onIntent(GameIntent.Hint) }) {
         Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))

@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
 data class GameSession(val seed: Long, val state: GameState, val history: UndoHistory = UndoHistory()) {
     val canUndo: Boolean get() = history.canUndo
 
+    val canRedo: Boolean get() = history.canRedo
+
     val isInProgress: Boolean get() = state.moves > 0 && !state.isWon
 
     fun play(move: Move, engine: GameEngine): GameSession? = when (val outcome = engine.apply(state, move)) {
@@ -21,6 +23,10 @@ data class GameSession(val seed: Long, val state: GameState, val history: UndoHi
 
     fun undo(): GameSession? = history.undo(state)?.let { (restored, remaining) ->
         copy(state = restored, history = remaining)
+    }
+
+    fun redo(): GameSession? = history.redo(state)?.let { (replayed, remaining) ->
+        copy(state = replayed, history = remaining)
     }
 
     fun tick(elapsedSeconds: Long, engine: GameEngine): GameSession = copy(state = engine.tick(state, elapsedSeconds))

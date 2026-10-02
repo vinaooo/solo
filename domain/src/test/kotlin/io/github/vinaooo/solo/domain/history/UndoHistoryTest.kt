@@ -98,4 +98,37 @@ class UndoHistoryTest {
     fun `canUndo is true after a push`() {
         UndoHistory().push(emptyState(), emptyState()).canUndo.shouldBeTrue()
     }
+
+    @Test
+    fun `redo plays the undone move again, earning its points back but keeping the penalty`() {
+        val before = emptyState().copy(waste = up("6H"), score = 100, moves = 3).withTableau(0, up("7S"))
+        val after = (engine.apply(before, Move.WasteToTableau(0)) as MoveOutcome.Applied).state
+        val (undone, history) = UndoHistory().push(before, after).undo(after).shouldNotBeNull()
+        history.canRedo.shouldBeTrue()
+
+        val (redone, remaining) = history.redo(undone.copy(elapsedSeconds = 30)).shouldNotBeNull()
+
+        redone.tableau shouldBe after.tableau
+        redone.waste shouldBe after.waste
+        redone.score shouldBe 100 - 15 + 5
+        redone.moves shouldBe after.moves + 1
+        redone.elapsedSeconds shouldBe 30
+        remaining.canRedo.shouldBeFalse()
+        remaining.undo(redone).shouldNotBeNull().first.tableau shouldBe before.tableau
+    }
+
+    @Test
+    fun `a new move clears the redo stack`() {
+        val before = emptyState().copy(stock = down("2C", "3C"))
+        val after = (engine.apply(before, Move.Draw) as MoveOutcome.Applied).state
+        val (undone, history) = UndoHistory().push(before, after).undo(after).shouldNotBeNull()
+
+        val again = (engine.apply(undone, Move.Draw) as MoveOutcome.Applied).state
+        history.push(undone, again).canRedo.shouldBeFalse()
+    }
+
+    @Test
+    fun `empty history cannot redo`() {
+        UndoHistory().redo(emptyState()).shouldBeNull()
+    }
 }

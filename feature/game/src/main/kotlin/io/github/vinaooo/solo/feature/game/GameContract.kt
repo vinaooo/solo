@@ -31,6 +31,8 @@ sealed interface GameIntent {
 
     data object Undo : GameIntent
 
+    data object Redo : GameIntent
+
     data object Hint : GameIntent
 
     data object AutoComplete : GameIntent

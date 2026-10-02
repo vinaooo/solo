@@ -3,6 +3,7 @@
     <string name="moves">Moves</string>
     <string name="time">Time</string>
     <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
     <string name="hint">Hint</string>
     <string name="auto_complete">Auto-complete</string>
     <string name="new_game">New game</string>
@@ -24,6 +25,7 @@
     <string name="a11y_drew">Drew %1$s</string>
     <string name="a11y_recycled">Waste turned over</string>
     <string name="a11y_undone">Move undone</string>
+    <string name="a11y_redone">Move redone</string>
     <string name="a11y_hint_move">Hint: %1$s to %2$s</string>
     <string name="a11y_hint_draw">Hint: draw a card</string>
     <string name="a11y_hint_recycle">Hint: turn the waste over</string>

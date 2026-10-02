@@ -16,6 +16,8 @@ sealed interface Announcement {
 
     data object Undone : Announcement
 
+    data object Redone : Announcement
+
     data class HintMove(val card: Card, val to: PileRef) : Announcement
 
     data object HintDraw : Announcement

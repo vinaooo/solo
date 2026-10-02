@@ -139,6 +139,25 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `redo replays the undone move and is enabled only after an undo`() = gameTest {
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+        val drawn = vm.session.state.waste
+        vm.session.canRedo.shouldBeFalse()
+
+        vm.onIntent(GameIntent.Undo)
+        runCurrent()
+        vm.session.canRedo.shouldBeTrue()
+
+        vm.onIntent(GameIntent.Redo)
+        runCurrent()
+        vm.session.state.waste shouldBe drawn
+        vm.session.canRedo.shouldBeFalse()
+        savedGames.saved shouldBe vm.session
+    }
+
+    @Test
     fun `other settings changes keep the game`() = gameTest {
         val vm = viewModel()
         val before = vm.session

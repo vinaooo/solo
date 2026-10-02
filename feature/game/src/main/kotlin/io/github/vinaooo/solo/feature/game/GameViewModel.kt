@@ -74,7 +74,8 @@ class GameViewModel @Inject constructor(
             is GameIntent.Drop -> withSession {
                 resolver.resolveDrop(it.state, intent.from, intent.cardIndex, intent.to)
             }
-            GameIntent.Undo -> undo()
+            GameIntent.Undo -> step(GameSession::undo, Announcement.Undone)
+            GameIntent.Redo -> step(GameSession::redo, Announcement.Redone)
             GameIntent.Hint -> showHint()
             GameIntent.AutoComplete -> autoComplete()
             GameIntent.NewGame -> newGame(restart = false)
@@ -111,12 +112,11 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun undo() {
-        val undone = state.value.session?.undo() ?: return
-        show(undone)
-        state.announce(Announcement.Undone)
-        feedback.give(FeedbackEvent.MOVE, state.value.settings)
-        persist(undone)
+    /** Undo or redo: it plays out like a move (a redo can even win), then says what it did. */
+    private fun step(move: (GameSession) -> GameSession?, announcement: Announcement) {
+        val next = state.value.session?.let(move) ?: return
+        onPlayed(next)
+        state.announce(announcement)
     }
 
     private fun showHint() {
