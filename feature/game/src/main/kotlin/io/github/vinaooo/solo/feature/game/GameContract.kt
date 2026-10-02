@@ -18,6 +18,8 @@ data class GameUiState(
     val isStuck: Boolean = false,
     /** Tell the player the game just got stuck. */
     val showStuckTip: Boolean = false,
+    /** How many games were dealt (not resumed) since the screen opened: the board plays each new deal once. */
+    val deals: Int = 0,
     val winRecord: ScoreRecord? = null,
     val message: GameMessage? = null,
     /** Where each face-up card can legally go; TalkBack offers these as actions. */

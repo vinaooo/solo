@@ -233,6 +233,26 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `a fresh game is dealt on the board, a resumed one is not`() = gameTest {
+        viewModel().uiState.value.deals shouldBe 1
+
+        savedGames.saved = sessionWith(Dealer().deal(SeededShuffler(9), DrawMode.ONE).copy(moves = 3))
+        viewModel().uiState.value.deals shouldBe 0
+    }
+
+    @Test
+    fun `a new game is dealt on the board, a restarted deal is not`() = gameTest {
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.NewGame)
+        runCurrent()
+        vm.uiState.value.deals shouldBe 2
+        vm.onIntent(GameIntent.RestartDeal)
+        runCurrent()
+        vm.uiState.value.deals shouldBe 2
+    }
+
+    @Test
     fun `other settings changes keep the game`() = gameTest {
         val vm = viewModel()
         val before = vm.session

@@ -72,8 +72,10 @@ class GameViewModel @Inject constructor(
             settingsRepository.settings.collect { settings -> state.update { it.copy(settings = settings) } }
         }
         viewModelScope.launch {
-            val session = resumeGame() ?: startNewGame(settingsRepository.settings.first().drawMode)
-            show(session)
+            val resumed = resumeGame()
+            show(resumed ?: startNewGame(settingsRepository.settings.first().drawMode))
+            // A game dealt now, not one picked up where it was left, is dealt on the board.
+            if (resumed == null) state.update { it.copy(deals = it.deals + 1) }
         }
         viewModelScope.launch {
             // Switching the draw mode in Settings (confirmed there) deals a new game in that mode.
@@ -169,7 +171,10 @@ class GameViewModel @Inject constructor(
             } else {
                 startNewGame(drawMode)
             }
-            state.update { it.copy(winRecord = null, isAutoCompleting = false) }
+            // A new game is dealt on the board; a restarted deal just goes back to its start.
+            state.update {
+                it.copy(winRecord = null, isAutoCompleting = false, deals = it.deals + if (restart) 0 else 1)
+            }
             show(session)
         }
     }

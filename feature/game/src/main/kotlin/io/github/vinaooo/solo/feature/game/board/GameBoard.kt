@@ -81,6 +81,7 @@ fun GameBoard(
     modifier: Modifier = Modifier,
     destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
     handedness: Handedness = Handedness.RIGHT,
+    deals: Int = 0,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
@@ -93,14 +94,14 @@ fun GameBoard(
 
         val moving = remember { mutableStateMapOf<CardIdentity, Boolean>() }
         val placedCards = layout.positions(state).values
-        val stillMoving = stillMoving(placedCards, moving)
+        val deal = rememberDeal(deals, state, layout)
 
         EmptySlots(state, layout, cardWidth, onIntent)
-        FaceDownPiles(state, layout, cardWidth, highlighted)
+        // While the deal plays, the face-down cards are cards on their way, not bars yet, and the stock isn't there.
+        if (!deal.active) FaceDownPiles(state, layout, cardWidth, highlighted)
 
         placedCards.forEach { placed ->
             key(placed.card.identity()) {
-                val dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset
                 val isHighlighted = placed.card.identity() in highlighted
                 val accessibility = cardAccessibility(
                     role = cardRole(state, placed),
@@ -119,11 +120,10 @@ fun GameBoard(
                     shadow = placedCards.find { it.pile == placed.pile && it.index == placed.index - 1 }
                         ?.takeIf { it.position != placed.position }
                         ?.let { layout.cover(state, it)?.edge },
-                    dragOffset = dragOffset,
-                    pileMoving = stillMoving[placed.pile],
+                    dragOffset = drag?.takeIf { it.pile == placed.pile && placed.index >= it.index }?.offset,
+                    pileMoving = stillMoving(placedCards, moving)[placed.pile],
                     onMovingChange = { moving[placed.card.identity()] = it },
-                    // A column's face-down cards are drawn as its bar instead.
-                    visible = placed.card.isFaceUp || placed.pile !is PileRef.Tableau,
+                    deal = deal,
                     accessibility = accessibility,
                     gestures = accessibility.modifier.then(
                         if (!isDraggable(state, placed)) {
@@ -143,6 +143,7 @@ fun GameBoard(
                 )
             }
         }
+        DealGuard(deal)
     }
 }
 
@@ -167,11 +168,13 @@ private fun BoardCard(
     dragOffset: Offset?,
     pileMoving: IntRange?,
     onMovingChange: (Boolean) -> Unit,
-    visible: Boolean,
     accessibility: CardAccessibility,
     gestures: Modifier,
+    deal: Deal,
 ) {
-    val target = IntOffset(placed.position.x.roundToInt(), placed.position.y.roundToInt())
+    val target = deal.target(placed)
+    // A column's face-down cards are drawn as its bar instead, once dealt.
+    val visible = deal.shows(placed)
     val animated = remember { Animatable(target, IntOffset.VectorConverter) }
     val stockReturn = rememberStockReturn(placed.pile)
     val spec = stockReturn.motion(
@@ -220,7 +223,7 @@ private fun BoardCard(
     val flying = shown.flying(placed.pile, appearing, dragging, lifted || departing)
     SideEffect { shown.update(drawn, visible, placed.pile) }
     PlayingCard(
-        card = if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card,
+        card = deal.face(if (stockReturn.showsFace(placed.pile) || !visible) placed.card.faceUp() else placed.card),
         highlighted = highlighted,
         contentDescription = accessibility.description,
         interactionSource = accessibility.touches,
@@ -229,8 +232,9 @@ private fun BoardCard(
         shadow = shadow,
         modifier = Modifier
             .offset { dragPosition ?: animated.value }
-            .zIndex(stockReturn.zIndex(placed, flying))
+            .zIndex(deal.zIndex(placed, animated.isRunning, otherwise = stockReturn.zIndex(placed, flying)))
             .scale(if (dragging) DRAG_SCALE else 1f)
+            .scale(scaleX = deal.flipScale(placed.card), scaleY = 1f)
             .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
             .testTag("card_${placed.card.suit}_${placed.card.rank}")
