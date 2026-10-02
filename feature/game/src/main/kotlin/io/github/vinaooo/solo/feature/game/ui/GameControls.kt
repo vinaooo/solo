@@ -266,7 +266,14 @@ private fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
         }
         // Always composed, so the items can animate out; it only takes touches while open.
         Popup(
-            popupPositionProvider = MenuBesideAnchor(vertical, gap = with(LocalDensity.current) { 16.dp.roundToPx() }),
+            popupPositionProvider = with(LocalDensity.current) {
+                MenuBesideAnchor(
+                    vertical,
+                    gap = 16.dp.roundToPx(),
+                    toolbarInset = 8.dp.roundToPx(),
+                    menuInset = 16.dp.roundToPx(),
+                )
+            },
             onDismissRequest = { menuOpen = false },
             properties = PopupProperties(focusable = menuOpen),
         ) {
@@ -287,19 +294,31 @@ private fun NewGameMenu(onIntent: (GameIntent) -> Unit, vertical: Boolean) {
 }
 
 /**
- * Places a popup's end edge on the anchor's end and its bottom above it, or to its left when [beside], [gap] away:
- * enough to clear the toolbar around the button.
+ * Places the menu above the button, its pills' right edge on the toolbar's, or to its left when [beside], its bottom
+ * on the toolbar's. [gap] clears the toolbar, [toolbarInset] is the toolbar's padding around the button and
+ * [menuInset] the FAB menu's own side padding.
  */
-private data class MenuBesideAnchor(private val beside: Boolean, private val gap: Int) : PopupPositionProvider {
+private data class MenuBesideAnchor(
+    private val beside: Boolean,
+    private val gap: Int,
+    private val toolbarInset: Int,
+    private val menuInset: Int,
+) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset = if (beside) {
-        IntOffset(anchorBounds.left - gap - popupContentSize.width, anchorBounds.bottom - popupContentSize.height)
+        IntOffset(
+            anchorBounds.left - gap + menuInset - popupContentSize.width,
+            anchorBounds.bottom + toolbarInset - popupContentSize.height,
+        )
     } else {
-        IntOffset(anchorBounds.right - popupContentSize.width, anchorBounds.top - gap - popupContentSize.height)
+        IntOffset(
+            anchorBounds.right + toolbarInset + menuInset - popupContentSize.width,
+            anchorBounds.top - gap - popupContentSize.height,
+        )
     }
 }
 
