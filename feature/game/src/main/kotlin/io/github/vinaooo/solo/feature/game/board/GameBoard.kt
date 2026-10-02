@@ -181,6 +181,9 @@ private fun BoardCard(
     LaunchedEffect(target) {
         if (appearing) {
             animated.snapTo(target)
+            // It may have been flying when this replaced that animation (a new deal right after another): it isn't
+            // now, or it would stay lifted over everything, the stock's count included.
+            onMovingChange(false)
             return@LaunchedEffect
         }
         onMovingChange(true)
