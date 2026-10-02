@@ -81,6 +81,7 @@ class GameViewModel @Inject constructor(
             GameIntent.NewGame -> newGame(restart = false)
             GameIntent.RestartDeal -> newGame(restart = true)
             GameIntent.MessageShown -> state.update { it.copy(message = null) }
+            GameIntent.AutoCompleteTipShown -> state.update { it.copy(showAutoCompleteTip = false) }
             GameIntent.Resume -> clock.start()
             GameIntent.Pause -> pause()
         }
@@ -164,11 +165,21 @@ class GameViewModel @Inject constructor(
     }
 
     private fun show(session: GameSession, keepHint: Boolean = false) {
+        val canAutoComplete = autoCompleter.canAutoComplete(session.state)
+        val tip = canAutoComplete &&
+            !state.value.canAutoComplete &&
+            state.value.settings.autoCompleteTipsShown < AUTO_COMPLETE_TIPS
+        if (tip) {
+            viewModelScope.launch {
+                settingsRepository.update { it.copy(autoCompleteTipsShown = it.autoCompleteTipsShown + 1) }
+            }
+        }
         state.update {
             it.copy(
                 session = session,
                 hint = if (keepHint) it.hint else null,
-                canAutoComplete = autoCompleter.canAutoComplete(session.state),
+                canAutoComplete = canAutoComplete,
+                showAutoCompleteTip = canAutoComplete && (it.showAutoCompleteTip || tip),
                 // A clock tick leaves the cards where they are, so their destinations don't change.
                 destinations = if (it.session?.state?.hasSamePilesAs(session.state) == true) {
                     it.destinations
@@ -186,6 +197,7 @@ class GameViewModel @Inject constructor(
     private companion object {
         const val CLOCK_TICK_MILLIS = 1_000L
         const val AUTO_COMPLETE_STEP_MILLIS = 120L
+        const val AUTO_COMPLETE_TIPS = 3
     }
 }
 

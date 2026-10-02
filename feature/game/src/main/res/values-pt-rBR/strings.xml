@@ -6,6 +6,7 @@
     <string name="redo">Refazer</string>
     <string name="hint">Dica</string>
     <string name="auto_complete">Auto completar</string>
+    <string name="auto_complete_tip">Toque para auto completar</string>
     <string name="new_game">Nova partida</string>
     <string name="restart_deal">Reiniciar partida</string>
     <string name="open_scores">Pontuações</string>

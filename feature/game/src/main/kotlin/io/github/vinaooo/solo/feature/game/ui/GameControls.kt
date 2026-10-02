@@ -28,15 +28,22 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.VerticalFloatingToolbar
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +61,7 @@ import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.R
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Portrait: stats in a row, the Scores and Settings buttons at its end. */
 @Composable
@@ -166,12 +174,40 @@ private fun ToolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
         } else {
             shrinkHorizontally(size, Alignment.CenterHorizontally)
         } + scaleOut(scale) + fadeOut(fade),
+    ) { AutoCompleteButton(uiState, onIntent, vertical) }
+    NewGameMenu(onIntent)
+}
+
+/**
+ * The first few times the button appears, a speech bubble points at it (from above, or from the left of the vertical
+ * toolbar) until the player taps anywhere or a few seconds pass.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AutoCompleteButton(uiState: GameUiState, onIntent: (GameIntent) -> Unit, vertical: Boolean) {
+    val tip = rememberTooltipState(isPersistent = true)
+    LaunchedEffect(uiState.showAutoCompleteTip) {
+        if (!uiState.showAutoCompleteTip) return@LaunchedEffect
+        try {
+            withTimeoutOrNull(AUTO_COMPLETE_TIP_MILLIS) { tip.show() }
+        } finally {
+            tip.dismiss()
+            onIntent(GameIntent.AutoCompleteTipShown)
+        }
+    }
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+            if (vertical) TooltipAnchorPosition.Left else TooltipAnchorPosition.Above,
+        ),
+        tooltip = {
+            PlainTooltip(caretShape = TooltipDefaults.caretShape()) { Text(stringResource(R.string.auto_complete_tip)) }
+        },
+        state = tip,
     ) {
         IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
             Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
         }
     }
-    NewGameMenu(onIntent)
 }
 
 @Composable
@@ -199,3 +235,5 @@ private fun NewGameMenu(onIntent: (GameIntent) -> Unit) {
         }
     }
 }
+
+private const val AUTO_COMPLETE_TIP_MILLIS = 5_000L

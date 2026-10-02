@@ -158,6 +158,30 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `the auto-complete button is pointed out, and counted, when it appears`() = gameTest {
+        savedGames.saved = sessionWith(readyToAutoComplete)
+
+        val vm = viewModel()
+
+        vm.uiState.value.showAutoCompleteTip.shouldBeTrue()
+        settings.current.value.autoCompleteTipsShown shouldBe 1
+        vm.onIntent(GameIntent.AutoCompleteTipShown)
+        vm.uiState.value.showAutoCompleteTip.shouldBeFalse()
+    }
+
+    @Test
+    fun `the auto-complete button is pointed out only the first few times`() = gameTest {
+        settings.current.value = Settings(autoCompleteTipsShown = 3)
+        savedGames.saved = sessionWith(readyToAutoComplete)
+
+        val vm = viewModel()
+
+        vm.uiState.value.canAutoComplete.shouldBeTrue()
+        vm.uiState.value.showAutoCompleteTip.shouldBeFalse()
+        settings.current.value.autoCompleteTipsShown shouldBe 3
+    }
+
+    @Test
     fun `other settings changes keep the game`() = gameTest {
         val vm = viewModel()
         val before = vm.session
