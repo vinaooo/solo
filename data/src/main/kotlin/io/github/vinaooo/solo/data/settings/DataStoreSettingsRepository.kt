@@ -32,6 +32,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             hapticsEnabled = this[Keys.HAPTICS] ?: defaults.hapticsEnabled,
             showTimer = this[Keys.SHOW_TIMER] ?: defaults.showTimer,
             handedness = enumOrDefault(this[Keys.HANDEDNESS], defaults.handedness),
+            boardAlignment = enumOrDefault(this[Keys.BOARD_ALIGNMENT], defaults.boardAlignment),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
         )
     }
@@ -44,6 +45,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.HAPTICS] = settings.hapticsEnabled
         this[Keys.SHOW_TIMER] = settings.showTimer
         this[Keys.HANDEDNESS] = settings.handedness.name
+        this[Keys.BOARD_ALIGNMENT] = settings.boardAlignment.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
     }
 
@@ -58,6 +60,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val HAPTICS = booleanPreferencesKey("haptics")
         val SHOW_TIMER = booleanPreferencesKey("show_timer")
         val HANDEDNESS = stringPreferencesKey("handedness")
+        val BOARD_ALIGNMENT = stringPreferencesKey("board_alignment")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
     }
 }

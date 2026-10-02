@@ -2,6 +2,9 @@ package io.github.vinaooo.solo.domain.model
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** Where the board sits in the height it has: at the top, or centered as if its tallest possible column were dealt. */
+enum class BoardAlignment { TOP, CENTER }
+
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -10,6 +13,7 @@ data class Settings(
     val hapticsEnabled: Boolean = true,
     val showTimer: Boolean = true,
     val handedness: Handedness = Handedness.RIGHT,
+    val boardAlignment: BoardAlignment = BoardAlignment.TOP,
     /** How many times the game has pointed out the auto-complete button; it stops after the first few. */
     val autoCompleteTipsShown: Int = 0,
 )

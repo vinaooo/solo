@@ -93,6 +93,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).
+- The board sits at the top or, with Settings' board position on Center, is centered as if it held the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Landscape has no height to spare, so it stays put.
 - `GameBoard` keys every card by its identity and animates it to its position with the motion scheme's spatial spring.
 - **Layers:** waste 100+, stock 150+, stock cover 198, stock count 199, foundations 200+, columns 300+ (by depth), and in-flight cards `LIFTED_Z` (10 000) + their layer.
   - Only a card arriving in a new pile is lifted. A card shifting within its own pile (the Draw 3 fan closing up, a column re-spacing) keeps its layer, or it covers newer cards.

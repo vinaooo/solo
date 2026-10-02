@@ -61,6 +61,7 @@ import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Move
@@ -81,11 +82,12 @@ fun GameBoard(
     modifier: Modifier = Modifier,
     destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
     handedness: Handedness = Handedness.RIGHT,
+    alignment: BoardAlignment = BoardAlignment.TOP,
     deals: Int = 0,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
-        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness)
+        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness, alignment)
         val cardWidth = with(density) { layout.cardWidth.toDp() }
         val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }
         var drag by remember { mutableStateOf<DragState?>(null) }
@@ -147,11 +149,16 @@ fun GameBoard(
 }
 
 @Composable
-private fun rememberBoardLayout(width: Int, height: Int, handedness: Handedness): BoardLayout {
+private fun rememberBoardLayout(
+    width: Int,
+    height: Int,
+    handedness: Handedness,
+    alignment: BoardAlignment,
+): BoardLayout {
     val density = LocalDensity.current
-    return remember(width, height, density, handedness) {
+    return remember(width, height, density, handedness, alignment) {
         with(density) {
-            BoardLayout(width.toFloat(), height.toFloat(), GAP.toPx(), handedness, COLUMN_GAP.toPx())
+            BoardLayout(width.toFloat(), height.toFloat(), GAP.toPx(), handedness, COLUMN_GAP.toPx(), alignment)
         }
     }
 }

@@ -7,6 +7,7 @@ import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.hint.HintEngine
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
@@ -34,6 +35,7 @@ class GameScreenScreenshotTest {
         themeMode: ThemeMode = ThemeMode.LIGHT,
         drawMode: DrawMode = DrawMode.ONE,
         handedness: Handedness = Handedness.RIGHT,
+        alignment: BoardAlignment = BoardAlignment.TOP,
     ) {
         val session = midGame(drawMode)
         compose.setContent {
@@ -42,7 +44,7 @@ class GameScreenScreenshotTest {
                     uiState = GameUiState(
                         session = session,
                         hint = HintEngine().bestHint(session.state),
-                        settings = Settings(handedness = handedness),
+                        settings = Settings(handedness = handedness, boardAlignment = alignment),
                     ),
                     onIntent = {},
                     onOpenScores = {},
@@ -65,6 +67,9 @@ class GameScreenScreenshotTest {
     @Test
     fun game_phone_left_handed() =
         capture("game_phone_left_handed", drawMode = DrawMode.THREE, handedness = Handedness.LEFT)
+
+    @Test
+    fun game_phone_centered() = capture("game_phone_centered", alignment = BoardAlignment.CENTER)
 
     @Test
     @Config(qualifiers = PHONE_LANDSCAPE)

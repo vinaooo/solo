@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Settings
@@ -46,6 +47,10 @@ sealed interface SettingsChange {
 
     data class HandednessChanged(val value: Handedness) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(handedness = value)
+    }
+
+    data class BoardAlignmentChanged(val value: BoardAlignment) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(boardAlignment = value)
     }
 }
 
