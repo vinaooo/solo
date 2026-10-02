@@ -14,7 +14,7 @@ import io.github.vinaooo.solo.domain.model.PileRef
  * A card going between the stock and the waste. Going back to the stock face down (an undone draw, a recycled
  * waste), it shows its face until it reaches the stock, and slides under the stock's cards until its spring
  * settles. Only from the waste: those faces were seen, while a new deal's cards must fly in face down. Leaving the
- * stock (a draw), it comes out from under the stock's cover and flies above the waste.
+ * stock (a draw), it comes out from under the stock's cover onto the waste, keeping the waste's own layer.
  */
 @Stable
 internal class StockReturn(pile: PileRef) {
@@ -42,7 +42,9 @@ internal class StockReturn(pile: PileRef) {
      */
     fun zIndex(placed: PlacedCard, flying: Boolean): Float = when {
         slidesUnder(placed.pile) -> placed.z - placed.index - UNDER_STOCK_OFFSET
-        flying && isLeaving(placed.pile) -> LEAVING_STOCK_Z + placed.index / LEAVING_ORDER_STEPS
+        // A drawn card keeps the waste's own layer, already under the stock and its cover and over the older waste
+        // cards: changing layers as it settles made the faces it covers blink.
+        flying && isLeaving(placed.pile) -> placed.z
         flying -> LIFTED_Z + placed.z
         else -> placed.z
     }
@@ -91,7 +93,3 @@ internal fun rememberStockReturn(pile: PileRef): StockReturn {
 
 /** Below every card of the stock, which a returning card is about to join, and above the waste. */
 private const val UNDER_STOCK_OFFSET = 0.5f
-
-/** Under the stock's cover ([STOCK_COVER_Z]) and above the waste, a drawn card keeping its order among the drawn. */
-private const val LEAVING_STOCK_Z = STOCK_COVER_Z - 1
-private const val LEAVING_ORDER_STEPS = 100f
