@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -43,6 +45,7 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -246,7 +249,16 @@ private fun FaceDownPiles(state: GameState, layout: BoardLayout, cardWidth: Dp) 
                 lineHeight = COUNT_SIZE,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
             ),
-            modifier = Modifier.clearAndSetSemantics {},
+            modifier = Modifier
+                .clearAndSetSemantics {}
+                // Centered on the digits' ink, not their line box, which is taller than a thin bar and carries empty
+                // space below the digits: free to overflow, it is placed so the ink's middle is the box's middle.
+                .layout { measurable, constraints ->
+                    val text = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+                    val inkCenter = text[FirstBaseline] - COUNT_SIZE.toPx() * DIGIT_HEIGHT / 2
+                    val height = text.height.coerceAtMost(constraints.maxHeight)
+                    layout(text.width, height) { text.place(0, (height / 2f - inkCenter).roundToInt()) }
+                },
         )
     }
     state.tableau.forEachIndexed { column, pile ->
@@ -372,4 +384,7 @@ private const val LANDED_PX = 2
 /** Above the stock's cards, under the foundations'. */
 private const val STOCK_COUNT_Z = 199f
 private val COUNT_SIZE = 9.sp
+
+/** Roboto's digit height, as a fraction of the font size. */
+private const val DIGIT_HEIGHT = 0.71f
 private const val DRAG_SCALE = 1.05f
