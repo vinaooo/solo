@@ -21,7 +21,8 @@ internal object DrawRule : MoveRule<Move.Draw> {
 }
 
 internal object RecycleRule : MoveRule<Move.Recycle> {
-    override fun isLegal(state: GameState, move: Move.Recycle) = state.stock.isEmpty() && state.waste.isNotEmpty()
+    override fun isLegal(state: GameState, move: Move.Recycle) =
+        state.stock.isEmpty() && state.waste.isNotEmpty() && state.canRecycle
 
     override fun perform(state: GameState, move: Move.Recycle): Transition {
         val recycles = state.recycles + 1

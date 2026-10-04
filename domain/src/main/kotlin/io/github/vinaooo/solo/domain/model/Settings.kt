@@ -2,6 +2,9 @@ package io.github.vinaooo.solo.domain.model
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** The app's colors when dynamic color is off or not available; green is Solo's brand. */
+enum class ThemeColor { GREEN, TEAL, BLUE, INDIGO, PURPLE, PINK, RED, ORANGE }
+
 /** Where the board sits in the height it has: at the top, or as low as the tallest possible column lets it. */
 enum class BoardAlignment { TOP, BOTTOM }
 
@@ -10,8 +13,10 @@ enum class PhoneViewSide { LEFT, CENTER, RIGHT }
 
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,
+    val gameMode: GameMode = GameMode.STANDARD,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
+    val themeColor: ThemeColor = ThemeColor.GREEN,
     val soundEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val showTimer: Boolean = true,

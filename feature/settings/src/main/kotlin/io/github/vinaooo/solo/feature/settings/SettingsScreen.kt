@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -56,13 +57,13 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val pendingDrawMode by viewModel.pendingDrawMode.collectAsStateWithLifecycle()
+    val pendingChange by viewModel.pendingChange.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions) {
         uriHandler.openUri(privacyPolicyUrl)
     }
-    if (pendingDrawMode != null) DrawModeDialog(viewModel::confirmDrawMode, viewModel::dismissDrawMode)
+    if (pendingChange != null) DrawModeDialog(viewModel::confirmChange, viewModel::dismissChange)
 }
 
 @Composable
@@ -104,12 +105,23 @@ fun SettingsScreen(
                 selected = settings.themeMode,
                 onSelect = { onChange(SettingsChange.ThemeModeChanged(it)) },
             )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            if (dynamicColorAvailable) {
                 ToggleRow(
                     title = stringResource(R.string.dynamic_color),
                     supporting = stringResource(R.string.dynamic_color_note),
                     checked = settings.dynamicColor,
                 ) { onChange(SettingsChange.DynamicColorChanged(it)) }
+            }
+            // Revealed from behind the switch when it's turned off; always there without dynamic color.
+            AnimatedVisibility(
+                visible = !dynamicColorAvailable || !settings.dynamicColor,
+                enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec(), Alignment.Top) +
+                    fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec(), Alignment.Top) +
+                    fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
+            ) {
+                ColorChoice(settings) { onChange(SettingsChange.ThemeColorChanged(it)) }
             }
 
             SectionTitle(stringResource(R.string.section_feedback))
@@ -133,6 +145,7 @@ private fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit) 
         selected = settings.drawMode,
         onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
     )
+    GameModeChoice(settings.gameMode) { onChange(SettingsChange.GameModeChanged(it)) }
     Choice(
         title = stringResource(R.string.handedness),
         options = listOf(Handedness.LEFT to R.string.hand_left, Handedness.RIGHT to R.string.hand_right),

@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 val barStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme }
                 enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
             }
-            SoloTheme(themeMode = settings.themeMode, dynamicColor = settings.dynamicColor) {
+            SoloTheme(settings.themeMode, settings.dynamicColor, settings.themeColor) {
                 val consent by adConsent.state.collectAsStateWithLifecycle()
                 SoloApp(
                     adBanner = adBanner,

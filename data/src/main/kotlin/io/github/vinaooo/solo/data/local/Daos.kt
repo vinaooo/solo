@@ -11,8 +11,16 @@ interface ScoreDao {
     @Insert
     suspend fun insert(score: ScoreEntity)
 
-    @Query("SELECT * FROM scores ORDER BY points DESC, elapsedSeconds ASC LIMIT :limit")
-    fun observeTop(limit: Int): Flow<List<ScoreEntity>>
+    /** A mode's best scores: the most points first, or the fastest first when [fastest] (counter time). */
+    @Query(
+        "SELECT * FROM scores WHERE mode = :mode ORDER BY " +
+            "CASE WHEN :fastest THEN elapsedSeconds END ASC, CASE WHEN :fastest THEN moves END ASC, " +
+            "points DESC, elapsedSeconds ASC LIMIT :limit",
+    )
+    fun observeTop(mode: String, fastest: Boolean, limit: Int): Flow<List<ScoreEntity>>
+
+    @Query("SELECT DISTINCT mode FROM scores")
+    fun observeModes(): Flow<List<String>>
 }
 
 @Dao

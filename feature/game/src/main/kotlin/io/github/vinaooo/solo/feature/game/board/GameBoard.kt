@@ -424,9 +424,16 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     }
     Slot(
         PileRef.Stock,
-        stringResource(if (state.waste.isEmpty()) R.string.stock_empty else R.string.stock_recycle),
+        stringResource(
+            when {
+                state.waste.isEmpty() -> R.string.stock_empty
+                state.canRecycle -> R.string.stock_recycle
+                else -> R.string.stock_no_passes
+            },
+        ),
         isEmpty = state.stock.isEmpty(),
-        icon = Icons.Rounded.Refresh,
+        // Out of passes (Vegas), the empty stock offers nothing: no turn-over icon.
+        icon = Icons.Rounded.Refresh.takeIf { state.canRecycle },
     )
     state.foundations.indices.forEach {
         Slot(

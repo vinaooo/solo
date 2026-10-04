@@ -49,7 +49,9 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import io.github.vinaooo.solo.core.ui.formatDollars
 import io.github.vinaooo.solo.core.ui.formatElapsed
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.feature.game.R
 import kotlin.math.PI
@@ -97,7 +99,11 @@ internal fun WinDialog(
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    Text(stringResource(R.string.win_score, record.points))
+                    // Vegas wins money; counter time ranks by time alone, which the next line shows.
+                    when {
+                        record.mode.isVegas -> Text(stringResource(R.string.win_money, formatDollars(record.points)))
+                        record.mode != GameMode.COUNTER_TIME -> Text(stringResource(R.string.win_score, record.points))
+                    }
                     Text(stringResource(R.string.win_time, formatElapsed(record.elapsedSeconds)))
                     Text(stringResource(R.string.win_moves, record.moves))
                     Button(onClick = onNewGame, modifier = Modifier.padding(top = 8.dp)) {

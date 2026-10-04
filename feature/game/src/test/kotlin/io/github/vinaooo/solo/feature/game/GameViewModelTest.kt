@@ -12,6 +12,7 @@ import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.PileRef
@@ -21,6 +22,7 @@ import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.FinishGame
+import io.github.vinaooo.solo.domain.usecase.LoseGame
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
@@ -74,10 +76,11 @@ class GameViewModelTest {
     }
 
     private fun TestScope.viewModel(): GameViewModel = GameViewModel(
-        startNewGame = StartNewGame(savedGames, stats, Dealer(), seedSource = { 42 }),
+        startNewGame = StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 42 }, clock = { 5_000 }),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
         finishGame = FinishGame(scores, stats, savedGames, clock = { 5_000 }),
+        loseGame = LoseGame(stats, savedGames),
         settingsRepository = settings,
         engine = engine,
         resolver = MoveResolver(),
@@ -363,6 +366,45 @@ class GameViewModelTest {
         vm.onIntent(GameIntent.MessageShown)
         runCurrent()
         vm.uiState.value.message.shouldBeNull()
+    }
+
+    @Test
+    fun `switching the game mode deals a new game in that mode`() = gameTest {
+        val vm = viewModel()
+
+        settings.current.value = Settings(gameMode = GameMode.VEGAS)
+        runCurrent()
+
+        vm.session.state.mode shouldBe GameMode.VEGAS
+        vm.session.state.score shouldBe -52
+    }
+
+    @Test
+    fun `against the clock, running out of time loses the game, blocks moves and isn't counted twice`() = gameTest {
+        settings.current.value = Settings(gameMode = GameMode.COUNTER_TIME)
+        val vm = viewModel()
+        vm.onIntent(GameIntent.Resume)
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+
+        advanceTimeBy(600_001)
+
+        vm.uiState.value.isTimeUp shouldBe true
+        vm.session.state.secondsLeft shouldBe 0
+        stats.stats.value shouldBe GameStats(played = 1)
+        savedGames.saved.shouldBeNull()
+        val before = vm.session
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        vm.onIntent(GameIntent.Undo)
+        vm.onIntent(GameIntent.Pause)
+        runCurrent()
+        vm.session shouldBe before
+        savedGames.saved.shouldBeNull()
+
+        vm.onIntent(GameIntent.NewGame)
+        runCurrent()
+        vm.uiState.value.isTimeUp shouldBe false
+        stats.stats.value shouldBe GameStats(played = 1)
     }
 
     @Test

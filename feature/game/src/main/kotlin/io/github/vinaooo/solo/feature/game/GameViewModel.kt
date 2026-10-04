@@ -8,11 +8,13 @@ import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.FinishGame
+import io.github.vinaooo.solo.domain.usecase.LoseGame
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
@@ -37,6 +39,7 @@ class GameViewModel @Inject constructor(
     private val resumeGame: ResumeGame,
     private val saveGame: SaveGame,
     private val finishGame: FinishGame,
+    private val loseGame: LoseGame,
     private val settingsRepository: SettingsRepository,
     private val engine: GameEngine,
     private val resolver: MoveResolver,
@@ -50,10 +53,17 @@ class GameViewModel @Inject constructor(
     private val state = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = state.asStateFlow()
 
+    // The clock stops once time is up; against the clock, it also stops while auto-complete plays a game already
+    // won, so the time can't run out in the middle of it.
     private val clock = Ticker(viewModelScope, CLOCK_TICK_MILLIS) {
-        state.value.session?.takeIf { it.isInProgress }?.let {
-            show(it.tick(it.state.elapsedSeconds + 1, engine), keepHint = true)
-        }
+        state.value.session
+            ?.takeIf { it.isInProgress && !it.state.isTimeUp }
+            ?.takeUnless { it.state.secondsLeft != null && autoCompleteJob?.isActive == true }
+            ?.let {
+                val next = it.tick(it.state.elapsedSeconds + 1, engine)
+                show(next, keepHint = true)
+                if (next.state.isTimeUp) timeUp()
+            }
     }
     private var autoCompleteJob: Job? = null
 
@@ -73,14 +83,18 @@ class GameViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val resumed = resumeGame()
-            show(resumed ?: startNewGame(settingsRepository.settings.first().drawMode))
+            val settings = settingsRepository.settings.first()
+            show(resumed ?: startNewGame(settings.drawMode, settings.gameMode))
             // A game dealt now, not one picked up where it was left, is dealt on the board.
             if (resumed == null) state.update { it.copy(deals = it.deals + 1) }
+            // Its time ran out while the app was away.
+            if (resumed?.state?.isTimeUp == true) timeUp()
         }
         viewModelScope.launch {
-            // Switching the draw mode in Settings (confirmed there) deals a new game in that mode.
-            settingsRepository.settings.map { it.drawMode }.distinctUntilChanged().drop(1)
-                .collect { newGame(restart = false, drawMode = it) }
+            // Switching the draw or game mode in Settings (confirmed there) deals a new game in those modes; both
+            // together, as one change, so a single settings write never deals twice.
+            settingsRepository.settings.map { it.drawMode to it.gameMode }.distinctUntilChanged().drop(1)
+                .collect { (drawMode, mode) -> newGame(restart = false, drawMode = drawMode, mode = mode) }
         }
     }
 
@@ -126,26 +140,27 @@ class GameViewModel @Inject constructor(
             }
         } else {
             feedback.give(FeedbackEvent.MOVE, state.value.settings)
-            persist(next)
+            viewModelScope.launch { saveGame(next) }
         }
     }
 
     /** Undo or redo: it plays out like a move (a redo can even win), then says what it did. */
     private fun step(move: (GameSession) -> GameSession?, announcement: Announcement) {
+        if (state.value.isTimeUp) return
         val next = state.value.session?.let(move) ?: return
         onPlayed(next)
         state.announce(announcement)
     }
 
     private fun showHint() {
-        val session = state.value.session ?: return
+        val session = state.value.session?.takeUnless { it.state.isTimeUp } ?: return
         val hint = hints.bestHint(session.state)
         state.update { if (hint == null) it.copy(message = GameMessage.NO_MOVES) else it.copy(hint = hint) }
         hint?.let { state.announce(hintAnnouncement(session.state, it)) }
     }
 
     private fun autoComplete() {
-        if (!state.value.canAutoComplete || autoCompleteJob?.isActive == true) return
+        if (!state.value.canAutoComplete || state.value.isTimeUp || autoCompleteJob?.isActive == true) return
         state.update { it.copy(isAutoCompleting = true) }
         state.announce(Announcement.AutoCompleting)
         autoCompleteJob = viewModelScope.launch {
@@ -162,14 +177,19 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun newGame(restart: Boolean, drawMode: DrawMode = state.value.settings.drawMode) {
+    private fun newGame(
+        restart: Boolean,
+        drawMode: DrawMode = state.value.settings.drawMode,
+        mode: GameMode = state.value.settings.gameMode,
+    ) {
         autoCompleteJob?.cancel()
         viewModelScope.launch {
+            // A restarted deal keeps its own modes, whatever Settings say now.
             val replay = state.value.session?.takeIf { restart }
             val session = if (replay != null) {
-                startNewGame(replay.state.drawMode, replay.seed)
+                startNewGame(replay.state.drawMode, replay.state.mode, replay.seed)
             } else {
-                startNewGame(drawMode)
+                startNewGame(drawMode, mode)
             }
             // A new game is dealt on the board; a restarted deal just goes back to its start.
             state.update {
@@ -181,7 +201,16 @@ class GameViewModel @Inject constructor(
 
     private fun pause() {
         clock.stop()
-        state.value.session?.takeUnless { it.state.isWon }?.let(::persist)
+        // A game whose time ran out was already recorded as lost and removed; saving it again would count it twice.
+        state.value.session?.takeUnless { it.state.isWon || it.state.isTimeUp }
+            ?.let { viewModelScope.launch { saveGame(it) } }
+    }
+
+    /** Counter time ran out: the game is lost, and recorded so (once: [LoseGame] removes the saved game). */
+    private fun timeUp() {
+        clock.stop()
+        state.announce(Announcement.TimeUp)
+        viewModelScope.launch { loseGame() }
     }
 
     private fun show(session: GameSession, keepHint: Boolean = false) {
@@ -210,10 +239,6 @@ class GameViewModel @Inject constructor(
                 },
             )
         }
-    }
-
-    private fun persist(session: GameSession) {
-        viewModelScope.launch { saveGame(session) }
     }
 
     private companion object {

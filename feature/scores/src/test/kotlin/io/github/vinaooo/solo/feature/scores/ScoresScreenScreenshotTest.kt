@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.model.ThemeMode
@@ -64,6 +65,34 @@ class ScoresScreenScreenshotTest {
 
     @Test
     fun scores_dark() = capture("scores_dark", filled, ThemeMode.DARK)
+
+    @Test
+    fun scores_vegas_tabs() = capture(
+        "scores_vegas_tabs",
+        ScoresUiState(
+            scores = listOf(
+                ScoreRecord(83, 512, 140, DrawMode.ONE, 1790510400000L, GameMode.VEGAS),
+                ScoreRecord(-17, 301, 88, DrawMode.THREE, 1789905600000L, GameMode.VEGAS),
+            ),
+            stats = GameStats(played = 12, won = 3, currentStreak = 1, bestStreak = 2),
+            isLoading = false,
+            modes = listOf(GameMode.STANDARD, GameMode.VEGAS, GameMode.COUNTER_TIME),
+            mode = GameMode.VEGAS,
+        ),
+        ThemeMode.LIGHT,
+    )
+
+    @Test
+    fun scores_counter_time() = capture(
+        "scores_counter_time",
+        ScoresUiState(
+            scores = listOf(ScoreRecord(1200, 233, 97, DrawMode.ONE, 1790510400000L, GameMode.COUNTER_TIME)),
+            isLoading = false,
+            modes = listOf(GameMode.STANDARD, GameMode.COUNTER_TIME),
+            mode = GameMode.COUNTER_TIME,
+        ),
+        ThemeMode.DARK,
+    )
 
     @Test
     fun scores_empty() = capture("scores_empty", ScoresUiState(isLoading = false), ThemeMode.LIGHT)

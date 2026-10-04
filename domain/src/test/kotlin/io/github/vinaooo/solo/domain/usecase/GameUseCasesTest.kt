@@ -7,11 +7,13 @@ import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.suitRun
 import io.github.vinaooo.solo.domain.withFoundation
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -35,7 +37,8 @@ class GameUseCasesTest {
 
     @Nested
     inner class StartNewGameTest {
-        private val startNewGame = StartNewGame(savedGames, stats, Dealer(), seedSource = { 77 })
+        private val startNewGame =
+            StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 77 }, clock = { 9L })
 
         @Test
         fun `deals a fresh game from a new seed and saves it`() = runTest {
@@ -68,6 +71,47 @@ class GameUseCasesTest {
             startNewGame(DrawMode.ONE)
 
             stats.stats.value shouldBe GameStats()
+        }
+
+        @Test
+        fun `a game is dealt in its mode, Vegas paying its $52 up front`() = runTest {
+            startNewGame(DrawMode.ONE, GameMode.VEGAS).state.run {
+                mode shouldBe GameMode.VEGAS
+                score shouldBe -52
+            }
+            startNewGame(DrawMode.ONE, GameMode.COUNTER_TIME).state.score shouldBe 0
+        }
+
+        @Test
+        fun `cumulative Vegas starts from the carried balance`() = runTest {
+            stats.update { it.copy(vegasBank = 30) }
+
+            startNewGame(DrawMode.ONE, GameMode.VEGAS_CUMULATIVE).state.score shouldBe -22
+        }
+
+        @Test
+        fun `an abandoned Vegas game enters the Vegas ranking with its dollars`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(1, deal.copy(mode = GameMode.VEGAS, score = -37, moves = 20))
+
+            startNewGame(DrawMode.ONE, GameMode.VEGAS)
+
+            scores.records.value shouldContainExactly listOf(
+                ScoreRecord(-37, 0, 20, DrawMode.ONE, playedAtMillis = 9L, mode = GameMode.VEGAS),
+            )
+            stats.stats.value.played shouldBe 1
+        }
+
+        @Test
+        fun `an abandoned cumulative game leaves the balance where it was, even untouched`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(1, deal.copy(mode = GameMode.VEGAS_CUMULATIVE, score = -52))
+
+            val next = startNewGame(DrawMode.ONE, GameMode.VEGAS_CUMULATIVE)
+
+            stats.stats.value.vegasBank shouldBe -52
+            next.state.score shouldBe -104
+            scores.records.value.shouldBeEmpty()
         }
     }
 
@@ -104,6 +148,31 @@ class GameUseCasesTest {
             stats.stats.value shouldBe GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1)
             savedGames.saved.shouldBeNull()
         }
+
+        @Test
+        fun `a cumulative win carries its balance over and enters no ranking`() = runTest {
+            val won = wonState.copy(mode = GameMode.VEGAS_CUMULATIVE, score = 156)
+
+            finishGame(GameSession(3, won))
+
+            stats.stats.value.vegasBank shouldBe 156
+            stats.stats.value.won shouldBe 1
+            scores.records.value.shouldBeEmpty()
+        }
+    }
+
+    @Nested
+    inner class LoseGameTest {
+        @Test
+        fun `a game out of time is a loss, and gone, so a new game doesn't count it again`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(1, deal.copy(mode = GameMode.COUNTER_TIME, moves = 5, elapsedSeconds = 600))
+
+            LoseGame(stats, savedGames)()
+            StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 2 }, clock = { 0L })(DrawMode.ONE)
+
+            stats.stats.value shouldBe GameStats(played = 1)
+        }
     }
 
     @Nested
@@ -117,7 +186,7 @@ class GameUseCasesTest {
                 ).shuffled(kotlin.random.Random(1))
             records.forEach { scores.add(it) }
 
-            val top = ObserveTopScores(scores)().first()
+            val top = ObserveTopScores(scores)(GameMode.STANDARD).first()
 
             top.size shouldBe 10
             top[0] shouldBe ScoreRecord(130, 99, 50, DrawMode.ONE, 0)

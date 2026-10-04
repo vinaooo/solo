@@ -55,8 +55,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import io.github.vinaooo.solo.core.ui.formatDollars
 import io.github.vinaooo.solo.core.ui.formatElapsed
+import io.github.vinaooo.solo.core.ui.spokenDollars
 import io.github.vinaooo.solo.core.ui.spokenElapsed
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.R
@@ -95,12 +98,23 @@ internal fun GameSidePanel(
 }
 
 @Composable
-/** [large] in landscape's side panel, which has the room for it. */
+/**
+ * [large] in landscape's side panel, which has the room for it. Vegas scores in dollars; counter time ranks by time
+ * alone, so it shows the time left instead of points, whether or not the timer is on.
+ */
 private fun Stats(uiState: GameUiState, large: Boolean = false) {
     val state = uiState.session?.state
-    Stat(stringResource(R.string.score), (state?.score ?: 0).toString(), large)
+    val score = state?.score ?: 0
+    val mode = state?.mode ?: uiState.settings.gameMode
+    when {
+        mode.isVegas -> Stat(stringResource(R.string.score), formatDollars(score), large, spoken = spokenDollars(score))
+        mode != GameMode.COUNTER_TIME -> Stat(stringResource(R.string.score), score.toString(), large)
+    }
     Stat(stringResource(R.string.moves), (state?.moves ?: 0).toString(), large)
-    if (uiState.settings.showTimer) {
+    val left = state?.secondsLeft
+    if (left != null) {
+        Stat(stringResource(R.string.time_left), formatElapsed(left), large, spoken = spokenElapsed(left))
+    } else if (uiState.settings.showTimer) {
         val elapsed = state?.elapsedSeconds ?: 0
         Stat(stringResource(R.string.time), formatElapsed(elapsed), large, spoken = spokenElapsed(elapsed))
     }

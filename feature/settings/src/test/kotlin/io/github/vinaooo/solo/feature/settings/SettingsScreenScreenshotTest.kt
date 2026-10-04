@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import org.junit.Rule
 import org.junit.Test
@@ -21,10 +22,10 @@ class SettingsScreenScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun capture(name: String, themeMode: ThemeMode) {
+    private fun capture(name: String, themeMode: ThemeMode, settings: Settings = Settings(themeMode = themeMode)) {
         compose.setContent {
-            SoloTheme(themeMode = themeMode, dynamicColor = false) {
-                SettingsScreen(Settings(themeMode = themeMode), onChange = {}, onBack = {})
+            SoloTheme(themeMode = themeMode, dynamicColor = false, themeColor = settings.themeColor) {
+                SettingsScreen(settings, onChange = {}, onBack = {})
             }
         }
         compose.onRoot().captureRoboImage("src/test/screenshots/$name.png")
@@ -35,6 +36,13 @@ class SettingsScreenScreenshotTest {
 
     @Test
     fun settings_dark() = capture("settings_dark", ThemeMode.DARK)
+
+    @Test
+    fun settings_colors() = capture(
+        "settings_colors",
+        ThemeMode.DARK,
+        Settings(themeMode = ThemeMode.DARK, dynamicColor = false, themeColor = ThemeColor.PURPLE),
+    )
 
     @Test
     @Config(qualifiers = "pt-rBR-w411dp-h891dp-xhdpi")

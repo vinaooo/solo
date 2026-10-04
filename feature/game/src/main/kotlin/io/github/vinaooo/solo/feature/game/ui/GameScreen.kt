@@ -115,6 +115,9 @@ fun GameScreen(
         }
     }
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
+    if (uiState.isTimeUp) {
+        TimeUpDialog(onNewGame = { onIntent(GameIntent.NewGame) }, onRestart = { onIntent(GameIntent.RestartDeal) })
+    }
 }
 
 /**

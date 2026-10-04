@@ -26,8 +26,10 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val defaults = Settings()
         return Settings(
             drawMode = enumOrDefault(this[Keys.DRAW_MODE], defaults.drawMode),
+            gameMode = enumOrDefault(this[Keys.GAME_MODE], defaults.gameMode),
             themeMode = enumOrDefault(this[Keys.THEME_MODE], defaults.themeMode),
             dynamicColor = this[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
+            themeColor = enumOrDefault(this[Keys.THEME_COLOR], defaults.themeColor),
             soundEnabled = this[Keys.SOUND] ?: defaults.soundEnabled,
             hapticsEnabled = this[Keys.HAPTICS] ?: defaults.hapticsEnabled,
             showTimer = this[Keys.SHOW_TIMER] ?: defaults.showTimer,
@@ -41,8 +43,10 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
 
     private fun MutablePreferences.write(settings: Settings) {
         this[Keys.DRAW_MODE] = settings.drawMode.name
+        this[Keys.GAME_MODE] = settings.gameMode.name
         this[Keys.THEME_MODE] = settings.themeMode.name
         this[Keys.DYNAMIC_COLOR] = settings.dynamicColor
+        this[Keys.THEME_COLOR] = settings.themeColor.name
         this[Keys.SOUND] = settings.soundEnabled
         this[Keys.HAPTICS] = settings.hapticsEnabled
         this[Keys.SHOW_TIMER] = settings.showTimer
@@ -58,8 +62,10 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
 
     private object Keys {
         val DRAW_MODE = stringPreferencesKey("draw_mode")
+        val GAME_MODE = stringPreferencesKey("game_mode")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val THEME_COLOR = stringPreferencesKey("theme_color")
         val SOUND = booleanPreferencesKey("sound")
         val HAPTICS = booleanPreferencesKey("haptics")
         val SHOW_TIMER = booleanPreferencesKey("show_timer")

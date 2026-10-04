@@ -11,6 +11,8 @@ import io.github.vinaooo.solo.domain.repository.ScoreRepository
 import io.github.vinaooo.solo.domain.repository.SeedSource
 import io.github.vinaooo.solo.domain.repository.StatsRepository
 import io.github.vinaooo.solo.domain.usecase.FinishGame
+import io.github.vinaooo.solo.domain.usecase.LoseGame
+import io.github.vinaooo.solo.domain.usecase.ObserveRankedModes
 import io.github.vinaooo.solo.domain.usecase.ObserveStats
 import io.github.vinaooo.solo.domain.usecase.ObserveTopScores
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
@@ -22,8 +24,15 @@ import io.github.vinaooo.solo.domain.usecase.StartNewGame
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
     @Provides
-    fun startNewGame(savedGames: SavedGameRepository, stats: StatsRepository, dealer: Dealer, seeds: SeedSource) =
-        StartNewGame(savedGames, stats, dealer, seeds)
+    @Suppress("LongParameterList") // A new game reads and writes every store a finished one touches.
+    fun startNewGame(
+        savedGames: SavedGameRepository,
+        stats: StatsRepository,
+        scores: ScoreRepository,
+        dealer: Dealer,
+        seeds: SeedSource,
+        clock: Clock,
+    ) = StartNewGame(savedGames, stats, scores, dealer, seeds, clock)
 
     @Provides fun resumeGame(savedGames: SavedGameRepository) = ResumeGame(savedGames)
 
@@ -33,7 +42,11 @@ object UseCaseModule {
     fun finishGame(scores: ScoreRepository, stats: StatsRepository, savedGames: SavedGameRepository, clock: Clock) =
         FinishGame(scores, stats, savedGames, clock)
 
+    @Provides fun loseGame(stats: StatsRepository, savedGames: SavedGameRepository) = LoseGame(stats, savedGames)
+
     @Provides fun observeTopScores(scores: ScoreRepository) = ObserveTopScores(scores)
+
+    @Provides fun observeRankedModes(scores: ScoreRepository) = ObserveRankedModes(scores)
 
     @Provides fun observeStats(stats: StatsRepository) = ObserveStats(stats)
 }
