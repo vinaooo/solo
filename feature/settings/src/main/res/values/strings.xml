@@ -37,4 +37,9 @@
     <string name="board_alignment">Board position</string>
     <string name="board_top">Top</string>
     <string name="board_bottom">Bottom</string>
+    <string name="game_mode">Scoring</string>
+    <string name="mode_standard_note">Points, with a time penalty and a speed bonus</string>
+    <string name="mode_vegas_note">$52 per game, $5 per card on a foundation; limited passes</string>
+    <string name="mode_vegas_cumulative_note">Vegas, with the balance carried from game to game</string>
+    <string name="mode_counter_time_note">Win in 10 minutes (Draw 1) or 14 (Draw 3); the fastest rank best</string>
 </resources>

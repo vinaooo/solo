@@ -37,8 +37,16 @@ class DeadEndDetector(private val rules: RuleSet = KlondikeRules(), private val 
         return true
     }
 
-    /** The cards alone: two positions that differ only in score, moves, time or recycles are the same position. */
-    private fun GameState.board() = copy(score = 0, moves = 0, recycles = 0, elapsedSeconds = 0)
+    /**
+     * The cards alone: two positions that differ only in score, moves, time or recycles are the same position. With
+     * limited passes (Vegas), the passes used are part of the position: they decide whether the stock comes back.
+     */
+    private fun GameState.board() = copy(
+        score = 0,
+        moves = 0,
+        recycles = if (mode.recycleLimit(drawMode) == null) 0 else recycles,
+        elapsedSeconds = 0,
+    )
 
     private fun GameState.foundationCards() = foundations.sumOf { it.size }
 

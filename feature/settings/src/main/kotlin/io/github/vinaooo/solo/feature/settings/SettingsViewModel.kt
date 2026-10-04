@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
@@ -54,6 +55,10 @@ sealed interface SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(boardAlignment = value)
     }
 
+    data class GameModeChanged(val value: GameMode) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(gameMode = value)
+    }
+
     data class PhoneViewChanged(val value: Boolean) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(phoneView = value)
     }
@@ -72,32 +77,38 @@ class SettingsViewModel @Inject constructor(
     val settings: StateFlow<Settings> = repository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), Settings())
 
-    private val pending = MutableStateFlow<DrawMode?>(null)
+    private val pending = MutableStateFlow<SettingsChange?>(null)
 
-    /** A draw mode waiting for the player to confirm abandoning the game in progress, which the switch would end. */
-    val pendingDrawMode: StateFlow<DrawMode?> = pending.asStateFlow()
+    /**
+     * A draw or game mode change waiting for the player to confirm abandoning the game in progress, which the switch
+     * would end.
+     */
+    val pendingChange: StateFlow<SettingsChange?> = pending.asStateFlow()
 
     fun onChange(change: SettingsChange) {
         viewModelScope.launch {
-            if (change is SettingsChange.DrawModeChanged &&
-                change.value != settings.value.drawMode &&
-                resumeGame()?.isInProgress == true
-            ) {
-                pending.value = change.value
+            if (startsNewGame(change) && resumeGame()?.isInProgress == true) {
+                pending.value = change
             } else {
                 repository.update(change::applyTo)
             }
         }
     }
 
-    fun confirmDrawMode() {
-        val drawMode = pending.value ?: return
+    fun confirmChange() {
+        val change = pending.value ?: return
         pending.value = null
-        viewModelScope.launch { repository.update { it.copy(drawMode = drawMode) } }
+        viewModelScope.launch { repository.update(change::applyTo) }
     }
 
-    fun dismissDrawMode() {
+    fun dismissChange() {
         pending.value = null
+    }
+
+    private fun startsNewGame(change: SettingsChange): Boolean = when (change) {
+        is SettingsChange.DrawModeChanged -> change.value != settings.value.drawMode
+        is SettingsChange.GameModeChanged -> change.value != settings.value.gameMode
+        else -> false
     }
 
     private companion object {

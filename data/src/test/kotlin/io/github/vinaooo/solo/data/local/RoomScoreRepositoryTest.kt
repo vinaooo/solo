@@ -3,9 +3,11 @@ package io.github.vinaooo.solo.data.local
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -26,7 +28,8 @@ class RoomScoreRepositoryTest {
 
     @Test
     fun `starts empty`() = runTest {
-        repository.observeTopScores().first().shouldBeEmpty()
+        repository.observeTopScores(GameMode.STANDARD).first().shouldBeEmpty()
+        repository.observeRankedModes().first().shouldBeEmpty()
     }
 
     @Test
@@ -37,6 +40,22 @@ class RoomScoreRepositoryTest {
         val worst = ScoreRecord(100, 100, 90, DrawMode.ONE, playedAtMillis = 4)
         listOf(slow, worst, fast, best).forEach { repository.add(it) }
 
-        repository.observeTopScores(limit = 3).first() shouldContainExactly listOf(best, fast, slow)
+        repository.observeTopScores(GameMode.STANDARD, limit = 3).first() shouldContainExactly listOf(best, fast, slow)
+    }
+
+    @Test
+    fun `each mode keeps its own ranking, counter time the fastest first`() = runTest {
+        val vegas = ScoreRecord(-12, 300, 90, DrawMode.ONE, playedAtMillis = 1, mode = GameMode.VEGAS)
+        val richer = ScoreRecord(40, 500, 120, DrawMode.ONE, playedAtMillis = 2, mode = GameMode.VEGAS)
+        val slow = ScoreRecord(700, 400, 100, DrawMode.ONE, playedAtMillis = 3, mode = GameMode.COUNTER_TIME)
+        val fast = ScoreRecord(500, 250, 130, DrawMode.ONE, playedAtMillis = 4, mode = GameMode.COUNTER_TIME)
+        val standard = ScoreRecord(900, 200, 120, DrawMode.ONE, playedAtMillis = 5)
+        listOf(vegas, richer, slow, fast, standard).forEach { repository.add(it) }
+
+        repository.observeTopScores(GameMode.VEGAS).first() shouldContainExactly listOf(richer, vegas)
+        repository.observeTopScores(GameMode.COUNTER_TIME).first() shouldContainExactly listOf(fast, slow)
+        repository.observeTopScores(GameMode.STANDARD).first() shouldContainExactly listOf(standard)
+        repository.observeRankedModes().first() shouldBe
+            setOf(GameMode.STANDARD, GameMode.VEGAS, GameMode.COUNTER_TIME)
     }
 }

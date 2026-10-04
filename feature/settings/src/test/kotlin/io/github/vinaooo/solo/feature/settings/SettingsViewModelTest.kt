@@ -5,6 +5,7 @@ import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.session.GameSession
@@ -53,7 +54,14 @@ class SettingsViewModelTest {
         vm.onChange(SettingsChange.ShowTimerChanged(false))
         runCurrent()
 
-        repository.current.value shouldBe Settings(DrawMode.THREE, ThemeMode.DARK, false, false, false, false)
+        repository.current.value shouldBe Settings(
+            drawMode = DrawMode.THREE,
+            themeMode = ThemeMode.DARK,
+            dynamicColor = false,
+            soundEnabled = false,
+            hapticsEnabled = false,
+            showTimer = false,
+        )
     }
 
     @Test
@@ -75,13 +83,39 @@ class SettingsViewModelTest {
 
         vm.onChange(SettingsChange.DrawModeChanged(DrawMode.THREE))
         runCurrent()
-        vm.pendingDrawMode.value shouldBe DrawMode.THREE
+        vm.pendingChange.value shouldBe SettingsChange.DrawModeChanged(DrawMode.THREE)
         repository.current.value.drawMode shouldBe DrawMode.ONE
 
-        vm.confirmDrawMode()
+        vm.confirmChange()
         runCurrent()
-        vm.pendingDrawMode.value.shouldBeNull()
+        vm.pendingChange.value.shouldBeNull()
         repository.current.value.drawMode shouldBe DrawMode.THREE
+    }
+
+    @Test
+    fun `switching the game mode mid-game waits for confirmation too`() = runTest(dispatcher) {
+        gameInProgress()
+        val vm = viewModel()
+
+        vm.onChange(SettingsChange.GameModeChanged(GameMode.VEGAS))
+        runCurrent()
+        vm.pendingChange.value shouldBe SettingsChange.GameModeChanged(GameMode.VEGAS)
+        repository.current.value.gameMode shouldBe GameMode.STANDARD
+
+        vm.confirmChange()
+        runCurrent()
+        repository.current.value.gameMode shouldBe GameMode.VEGAS
+    }
+
+    @Test
+    fun `without a game in progress, the game mode changes at once`() = runTest(dispatcher) {
+        val vm = viewModel()
+
+        vm.onChange(SettingsChange.GameModeChanged(GameMode.COUNTER_TIME))
+        runCurrent()
+
+        vm.pendingChange.value.shouldBeNull()
+        repository.current.value.gameMode shouldBe GameMode.COUNTER_TIME
     }
 
     @Test
@@ -91,10 +125,10 @@ class SettingsViewModelTest {
 
         vm.onChange(SettingsChange.DrawModeChanged(DrawMode.THREE))
         runCurrent()
-        vm.dismissDrawMode()
+        vm.dismissChange()
         runCurrent()
 
-        vm.pendingDrawMode.value.shouldBeNull()
+        vm.pendingChange.value.shouldBeNull()
         repository.current.value.drawMode shouldBe DrawMode.ONE
     }
 }

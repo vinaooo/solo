@@ -52,4 +52,9 @@
     <string name="a11y_move_to_foundation">Mover para base</string>
     <string name="a11y_click_move">mover</string>
     <string name="a11y_click_draw">virar uma carta</string>
+    <string name="time_left">Tempo restante</string>
+    <string name="time_up_title">Tempo esgotado</string>
+    <string name="time_up_body">A partida não terminou a tempo. Conta como derrota.</string>
+    <string name="win_money">Saldo: %1$s</string>
+    <string name="stock_no_passes">Sem passadas restantes</string>
 </resources>

@@ -2,7 +2,14 @@ package io.github.vinaooo.solo.domain.model
 
 import kotlin.math.roundToInt
 
-data class GameStats(val played: Int = 0, val won: Int = 0, val currentStreak: Int = 0, val bestStreak: Int = 0) {
+/** Lifetime statistics, across every mode, and the cumulative Vegas balance ([vegasBank], in dollars). */
+data class GameStats(
+    val played: Int = 0,
+    val won: Int = 0,
+    val currentStreak: Int = 0,
+    val bestStreak: Int = 0,
+    val vegasBank: Int = 0,
+) {
     val winRatePercent: Int
         get() = if (played == 0) 0 else (won * PERCENT / played.toDouble()).roundToInt()
 

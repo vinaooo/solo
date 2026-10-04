@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.domain.repository
 
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.model.Settings
@@ -15,7 +16,11 @@ interface SavedGameRepository {
 }
 
 interface ScoreRepository {
-    fun observeTopScores(limit: Int = ScoreRecord.TOP_LIMIT): Flow<List<ScoreRecord>>
+    /** The best [limit] scores of [mode], in its ranking order ([ScoreRecord.rankingFor]). */
+    fun observeTopScores(mode: GameMode, limit: Int = ScoreRecord.TOP_LIMIT): Flow<List<ScoreRecord>>
+
+    /** The modes that have at least one score. */
+    fun observeRankedModes(): Flow<Set<GameMode>>
 
     suspend fun add(record: ScoreRecord)
 }

@@ -18,7 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -33,9 +35,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.vinaooo.solo.core.ui.formatDollars
 import io.github.vinaooo.solo.core.ui.formatElapsed
+import io.github.vinaooo.solo.core.ui.label
+import io.github.vinaooo.solo.core.ui.spokenDollars
 import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import java.text.DateFormat
@@ -44,12 +50,17 @@ import java.util.Date
 @Composable
 fun ScoresRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: ScoresViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ScoresScreen(uiState, onBack, modifier)
+    ScoresScreen(uiState, onBack, modifier, onSelectMode = viewModel::selectMode)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScoresScreen(uiState: ScoresUiState, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun ScoresScreen(
+    uiState: ScoresUiState,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSelectMode: (GameMode) -> Unit = {},
+) {
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -69,6 +80,23 @@ fun ScoresScreen(uiState: ScoresUiState, onBack: () -> Unit, modifier: Modifier 
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item { StatsCard(uiState.stats) }
+            // One ranking per mode already played; a single one needs no tabs.
+            if (uiState.modes.size > 1) {
+                item {
+                    PrimaryScrollableTabRow(
+                        selectedTabIndex = uiState.modes.indexOf(uiState.mode).coerceAtLeast(0),
+                        edgePadding = 0.dp,
+                    ) {
+                        uiState.modes.forEach { mode ->
+                            Tab(
+                                selected = mode == uiState.mode,
+                                onClick = { onSelectMode(mode) },
+                                text = { Text(stringResource(mode.label)) },
+                            )
+                        }
+                    }
+                }
+            }
             if (!uiState.isLoading && uiState.scores.isEmpty()) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -114,6 +142,7 @@ private fun ScoreRow(rank: Int, record: ScoreRecord) {
     val date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(record.playedAtMillis))
     val rankDescription = stringResource(R.string.rank_description, rank)
     val spokenTime = spokenElapsed(record.elapsedSeconds)
+    val spokenMoney = spokenDollars(record.points)
     ListItem(
         modifier = Modifier.semantics(mergeDescendants = true) {},
         leadingContent = {
@@ -124,14 +153,31 @@ private fun ScoreRow(rank: Int, record: ScoreRecord) {
             )
         },
         supportingContent = { Text(stringResource(R.string.score_details, record.moves, drawMode, date)) },
-        trailingContent = {
-            Text(
-                formatElapsed(record.elapsedSeconds),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { contentDescription = spokenTime },
-            )
+        // Counter time ranks by time, so the time is the headline and there are no points to show.
+        trailingContent = if (record.mode == GameMode.COUNTER_TIME) {
+            null
+        } else {
+            {
+                Text(
+                    formatElapsed(record.elapsedSeconds),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { contentDescription = spokenTime },
+                )
+            }
         },
     ) {
-        Text(record.points.toString(), fontWeight = FontWeight.Bold)
+        when {
+            record.mode.isVegas -> Text(
+                formatDollars(record.points),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { contentDescription = spokenMoney },
+            )
+            record.mode == GameMode.COUNTER_TIME -> Text(
+                formatElapsed(record.elapsedSeconds),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { contentDescription = spokenTime },
+            )
+            else -> Text(record.points.toString(), fontWeight = FontWeight.Bold)
+        }
     }
 }

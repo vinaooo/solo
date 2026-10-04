@@ -9,6 +9,7 @@ import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
@@ -36,8 +37,13 @@ class GameScreenScreenshotTest {
         themeMode: ThemeMode = ThemeMode.LIGHT,
         drawMode: DrawMode = DrawMode.ONE,
         settings: Settings = Settings(),
+        modeScoreAndTime: Triple<GameMode, Int, Long>? = null,
     ) {
-        val session = midGame(drawMode)
+        val session = midGame(drawMode).let { game ->
+            modeScoreAndTime?.let { (mode, score, elapsed) ->
+                game.copy(state = game.state.copy(mode = mode, score = score, elapsedSeconds = elapsed))
+            } ?: game
+        }
         compose.setContent {
             SoloTheme(themeMode = themeMode, dynamicColor = false) {
                 GameScreen(
@@ -71,6 +77,13 @@ class GameScreenScreenshotTest {
     @Test
     fun game_phone_board_bottom() =
         capture("game_phone_board_bottom", settings = Settings(boardAlignment = BoardAlignment.BOTTOM))
+
+    @Test
+    fun game_phone_vegas() = capture("game_phone_vegas", modeScoreAndTime = Triple(GameMode.VEGAS, -17, 95L))
+
+    @Test
+    fun game_phone_counter_time() =
+        capture("game_phone_counter_time", modeScoreAndTime = Triple(GameMode.COUNTER_TIME, 0, 95L))
 
     @Test
     @Config(qualifiers = PHONE_LANDSCAPE)

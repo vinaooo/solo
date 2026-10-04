@@ -68,16 +68,21 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 **Domain (`:domain`)**
 - `GameState` is immutable: stock, waste, 4 foundations, 7 tableau columns, score, moves and time.
-- `GameEngine.apply(state, move)` returns `MoveOutcome.Applied` or `Rejected`. The rules sit behind `RuleSet` (`KlondikeRules`, with one small rule per move type) and scoring behind `ScoringStrategy` (`StandardScoring`, Windows Standard scoring), so new variants and scoring modes plug in without touching the engine.
+- `GameEngine.apply(state, move)` returns `MoveOutcome.Applied` or `Rejected`. The rules sit behind `RuleSet` (`KlondikeRules`, with one small rule per move type) and scoring behind `ScoringStrategy`, so new variants and scoring modes plug in without touching the engine.
+- **Game modes:** `GameState.mode` (`GameMode`, default `STANDARD`) travels with the game, like `drawMode`, so a resumed or restarted game keeps its rules whatever Settings say. `scoringFor(mode)` picks the scoring, and `ScoringStrategy.bounded` the floor (Standard points never go below 0; Vegas money does).
+  - **Standard** (`StandardScoring`, Windows Standard: time penalty and speed bonus) and **Counter time** use the same points, but Counter time hides them and ranks by the fastest win.
+  - **Vegas** (`VegasScoring`): a game starts at -$52, +$5 a card onto a foundation, -$5 when one leaves it (otherwise moving a card up and down makes endless money), nothing else, undo included. Passes are limited (`GameMode.recycleLimit`: 1 pass in Draw 1, 3 in Draw 3), which `RecycleRule` and `DeadEndDetector` (passes used are part of a position) respect.
+  - **Vegas cumulative:** Vegas whose balance (`GameStats.vegasBank`) carries over: a new game starts at bank - 52. The bank is committed only by `FinishGame` (a win) and `StartNewGame` (abandoning, even an untouched game: its $52 is spent). It has no ranking, by the user's choice.
+  - **Counter time:** 10 minutes in Draw 1, 14 in Draw 3 (`timeLimitSeconds`). The engine stops the clock at the limit and rejects moves once `isTimeUp`. The ViewModel then records the loss with `LoseGame`, which also deletes the saved game, so the next new game doesn't count it again; it also doesn't save on pause and freezes the clock while auto-complete runs. The time's-up dialog offers a new game or the same deal again.
 - `GameSession` (a seed, the state and an `UndoHistory`) is the unit that gets played, undone, redone and saved as JSON with kotlinx.serialization. Deals are reproducible from the seed (`SeededShuffler`), which is how "restart this deal" works.
 - `UndoHistory` keeps undo and redo stacks. A redo earns the move's points back and counts as a move, but the undo penalty stays. A new move clears the redo stack.
 - `MoveResolver` turns a tap or drop into a `Move`. A tapped king that fills its column goes to the next empty column to its right, wrapping around.
 - `HintEngine` ranks the legal moves, and `AutoCompleter` finishes a game that can no longer get stuck.
 - `DeadEndDetector` searches every position reachable by drawing, recycling and moving between columns for one that puts a card on a foundation or turns one up. It is a cancellable `suspend` search that gives up (says "not stuck") past 5,000 positions, because a real dead end takes the whole search.
-- The use cases (`StartNewGame`, `FinishGame`, …) own the rules about scores and stats. For example, starting a new game counts the unfinished one as a loss.
+- The use cases (`StartNewGame`, `FinishGame`, `LoseGame`, …) own the rules about scores and stats. For example, starting a new game counts the unfinished one as a loss, and an abandoned Vegas game still enters the Vegas ranking with its dollars.
 
 **Data (`:data`)**
-- Room stores the top-10 scores and a single stats row.
+- Room stores the scores (each with its mode; `observeTopScores(mode)` ranks them the mode's way) and a single stats row. Version 2 added the mode and the Vegas bank through an `AutoMigration`; `SoloDatabaseMigrationTest` builds a version 1 database from `schemas/.../1.json` and checks that the app migrates it. Never use a destructive fallback: it would wipe the players' scores.
 - The game in progress is saved to a file with an atomic temp-file-and-rename and a versioned envelope. A corrupt file is discarded.
 - Settings are in Preferences DataStore.
 
@@ -89,7 +94,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - Sound and haptics sit behind `GameFeedback`, and whether they play depends on the settings.
 - `DeadEndWatcher` runs the dead-end search after every move on the injected `@SearchDispatcher` (`Dispatchers.Default`; tests pass the test dispatcher). A new move cancels the previous search.
 - `GameUiState.deals` counts the games dealt (new game, first game; not a restarted deal or a resumed game). The board plays each new deal once and remembers what it played in `rememberSaveable`, so a draw mode changed in Settings, which starts a new game, is dealt on coming back.
-- Changing the draw mode in Settings starts a new game. `SettingsViewModel` asks for confirmation first if a game is in progress.
+- Changing the draw mode or the scoring mode (a radio list, `GameModeChoice`) in Settings starts a new game. `SettingsViewModel` asks for confirmation first if a game is in progress (`pendingChange`). The Scores screen has a tab per mode already played (`ObserveRankedModes`).
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).

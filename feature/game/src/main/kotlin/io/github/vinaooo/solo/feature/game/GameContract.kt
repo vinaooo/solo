@@ -25,7 +25,10 @@ data class GameUiState(
     /** Where each face-up card can legally go; TalkBack offers these as actions. */
     val destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
     val announcement: Announced? = null,
-)
+) {
+    /** Counter time ran out before the game was won: it's lost, and no more moves can be played. */
+    val isTimeUp: Boolean get() = session?.state?.isTimeUp == true
+}
 
 /** The card at [index] in [pile]. */
 data class CardSpot(val pile: PileRef, val index: Int)

@@ -26,6 +26,9 @@ sealed interface Announcement {
 
     /** Auto-complete speaks once, instead of once for every card it plays. */
     data object AutoCompleting : Announcement
+
+    /** Counter time ran out: the game is lost. */
+    data object TimeUp : Announcement
 }
 
 /** An [announcement] numbered by [sequence], so saying the same thing twice in a row still counts as new. */

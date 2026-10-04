@@ -57,6 +57,7 @@ internal fun announcementText(announcement: Announcement): String = when (announ
     Announcement.HintDraw -> stringResource(R.string.a11y_hint_draw)
     Announcement.HintRecycle -> stringResource(R.string.a11y_hint_recycle)
     Announcement.AutoCompleting -> stringResource(R.string.a11y_auto_completing)
+    Announcement.TimeUp -> stringResource(R.string.time_up_title)
 }
 
 @Composable

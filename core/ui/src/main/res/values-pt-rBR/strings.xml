@@ -11,4 +11,12 @@
         <item quantity="one">%1$d segundo</item>
         <item quantity="other">%1$d segundos</item>
     </plurals>
+    <plurals name="dollars">
+        <item quantity="one">%1$d dólar</item>
+        <item quantity="other">%1$d dólares</item>
+    </plurals>
+    <string name="mode_standard">Padrão</string>
+    <string name="mode_vegas">Vegas</string>
+    <string name="mode_vegas_cumulative">Vegas acumulado</string>
+    <string name="mode_counter_time">Contra o tempo</string>
 </resources>

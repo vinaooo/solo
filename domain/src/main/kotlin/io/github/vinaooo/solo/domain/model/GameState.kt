@@ -16,9 +16,22 @@ data class GameState(
     val moves: Int = 0,
     val recycles: Int = 0,
     val elapsedSeconds: Long = 0,
+    val mode: GameMode = GameMode.STANDARD,
 ) {
     val isWon: Boolean
         get() = foundations.all { it.size == Rank.entries.size }
+
+    /** The time left to win in, or null when the mode has no limit. */
+    val secondsLeft: Long?
+        get() = mode.timeLimitSeconds(drawMode)?.let { (it - elapsedSeconds).coerceAtLeast(0) }
+
+    /** The time limit has run out before the game was won: no more moves. */
+    val isTimeUp: Boolean
+        get() = !isWon && secondsLeft == 0L
+
+    /** Whether the waste may still go back to the stock. */
+    val canRecycle: Boolean
+        get() = mode.recycleLimit(drawMode)?.let { recycles < it } ?: true
 
     fun allCards(): List<Card> = stock + waste + foundations.flatten() + tableau.flatten()
 

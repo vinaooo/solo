@@ -2,10 +2,8 @@ package io.github.vinaooo.solo.domain.history
 
 import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.scoring.ScoreEvent
-import io.github.vinaooo.solo.domain.scoring.ScoringStrategy
-import io.github.vinaooo.solo.domain.scoring.StandardScoring
+import io.github.vinaooo.solo.domain.scoring.scoringFor
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 @Serializable
 data class UndoEntry(val previous: GameState, val scoreDelta: Int)
@@ -17,9 +15,6 @@ data class UndoEntry(val previous: GameState, val scoreDelta: Int)
  */
 @Serializable
 data class UndoHistory(val entries: List<UndoEntry> = emptyList(), val redos: List<UndoEntry> = emptyList()) {
-    @Transient
-    private val scoring: ScoringStrategy = StandardScoring()
-
     val canUndo: Boolean get() = entries.isNotEmpty()
 
     val canRedo: Boolean get() = redos.isNotEmpty()
@@ -31,9 +26,10 @@ data class UndoHistory(val entries: List<UndoEntry> = emptyList(), val redos: Li
 
     fun undo(current: GameState): Pair<GameState, UndoHistory>? {
         val last = entries.lastOrNull() ?: return null
+        val scoring = scoringFor(current.mode)
         val score = current.score - last.scoreDelta + scoring.pointsFor(ScoreEvent.Undo)
         val restored = last.previous.copy(
-            score = score.coerceAtLeast(0),
+            score = scoring.bounded(score),
             moves = current.moves,
             elapsedSeconds = current.elapsedSeconds,
         )
@@ -44,7 +40,7 @@ data class UndoHistory(val entries: List<UndoEntry> = emptyList(), val redos: Li
     fun redo(current: GameState): Pair<GameState, UndoHistory>? {
         val next = redos.lastOrNull() ?: return null
         val replayed = next.previous.copy(
-            score = (current.score + next.scoreDelta).coerceAtLeast(0),
+            score = scoringFor(current.mode).bounded(current.score + next.scoreDelta),
             moves = current.moves + 1,
             elapsedSeconds = current.elapsedSeconds,
         )

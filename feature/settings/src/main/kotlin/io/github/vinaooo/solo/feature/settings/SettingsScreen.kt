@@ -56,13 +56,13 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val pendingDrawMode by viewModel.pendingDrawMode.collectAsStateWithLifecycle()
+    val pendingChange by viewModel.pendingChange.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     SettingsScreen(settings, viewModel::onChange, onBack, modifier, privacyOptionsRequired, onOpenPrivacyOptions) {
         uriHandler.openUri(privacyPolicyUrl)
     }
-    if (pendingDrawMode != null) DrawModeDialog(viewModel::confirmDrawMode, viewModel::dismissDrawMode)
+    if (pendingChange != null) DrawModeDialog(viewModel::confirmChange, viewModel::dismissChange)
 }
 
 @Composable
@@ -133,6 +133,7 @@ private fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit) 
         selected = settings.drawMode,
         onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
     )
+    GameModeChoice(settings.gameMode) { onChange(SettingsChange.GameModeChanged(it)) }
     Choice(
         title = stringResource(R.string.handedness),
         options = listOf(Handedness.LEFT to R.string.hand_left, Handedness.RIGHT to R.string.hand_right),
