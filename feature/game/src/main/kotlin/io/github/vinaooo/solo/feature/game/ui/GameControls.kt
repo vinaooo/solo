@@ -88,29 +88,39 @@ internal fun GameSidePanel(
         modifier = modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Stats(uiState)
+        Stats(uiState, large = true)
         Spacer(Modifier.weight(1f))
         Row { NavigationButtons(onOpenScores, onOpenSettings) }
     }
 }
 
 @Composable
-private fun Stats(uiState: GameUiState) {
+/** [large] in landscape's side panel, which has the room for it. */
+private fun Stats(uiState: GameUiState, large: Boolean = false) {
     val state = uiState.session?.state
-    Stat(stringResource(R.string.score), (state?.score ?: 0).toString())
-    Stat(stringResource(R.string.moves), (state?.moves ?: 0).toString())
+    Stat(stringResource(R.string.score), (state?.score ?: 0).toString(), large)
+    Stat(stringResource(R.string.moves), (state?.moves ?: 0).toString(), large)
     if (uiState.settings.showTimer) {
         val elapsed = state?.elapsedSeconds ?: 0
-        Stat(stringResource(R.string.time), formatElapsed(elapsed), spoken = spokenElapsed(elapsed))
+        Stat(stringResource(R.string.time), formatElapsed(elapsed), large, spoken = spokenElapsed(elapsed))
     }
 }
 
 /** A label over its value, read by TalkBack as one item: "Score, 25". */
 @Composable
-private fun Stat(label: String, value: String, spoken: String = value) {
+private fun Stat(label: String, value: String, large: Boolean, spoken: String = value) {
+    val typography = MaterialTheme.typography
     Column(modifier = Modifier.clearAndSetSemantics { contentDescription = "$label, $spoken" }) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            label,
+            style = if (large) typography.titleSmall else typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            value,
+            style = if (large) typography.headlineMedium else typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
