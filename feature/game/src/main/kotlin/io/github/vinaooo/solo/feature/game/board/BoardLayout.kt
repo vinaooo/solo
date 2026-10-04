@@ -72,6 +72,9 @@ class BoardLayout(
     private val hiddenBarSpread = gap * HIDDEN_BAR_SPREAD
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
+    /** The thinnest bar's height, a single face-down card's, unsqueezed. */
+    val singleBarHeight: Float = faceDownStep + hiddenBarExtra
+
     private val left = (width - boardWidth) / 2
     private val topRowY = gap + when {
         sideways || alignment == BoardAlignment.TOP -> 0f

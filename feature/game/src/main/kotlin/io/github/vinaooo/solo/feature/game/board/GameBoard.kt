@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
@@ -338,13 +337,17 @@ private fun FaceDownPiles(
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
     val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
-    val count: @Composable (Int) -> Unit = { value ->
+    // Sized to the thinnest bar, a single face-down card's: its digits fill a share of its height, so they scale with
+    // the cards instead of staying one size on every screen.
+    val barCountPx = layout.singleBarHeight * COUNT_FILL / DIGIT_HEIGHT
+    val count: @Composable (Int, Float) -> Unit = { value, countPx ->
+        val countSize = with(density) { countPx.toSp() }
         Text(
             text = value.toString(),
             color = MaterialTheme.colorScheme.onPrimary,
-            fontSize = COUNT_SIZE,
+            fontSize = countSize,
             style = LocalTextStyle.current.copy(
-                lineHeight = COUNT_SIZE,
+                lineHeight = countSize,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
             ),
             modifier = Modifier
@@ -353,7 +356,7 @@ private fun FaceDownPiles(
                 // space below the digits: free to overflow, it is placed so the ink's middle is the box's middle.
                 .layout { measurable, constraints ->
                     val text = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-                    val inkCenter = text[FirstBaseline] - COUNT_SIZE.toPx() * DIGIT_HEIGHT / 2
+                    val inkCenter = text[FirstBaseline] - countPx * DIGIT_HEIGHT / 2
                     val height = text.height.coerceAtMost(constraints.maxHeight)
                     layout(text.width, height) { text.place(0, (height / 2f - inkCenter).roundToInt()) }
                 },
@@ -373,7 +376,7 @@ private fun FaceDownPiles(
                         .size(cardWidth, height)
                         .background(color, shape),
                     contentAlignment = Alignment.Center,
-                ) { if (hidden > 0) count(hidden) }
+                ) { if (hidden > 0) count(hidden, barCountPx) }
             }
         }
     }
@@ -389,7 +392,7 @@ private fun FaceDownPiles(
                 .size(cardWidth, cardHeight)
                 .zIndex(STOCK_COUNT_Z),
             contentAlignment = Alignment.Center,
-        ) { count(state.stock.size) }
+        ) { count(state.stock.size, barCountPx * STOCK_COUNT_SCALE) }
     }
 }
 
@@ -489,7 +492,12 @@ private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */
 private const val STOCK_COUNT_Z = 199f
-private val COUNT_SIZE = 9.sp
+
+/** How much of a one-card bar's height the count's digits fill. */
+private const val COUNT_FILL = 0.6f
+
+/** The stock's count has a whole card to itself: twice the bars'. */
+private const val STOCK_COUNT_SCALE = 2
 
 /** Roboto's digit height, as a fraction of the font size. */
 private const val DIGIT_HEIGHT = 0.71f
