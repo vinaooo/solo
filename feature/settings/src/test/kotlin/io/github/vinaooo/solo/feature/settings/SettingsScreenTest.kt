@@ -1,15 +1,20 @@
 package io.github.vinaooo.solo.feature.settings
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
+import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.collections.shouldContainExactly
@@ -45,6 +50,32 @@ class SettingsScreenTest {
             SettingsChange.HapticsChanged(false),
             SettingsChange.HandednessChanged(Handedness.LEFT),
             SettingsChange.ShowTimerChanged(false),
+        )
+    }
+
+    @Test
+    fun `a phone has no phone view`() {
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
+
+        compose.onNodeWithText("Phone view").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = TABLET)
+    fun `on a tablet, the board side shows only once phone view is on`() {
+        var settings by mutableStateOf(Settings())
+        val changes = mutableListOf<SettingsChange>()
+        compose.setContent { SoloTheme { SettingsScreen(settings, onChange = { changes += it }, onBack = {}) } }
+
+        compose.onNodeWithText("Board side").assertDoesNotExist()
+        compose.onNodeWithText("Phone view").performScrollTo().performClick()
+        settings = Settings(phoneView = true)
+        // The second "Right": the first is the preferred hand's.
+        compose.onAllNodesWithText("Right")[1].performScrollTo().performClick()
+
+        changes shouldContainExactly listOf(
+            SettingsChange.PhoneViewChanged(true),
+            SettingsChange.PhoneViewSideChanged(PhoneViewSide.RIGHT),
         )
     }
 
@@ -114,3 +145,5 @@ class SettingsScreenTest {
         compose.onNodeWithText("Sons e vibração").performScrollTo().assertExists()
     }
 }
+
+private const val TABLET = "w800dp-h1280dp-port-mdpi"

@@ -11,6 +11,12 @@
     <string name="draw_mode_confirm">Confirm</string>
     <string name="draw_mode_cancel">Cancel</string>
     <string name="show_timer">Show timer</string>
+    <string name="phone_view">Phone view</string>
+    <string name="phone_view_note">Cards at a phone\'s size</string>
+    <string name="phone_view_side">Board side</string>
+    <string name="side_left">Left</string>
+    <string name="side_center">Center</string>
+    <string name="side_right">Right</string>
     <string name="theme">Theme</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>

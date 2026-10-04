@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
+import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.shouldBe
@@ -43,6 +44,8 @@ class DataStoreSettingsRepositoryTest {
             showTimer = false,
             handedness = Handedness.LEFT,
             boardAlignment = BoardAlignment.BOTTOM,
+            phoneView = true,
+            phoneViewSide = PhoneViewSide.LEFT,
         )
 
         repository.update { changed }

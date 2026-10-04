@@ -33,6 +33,8 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             showTimer = this[Keys.SHOW_TIMER] ?: defaults.showTimer,
             handedness = enumOrDefault(this[Keys.HANDEDNESS], defaults.handedness),
             boardAlignment = enumOrDefault(this[Keys.BOARD_ALIGNMENT], defaults.boardAlignment),
+            phoneView = this[Keys.PHONE_VIEW] ?: defaults.phoneView,
+            phoneViewSide = enumOrDefault(this[Keys.PHONE_VIEW_SIDE], defaults.phoneViewSide),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
         )
     }
@@ -46,6 +48,8 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.SHOW_TIMER] = settings.showTimer
         this[Keys.HANDEDNESS] = settings.handedness.name
         this[Keys.BOARD_ALIGNMENT] = settings.boardAlignment.name
+        this[Keys.PHONE_VIEW] = settings.phoneView
+        this[Keys.PHONE_VIEW_SIDE] = settings.phoneViewSide.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
     }
 
@@ -61,6 +65,8 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val SHOW_TIMER = booleanPreferencesKey("show_timer")
         val HANDEDNESS = stringPreferencesKey("handedness")
         val BOARD_ALIGNMENT = stringPreferencesKey("board_alignment")
+        val PHONE_VIEW = booleanPreferencesKey("phone_view")
+        val PHONE_VIEW_SIDE = stringPreferencesKey("phone_view_side")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
     }
 }

@@ -118,6 +118,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - Landscape: `CenteredRow` puts stats and buttons on the left, the board centered, and a vertical floating toolbar on the right. Both sides get the width of the wider one, so the board stays centered.
   - The board is `sideways` (`BoardLayout`): no top row. On the handedness edge, the stock with the waste under it (the Draw 3 fan grows down); next to it, the four foundations one under the other; then the tableau, which gets the whole height. Right-handed is the mirror image.
   - The stacked foundations set the card size (4 cards tall), so landscape cards are smaller than a top row would allow.
+- **Phone view** (Settings, shown only when the short side is 600dp+): on a tablet, the traditional board (top row, never `sideways`), at most 412dp wide like a phone's, at the top of the board's room, in both orientations, on the side Settings' board side picks (left, center or right; revealed under the switch only while phone view is on); the stats and toolbar stay at the edges.
 - **Toolbar:**
   - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
   - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.
