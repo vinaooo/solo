@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
@@ -74,6 +75,17 @@ class SettingsScreenTest {
         compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
 
         compose.onNodeWithContentDescription("Purple").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun `a scoring mode is chosen by its icon, and its name and meaning show below`() {
+        val changes = mutableListOf<SettingsChange>()
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = { changes += it }, onBack = {}) } }
+
+        compose.onNodeWithText("Points, with a time penalty and a speed bonus").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Counter time").performScrollTo().performClick()
+
+        changes shouldContainExactly listOf(SettingsChange.GameModeChanged(GameMode.COUNTER_TIME))
     }
 
     @Test

@@ -52,6 +52,9 @@ sealed interface GameIntent {
 
     data object RestartDeal : GameIntent
 
+    /** Handled by the screen, which captures the board first. */
+    data object ReportBug : GameIntent
+
     data object MessageShown : GameIntent
 
     data object AutoCompleteTipShown : GameIntent

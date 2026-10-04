@@ -21,7 +21,7 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
 ./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
 ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest   # on-device UI tests (emulator; not part of the gate or CI)
-adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck; tallest: the tallest possible column)
+adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck; tallest: the tallest possible column; --es state <code>: a bug report's "State:" block; --es load game.json: a report's attachment, pushed to /sdcard/Android/data/io.github.vinaooo.solo/files/)
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.
@@ -73,7 +73,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
   - **Standard** (`StandardScoring`, Windows Standard: time penalty and speed bonus) and **Counter time** use the same points, but Counter time hides them and ranks by the fastest win.
   - **Vegas** (`VegasScoring`): a game starts at -$52, +$5 a card onto a foundation, -$5 when one leaves it (otherwise moving a card up and down makes endless money), nothing else, undo included. Passes are limited (`GameMode.recycleLimit`: 1 pass in Draw 1, 3 in Draw 3), which `RecycleRule` and `DeadEndDetector` (passes used are part of a position) respect.
   - **Vegas cumulative:** Vegas whose balance (`GameStats.vegasBank`) carries over: a new game starts at bank - 52. The bank is committed only by `FinishGame` (a win) and `StartNewGame` (abandoning, even an untouched game: its $52 is spent). It has no ranking, by the user's choice.
-  - **Counter time:** 10 minutes in Draw 1, 14 in Draw 3 (`timeLimitSeconds`). The engine stops the clock at the limit and rejects moves once `isTimeUp`. The ViewModel then records the loss with `LoseGame`, which also deletes the saved game, so the next new game doesn't count it again; it also doesn't save on pause and freezes the clock while auto-complete runs. The time's-up dialog offers a new game or the same deal again.
+  - **Counter time:** 10 minutes in Draw 1, 15 in Draw 3 (`timeLimitSeconds`). The engine stops the clock at the limit and rejects moves once `isTimeUp`. The ViewModel then records the loss with `LoseGame`, which also deletes the saved game, so the next new game doesn't count it again; it also doesn't save on pause and freezes the clock while auto-complete runs. The time's-up dialog offers a new game or the same deal again.
 - `GameSession` (a seed, the state and an `UndoHistory`) is the unit that gets played, undone, redone and saved as JSON with kotlinx.serialization. Deals are reproducible from the seed (`SeededShuffler`), which is how "restart this deal" works.
 - `UndoHistory` keeps undo and redo stacks. A redo earns the move's points back and counts as a move, but the undo penalty stays. A new move clears the redo stack.
 - `MoveResolver` turns a tap or drop into a `Move`. A tapped king that fills its column goes to the next empty column to its right, wrapping around.
@@ -127,6 +127,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - **Toolbar:**
   - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
   - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.
+  - "Report a bug" sits in the new-game menu. The game screen records itself into a graphics layer; on report, it waits for the menu and its scrim to close, then captures the board. `BugReportDialog` sends by email to `REPORT_EMAIL` (`vrpedrinho+solo@gmail.com`), with the screenshot and the game's JSON attached through a `FileProvider` (`${applicationId}.reports`). The report text ends with a "State:" block, the exact board as `GameCodec` text (gzipped JSON in Base64, about 1,000 characters), so a GitHub issue, which takes text only, can be replayed too. `DebugGameActivity` loads either the block or the attached game.json. There is no token in the app: the repo is public, and an embedded token could be extracted.
   - The new-game menu (`NewGameMenu.kt`) draws its own FAB-menu pills in a popup with 40dp of room around them, because Material's `FloatingActionButtonMenu` clips its items. The toolbar draws a 60% scrim behind itself while the menu is open.
 
 **App shell (`:app`)**

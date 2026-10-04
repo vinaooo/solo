@@ -57,4 +57,11 @@
     <string name="time_up_body">The game wasn\'t finished in time. It counts as a loss.</string>
     <string name="win_money">Winnings: %1$s</string>
     <string name="stock_no_passes">No passes left</string>
+    <string name="report_bug">Report a bug</string>
+    <string name="report_bug_body">Tell us what happened. Sending by email attaches a screenshot of the board and the game, so we can replay it.</string>
+    <string name="report_bug_hint">What went wrong?</string>
+    <string name="report_by_email">Email</string>
+    <string name="report_on_github">GitHub</string>
+    <string name="report_cancel">Cancel</string>
+    <string name="report_subject">Solo bug report</string>
 </resources>

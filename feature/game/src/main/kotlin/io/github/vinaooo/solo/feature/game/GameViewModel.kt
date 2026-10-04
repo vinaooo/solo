@@ -108,13 +108,13 @@ class GameViewModel @Inject constructor(
             GameIntent.Redo -> step(GameSession::redo, Announcement.Redone)
             GameIntent.Hint -> showHint()
             GameIntent.AutoComplete -> autoComplete()
-            GameIntent.NewGame -> newGame(restart = false)
-            GameIntent.RestartDeal -> newGame(restart = true)
+            GameIntent.NewGame, GameIntent.RestartDeal -> newGame(restart = intent == GameIntent.RestartDeal)
             GameIntent.MessageShown -> state.update { it.copy(message = null) }
             GameIntent.AutoCompleteTipShown -> state.update { it.copy(showAutoCompleteTip = false) }
             GameIntent.StuckTipShown -> state.update { it.copy(showStuckTip = false) }
             GameIntent.Resume -> clock.start()
             GameIntent.Pause -> pause()
+            GameIntent.ReportBug -> Unit
         }
     }
 

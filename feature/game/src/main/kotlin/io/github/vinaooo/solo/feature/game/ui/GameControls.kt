@@ -159,7 +159,8 @@ internal fun HorizontalGameToolbar(
     HorizontalFloatingToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim },
+        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim }
+            .keepingEnd(vertical = false, hold = rememberMenuHold(menuOpen)),
     ) { ToolbarActions(uiState, onIntent, vertical = false, menuOpen) { menuOpen = it } }
 }
 
@@ -174,7 +175,8 @@ internal fun VerticalGameToolbar(uiState: GameUiState, onIntent: (GameIntent) ->
     VerticalFloatingToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim },
+        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim }
+            .keepingEnd(vertical = true, hold = rememberMenuHold(menuOpen)),
     ) { ToolbarActions(uiState, onIntent, vertical = true, menuOpen) { menuOpen = it } }
 }
 
@@ -190,33 +192,39 @@ private fun ToolbarActions(
     menuOpen: Boolean,
     onMenuOpenChange: (Boolean) -> Unit,
 ) {
-    IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
-        Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
-    }
-    IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
-        Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
-    }
-    IconButton(onClick = { onIntent(GameIntent.Hint) }) {
-        Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
-    }
-    // The button grows out of its slot, widening the toolbar (lengthening it in landscape), and scales up into place.
-    // Only along the toolbar: growing across it too leaves the toolbar's balanced padding, and so its thickness, wrong.
+    // A button grows out of its slot, widening the toolbar (lengthening it in landscape), and scales up into place;
+    // it leaves the same way. Only along the toolbar: growing across it too leaves the toolbar's balanced padding, and
+    // so its thickness, wrong. While the menu is open every button but its close button leaves, so the toolbar shrinks
+    // to that one button, and grows back when the menu closes.
     val size = MaterialTheme.motionScheme.defaultSpatialSpec<IntSize>()
     val scale = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
     val fade = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
-    AnimatedVisibility(
-        visible = uiState.canAutoComplete,
-        enter = if (vertical) {
-            expandVertically(size, Alignment.CenterVertically)
-        } else {
-            expandHorizontally(size, Alignment.CenterHorizontally)
-        } + scaleIn(scale) + fadeIn(fade),
-        exit = if (vertical) {
-            shrinkVertically(size, Alignment.CenterVertically)
-        } else {
-            shrinkHorizontally(size, Alignment.CenterHorizontally)
-        } + scaleOut(scale) + fadeOut(fade),
-    ) {
+    val enter = if (vertical) {
+        expandVertically(size, Alignment.CenterVertically)
+    } else {
+        expandHorizontally(size, Alignment.CenterHorizontally)
+    } + scaleIn(scale) + fadeIn(fade)
+    val exit = if (vertical) {
+        shrinkVertically(size, Alignment.CenterVertically)
+    } else {
+        shrinkHorizontally(size, Alignment.CenterHorizontally)
+    } + scaleOut(scale) + fadeOut(fade)
+    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
+        IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
+            Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
+        }
+    }
+    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
+        IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
+            Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
+        }
+    }
+    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
+        IconButton(onClick = { onIntent(GameIntent.Hint) }) {
+            Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
+        }
+    }
+    AnimatedVisibility(uiState.canAutoComplete && !menuOpen, enter = enter, exit = exit) {
         // The first few times the button appears, a bubble points it out.
         TipBox(
             show = uiState.showAutoCompleteTip,
