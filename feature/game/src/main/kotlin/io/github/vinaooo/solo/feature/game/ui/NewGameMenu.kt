@@ -13,17 +13,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Style
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -116,9 +120,57 @@ internal fun NewGameMenu(
                     }
                 }
             }
+            ReportBugButton(vertical, { progress.last().value }) {
+                onMenuOpenChange(false)
+                onIntent(GameIntent.ReportBug)
+            }
         }
     }
 }
+
+/** Report a bug: a quiet text button in the game's bottom-left corner, fading in and out ([visible]) with the pills. */
+@Composable
+private fun ReportBugButton(vertical: Boolean, visible: () -> Float, onClick: () -> Unit) {
+    Popup(popupPositionProvider = GameAreaBottomStart(LocalGameArea.current, vertical, LocalDensity.current)) {
+        TextButton(
+            onClick = onClick,
+            colors = ButtonDefaults.textButtonColors(contentColor = Color.White.copy(alpha = QUIET_ALPHA)),
+            modifier = Modifier.graphicsLayer { alpha = visible().coerceIn(0f, 1f) },
+        ) {
+            Icon(Icons.Rounded.BugReport, null, Modifier.size(18.dp))
+            Text(
+                stringResource(R.string.report_bug),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The bottom-left corner of the game's [area] (the screen above the ad), a margin in; when [vertical] (landscape),
+ * above the Scores and Settings buttons that sit in that corner.
+ */
+private class GameAreaBottomStart(private val area: IntRect, private val vertical: Boolean, density: Density) :
+    PopupPositionProvider {
+    private val margin = with(density) { CORNER_MARGIN.roundToPx() }
+    private val lift = with(density) { if (vertical) NAVIGATION_BUTTONS_HEIGHT.roundToPx() else 0 }
+
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ) = IntOffset(area.left + margin, area.bottom - margin - lift - popupContentSize.height)
+}
+
+private val CORNER_MARGIN = 16.dp
+
+/** The Scores and Settings icon buttons' row, in landscape's corner. */
+private val NAVIGATION_BUTTONS_HEIGHT = 56.dp
+
+/** The report button reads on the scrim without competing with the pills. */
+private const val QUIET_ALPHA = 0.8f
 
 /**
  * One option of the new game menu: a FAB menu pill that sits [fromButton] places from the button and, as [progress]
@@ -217,3 +269,6 @@ internal fun Modifier.scrimBehind(color: Color, alpha: () -> Float): Modifier = 
 /** Stronger than Material's standard 0.32 scrim, so the menu stands out clearly from the game. */
 internal const val MENU_SCRIM_ALPHA = 0.6f
 private const val SCRIM_REACH = 100_000f
+
+/** Where the game screen lies in the window, so a popup can find its corner (the ad sits below it). */
+internal val LocalGameArea = compositionLocalOf { IntRect.Zero }

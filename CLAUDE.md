@@ -21,7 +21,7 @@ JDK 21 and Android SDK Platform 37 are required (compileSdk 37, targetSdk 36, mi
 ./gradlew :domain:pitest                         # mutation testing (gate: 80% killed, 90% coverage)
 ./gradlew :app:assembleRelease                   # minified (R8) release APK, signed when the upload key is configured
 ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest   # on-device UI tests (emulator; not part of the gate or CI)
-adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck; tallest: the tallest possible column)
+adb shell am start -S -n io.github.vinaooo.solo/.debug.DebugGameActivity   # debug build: a game one move from auto-complete (--es game near_stuck: one move from stuck; tallest: the tallest possible column; --es state <code>: a bug report's "State:" block; --es load game.json: a report's attachment, pushed to /sdcard/Android/data/io.github.vinaooo.solo/files/)
 ```
 
 The full gate, matching CI: `./gradlew ktlintCheck detekt lint test verifyRoborazziDebug koverVerify`.
@@ -127,6 +127,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - **Toolbar:**
   - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
   - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.
+  - "Report a bug" sits in the new-game menu. The game screen records itself into a graphics layer; on report, it waits for the menu and its scrim to close, then captures the board. `BugReportDialog` sends by email to `REPORT_EMAIL` (`vrpedrinho+solo@gmail.com`), with the screenshot and the game's JSON attached through a `FileProvider` (`${applicationId}.reports`). The report text ends with a "State:" block, the exact board as `GameCodec` text (gzipped JSON in Base64, about 1,000 characters), so a GitHub issue, which takes text only, can be replayed too. `DebugGameActivity` loads either the block or the attached game.json. There is no token in the app: the repo is public, and an embedded token could be extracted.
   - The new-game menu (`NewGameMenu.kt`) draws its own FAB-menu pills in a popup with 40dp of room around them, because Material's `FloatingActionButtonMenu` clips its items. The toolbar draws a 60% scrim behind itself while the menu is open.
 
 **App shell (`:app`)**

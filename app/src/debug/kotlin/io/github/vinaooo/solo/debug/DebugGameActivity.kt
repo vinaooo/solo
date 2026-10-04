@@ -11,7 +11,9 @@ import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
+import io.github.vinaooo.solo.domain.session.GameCodec
 import io.github.vinaooo.solo.domain.session.GameSession
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
 
@@ -22,6 +24,11 @@ import kotlinx.coroutines.runBlocking
  * - `near_win` (the default): one move away from auto-complete.
  * - `near_stuck`: one card (the five of spades, in the stock) can still go to its foundation; then the game is stuck.
  * - `tallest`: the last column as tall as a column gets, six face-down cards and a run from king to ace.
+ *
+ * Or replay a bug report:
+ * - `--es state <code>`: the code in the report's "State:" block (GitHub or email), the exact board.
+ * - `--es load game.json`: the report's attached game, with its moves to undo, pushed first to the app's own folder:
+ *   `adb push game.json /sdcard/Android/data/io.github.vinaooo.solo/files/`
  */
 @AndroidEntryPoint
 class DebugGameActivity : ComponentActivity() {
@@ -30,12 +37,16 @@ class DebugGameActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val report = intent.getStringExtra("state")?.let { GameSession(seed = 0, state = GameCodec.decode(it)) }
+            ?: intent.getStringExtra("load")?.let {
+                GameCodec.decodeSession(File(getExternalFilesDir(null), it).readText())
+            }
         val game = when (intent.getStringExtra("game")) {
             "near_stuck" -> nearStuck()
             "tallest" -> tallest()
             else -> nearWin()
         }
-        runBlocking { savedGames.save(GameSession(seed = 0, state = game)) }
+        runBlocking { savedGames.save(report ?: GameSession(seed = 0, state = game)) }
         startActivity(
             Intent(this, MainActivity::class.java).addFlags(
                 Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK,

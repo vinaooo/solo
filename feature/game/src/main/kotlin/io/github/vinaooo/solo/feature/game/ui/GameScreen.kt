@@ -35,20 +35,32 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +73,7 @@ import io.github.vinaooo.solo.feature.game.GameViewModel
 import io.github.vinaooo.solo.feature.game.R
 import io.github.vinaooo.solo.feature.game.board.GameBoard
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun GameRoute(
@@ -87,14 +100,35 @@ fun GameScreen(
 ) {
     val snackbar = remember { SnackbarHostState() }
     val noMoves = stringResource(R.string.no_moves)
+    // The screen as last drawn, for a bug report's screenshot.
+    val frame = rememberGraphicsLayer()
+    var report by remember { mutableStateOf<BugReport?>(null) }
+    val scope = rememberCoroutineScope()
+    val handle: (GameIntent) -> Unit = { intent ->
+        if (intent == GameIntent.ReportBug) {
+            // After the menu and its scrim have gone, so the screenshot shows the board as it was.
+            scope.launch {
+                delay(MENU_CLOSED_MILLIS)
+                report = BugReport(frame.toImageBitmap())
+            }
+        } else {
+            onIntent(intent)
+        }
+    }
     LaunchedEffect(uiState.message) {
         if (uiState.message == GameMessage.NO_MOVES) {
             snackbar.showSnackbar(noMoves)
             onIntent(GameIntent.MessageShown)
         }
     }
+    var area by remember { mutableStateOf(IntRect.Zero) }
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize()
+            .onGloballyPositioned { area = it.boundsInWindow().roundToIntRect() }
+            .drawWithContent {
+                frame.record { this@drawWithContent.drawContent() }
+                drawLayer(frame)
+            },
         color = SoloThemeExtras.cardColors.table,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
@@ -109,12 +143,15 @@ fun GameScreen(
                 }
             },
         ) {
-            GameContent(uiState, onIntent, onOpenScores, onOpenSettings, snackbar)
+            CompositionLocalProvider(LocalGameArea provides area) {
+                GameContent(uiState, handle, onOpenScores, onOpenSettings, snackbar)
+            }
             StuckMessage(uiState.showStuckTip, { onIntent(GameIntent.StuckTipShown) }, Modifier.align(Alignment.Center))
             Announcer(uiState.announcement)
         }
     }
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
+    report?.let { BugReportDialog(uiState, it.screenshot, onDone = { report = null }) }
     if (uiState.isTimeUp) {
         TimeUpDialog(onNewGame = { onIntent(GameIntent.NewGame) }, onRestart = { onIntent(GameIntent.RestartDeal) })
     }
@@ -283,3 +320,7 @@ private val PHONE_WIDTH = 412.dp
 private const val TABLET_WIDTH_DP = 600
 private val TOOLBAR_SPACE = 88.dp
 private const val STUCK_MESSAGE_MILLIS = 5_000L
+private const val MENU_CLOSED_MILLIS = 400L
+
+/** A bug report being written, with the board's [screenshot]. */
+private class BugReport(val screenshot: ImageBitmap)
