@@ -93,7 +93,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).
-- The board sits at the top or, with Settings' board position on Bottom, as low as it can while leaving room for the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Landscape has no height to spare, so it stays put.
+- The board sits at the top or, with Settings' board position on Bottom, as low as it can while leaving room for the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Board position only applies to portrait.
 - `GameBoard` keys every card by its identity and animates it to its position with the motion scheme's spatial spring.
 - **Layers:** waste 100+, stock 150+, stock cover 198, stock count 199, foundations 200+, columns 300+ (by depth), and in-flight cards `LIFTED_Z` (10 000) + their layer.
   - Only a card arriving in a new pile is lifted. A card shifting within its own pile (the Draw 3 fan closing up, a column re-spacing) keeps its layer, or it covers newer cards.
@@ -116,6 +116,8 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Layouts**
 - Portrait: stats and the Scores/Settings buttons on top, the board below, and a horizontal floating toolbar at the bottom.
 - Landscape: `CenteredRow` puts stats and buttons on the left, the board centered, and a vertical floating toolbar on the right. Both sides get the width of the wider one, so the board stays centered.
+  - The board is `sideways` (`BoardLayout`): no top row. On the handedness edge, the stock with the waste under it (the Draw 3 fan grows down); next to it, the four foundations one under the other; then the tableau, which gets the whole height. Right-handed is the mirror image.
+  - The stacked foundations set the card size (4 cards tall), so landscape cards are smaller than a top row would allow.
 - **Toolbar:**
   - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
   - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.

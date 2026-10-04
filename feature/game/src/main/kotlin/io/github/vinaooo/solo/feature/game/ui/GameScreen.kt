@@ -220,7 +220,9 @@ private fun LandscapeGame(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
         start = { GameSidePanel(uiState, onOpenScores, onOpenSettings, Modifier.fillMaxHeight()) },
-        center = { BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp)) },
+        center = {
+            BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp), sideways = true)
+        },
         end = {
             VerticalGameToolbar(
                 uiState = uiState,
@@ -233,7 +235,12 @@ private fun LandscapeGame(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier) {
+private fun BoardOrLoading(
+    uiState: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    modifier: Modifier,
+    sideways: Boolean = false,
+) {
     val session = uiState.session
     if (session == null) {
         Box(modifier, contentAlignment = Alignment.Center) { LoadingIndicator() }
@@ -247,6 +254,7 @@ private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit,
             handedness = uiState.settings.handedness,
             alignment = uiState.settings.boardAlignment,
             deals = uiState.deals,
+            sideways = sideways,
         )
     }
 }

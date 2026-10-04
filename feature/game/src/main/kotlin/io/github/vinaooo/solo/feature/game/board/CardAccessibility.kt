@@ -15,7 +15,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import io.github.vinaooo.solo.core.designsystem.component.cardName
-import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
@@ -30,7 +29,7 @@ internal fun cardAccessibility(
     placed: PlacedCard,
     hinted: Boolean,
     destinations: List<PileRef>,
-    handedness: Handedness,
+    layout: BoardLayout,
     onIntent: (GameIntent) -> Unit,
 ): CardAccessibility {
     val hintLabel = stringResource(R.string.a11y_hinted)
@@ -38,7 +37,7 @@ internal fun cardAccessibility(
     val touches = remember { MutableInteractionSource() }
     val modifier = Modifier
         .semantics {
-            traversalIndex = traversalOrder(placed.pile, placed.index, handedness)
+            traversalIndex = traversalOrder(placed.pile, placed.index, layout.handedness, layout.sideways)
             if (role == CardRole.Hidden) hideFromAccessibility()
             if (hinted) stateDescription = hintLabel
             if (actions.isNotEmpty()) customActions = actions

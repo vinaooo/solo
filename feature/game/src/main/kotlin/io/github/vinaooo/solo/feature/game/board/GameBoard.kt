@@ -84,10 +84,12 @@ fun GameBoard(
     handedness: Handedness = Handedness.RIGHT,
     alignment: BoardAlignment = BoardAlignment.TOP,
     deals: Int = 0,
+    /** Landscape: the piles in two columns beside the tableau instead of a row above it. */
+    sideways: Boolean = false,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
-        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness, alignment)
+        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness, alignment, sideways)
         val cardWidth = with(density) { layout.cardWidth.toDp() }
         val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }
         var drag by remember { mutableStateOf<DragState?>(null) }
@@ -109,7 +111,7 @@ fun GameBoard(
                     placed = placed,
                     hinted = isHighlighted,
                     destinations = destinations[CardSpot(placed.pile, placed.index)].orEmpty(),
-                    handedness = handedness,
+                    layout = layout,
                     onIntent = onIntent,
                 )
                 BoardCard(
@@ -154,11 +156,20 @@ private fun rememberBoardLayout(
     height: Int,
     handedness: Handedness,
     alignment: BoardAlignment,
+    sideways: Boolean,
 ): BoardLayout {
     val density = LocalDensity.current
-    return remember(width, height, density, handedness, alignment) {
+    return remember(width, height, density, handedness, alignment, sideways) {
         with(density) {
-            BoardLayout(width.toFloat(), height.toFloat(), GAP.toPx(), handedness, COLUMN_GAP.toPx(), alignment)
+            BoardLayout(
+                width.toFloat(),
+                height.toFloat(),
+                GAP.toPx(),
+                handedness,
+                COLUMN_GAP.toPx(),
+                alignment,
+                sideways,
+            )
         }
     }
 }
@@ -397,7 +408,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 .width(cardWidth)
                 .semantics {
                     contentDescription = description
-                    traversalIndex = traversalOrder(pile, 0, layout.handedness)
+                    traversalIndex = traversalOrder(pile, 0, layout.handedness, layout.sideways)
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
