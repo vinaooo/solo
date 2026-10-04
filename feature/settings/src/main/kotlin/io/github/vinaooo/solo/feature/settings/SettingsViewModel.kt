@@ -9,6 +9,7 @@ import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
@@ -33,6 +34,10 @@ sealed interface SettingsChange {
 
     data class DynamicColorChanged(val value: Boolean) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(dynamicColor = value)
+    }
+
+    data class ThemeColorChanged(val value: ThemeColor) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(themeColor = value)
     }
 
     data class SoundChanged(val value: Boolean) : SettingsChange {

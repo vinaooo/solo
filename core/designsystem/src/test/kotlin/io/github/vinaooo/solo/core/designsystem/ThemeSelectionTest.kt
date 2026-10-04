@@ -2,8 +2,11 @@ package io.github.vinaooo.solo.core.designsystem
 
 import androidx.test.core.app.ApplicationProvider
 import io.github.vinaooo.solo.core.designsystem.theme.BrandColors
+import io.github.vinaooo.solo.core.designsystem.theme.PurpleColors
 import io.github.vinaooo.solo.core.designsystem.theme.colorSchemeFor
 import io.github.vinaooo.solo.core.designsystem.theme.isDarkTheme
+import io.github.vinaooo.solo.core.designsystem.theme.paletteScheme
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -29,6 +32,14 @@ class ThemeSelectionTest {
     fun `brand colors are used when dynamic color is off`() {
         colorSchemeFor(context, darkTheme = false, dynamicColor = false) shouldBe BrandColors.light
         colorSchemeFor(context, darkTheme = true, dynamicColor = false) shouldBe BrandColors.dark
+    }
+
+    @Test
+    fun `with dynamic color off, the chosen color's scheme is used`() {
+        colorSchemeFor(context, darkTheme = false, dynamicColor = false, ThemeColor.PURPLE) shouldBe PurpleColors.light
+        colorSchemeFor(context, darkTheme = true, dynamicColor = false, ThemeColor.PURPLE) shouldBe PurpleColors.dark
+        // Every color has its own scheme.
+        ThemeColor.entries.map { paletteScheme(it, dark = false).primary }.toSet().size shouldBe ThemeColor.entries.size
     }
 
     @Test

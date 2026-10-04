@@ -8,6 +8,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -16,6 +17,7 @@ import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -51,6 +53,27 @@ class SettingsScreenTest {
             SettingsChange.HandednessChanged(Handedness.LEFT),
             SettingsChange.ShowTimerChanged(false),
         )
+    }
+
+    @Test
+    fun `the colors show only once dynamic color is off`() {
+        var settings by mutableStateOf(Settings())
+        val changes = mutableListOf<SettingsChange>()
+        compose.setContent { SoloTheme { SettingsScreen(settings, onChange = { changes += it }, onBack = {}) } }
+
+        compose.onNodeWithContentDescription("Purple").assertDoesNotExist()
+        settings = Settings(dynamicColor = false)
+        compose.onNodeWithContentDescription("Purple").performScrollTo().performClick()
+
+        changes shouldContainExactly listOf(SettingsChange.ThemeColorChanged(ThemeColor.PURPLE))
+    }
+
+    @Test
+    @Config(sdk = [30])
+    fun `without dynamic color, the colors are always there`() {
+        compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = {}, onBack = {}) } }
+
+        compose.onNodeWithContentDescription("Purple").performScrollTo().assertExists()
     }
 
     @Test

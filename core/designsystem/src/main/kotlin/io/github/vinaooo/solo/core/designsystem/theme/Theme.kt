@@ -15,6 +15,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 
 fun isDarkTheme(themeMode: ThemeMode, systemInDark: Boolean): Boolean = when (themeMode) {
@@ -23,20 +24,31 @@ fun isDarkTheme(themeMode: ThemeMode, systemInDark: Boolean): Boolean = when (th
     ThemeMode.DARK -> true
 }
 
-/** Dynamic (wallpaper) colors on Android 12+, brand colors otherwise. */
-fun colorSchemeFor(context: Context, darkTheme: Boolean, dynamicColor: Boolean): ColorScheme = when {
-    dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    darkTheme -> BrandColors.dark
-    else -> BrandColors.light
+/** Dynamic (wallpaper) colors on Android 12+, the chosen [themeColor]'s otherwise. */
+fun colorSchemeFor(
+    context: Context,
+    darkTheme: Boolean,
+    dynamicColor: Boolean,
+    themeColor: ThemeColor = ThemeColor.GREEN,
+): ColorScheme = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+} else {
+    paletteScheme(themeColor, darkTheme)
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SoloTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, dynamicColor: Boolean = true, content: @Composable () -> Unit) {
+fun SoloTheme(
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    dynamicColor: Boolean = true,
+    themeColor: ThemeColor = ThemeColor.GREEN,
+    content: @Composable () -> Unit,
+) {
     val darkTheme = isDarkTheme(themeMode, isSystemInDarkTheme())
     val context = LocalContext.current
-    val colorScheme = remember(context, darkTheme, dynamicColor) { colorSchemeFor(context, darkTheme, dynamicColor) }
+    val colorScheme = remember(context, darkTheme, dynamicColor, themeColor) {
+        colorSchemeFor(context, darkTheme, dynamicColor, themeColor)
+    }
     val cardColors = remember(colorScheme, darkTheme) { cardColorsFor(colorScheme, darkTheme) }
     CompositionLocalProvider(LocalCardColors provides cardColors) {
         MaterialExpressiveTheme(

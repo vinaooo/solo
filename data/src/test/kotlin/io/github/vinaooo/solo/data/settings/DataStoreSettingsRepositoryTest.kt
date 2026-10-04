@@ -6,6 +6,7 @@ import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.ThemeColor
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -39,6 +40,7 @@ class DataStoreSettingsRepositoryTest {
             drawMode = DrawMode.THREE,
             themeMode = ThemeMode.DARK,
             dynamicColor = false,
+            themeColor = ThemeColor.PURPLE,
             soundEnabled = false,
             hapticsEnabled = false,
             showTimer = false,
