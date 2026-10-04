@@ -27,7 +27,7 @@ enum class GameMode {
         null
     }
 
-    /** The time to win in, or null for none: 10 minutes in Draw 1, 14 in Draw 3, as chosen with the user. */
+    /** The time to win in, or null for none: 10 minutes in Draw 1, 15 in Draw 3, as chosen with the user. */
     fun timeLimitSeconds(drawMode: DrawMode): Long? = if (this == COUNTER_TIME) {
         when (drawMode) {
             DrawMode.ONE -> DRAW_ONE_LIMIT_SECONDS
@@ -48,6 +48,6 @@ enum class GameMode {
         const val VEGAS_DRAW_THREE_RECYCLES = 2
         const val VEGAS_STAKE = 52
         const val DRAW_ONE_LIMIT_SECONDS = 10 * 60L
-        const val DRAW_THREE_LIMIT_SECONDS = 14 * 60L
+        const val DRAW_THREE_LIMIT_SECONDS = 15 * 60L
     }
 }

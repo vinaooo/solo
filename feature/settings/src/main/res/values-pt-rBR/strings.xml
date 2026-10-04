@@ -49,5 +49,5 @@
     <string name="mode_standard_note">Pontos, com penalidade de tempo e bônus de rapidez</string>
     <string name="mode_vegas_note">$52 por partida, $5 por carta na base; passadas limitadas</string>
     <string name="mode_vegas_cumulative_note">Vegas, com o saldo levado de uma partida para a outra</string>
-    <string name="mode_counter_time_note">Vença em 10 minutos (Virar 1) ou 14 (Virar 3); os mais rápidos ficam no topo</string>
+    <string name="mode_counter_time_note">A vitória mais rápida vai para o topo das pontuações</string>
 </resources>

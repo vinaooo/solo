@@ -33,7 +33,7 @@ class GameModeRulesTest {
         GameMode.VEGAS_CUMULATIVE.recycleLimit(DrawMode.THREE) shouldBe 2
 
         GameMode.COUNTER_TIME.timeLimitSeconds(DrawMode.ONE) shouldBe 600
-        GameMode.COUNTER_TIME.timeLimitSeconds(DrawMode.THREE) shouldBe 840
+        GameMode.COUNTER_TIME.timeLimitSeconds(DrawMode.THREE) shouldBe 900
         GameMode.VEGAS.timeLimitSeconds(DrawMode.ONE).shouldBeNull()
         GameMode.STANDARD.timeLimitSeconds(DrawMode.THREE).shouldBeNull()
 
