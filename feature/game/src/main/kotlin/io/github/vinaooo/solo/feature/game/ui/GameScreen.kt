@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -51,6 +53,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
+import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
@@ -220,7 +223,9 @@ private fun LandscapeGame(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
         start = { GameSidePanel(uiState, onOpenScores, onOpenSettings, Modifier.fillMaxHeight()) },
-        center = { BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp)) },
+        center = {
+            BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp), sideways = true)
+        },
         end = {
             VerticalGameToolbar(
                 uiState = uiState,
@@ -233,23 +238,45 @@ private fun LandscapeGame(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier) {
+private fun BoardOrLoading(
+    uiState: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    modifier: Modifier,
+    sideways: Boolean = false,
+) {
     val session = uiState.session
     if (session == null) {
         Box(modifier, contentAlignment = Alignment.Center) { LoadingIndicator() }
     } else {
-        GameBoard(
-            state = session.state,
-            hint = uiState.hint,
-            onIntent = onIntent,
-            modifier = modifier,
-            destinations = uiState.destinations,
-            handedness = uiState.settings.handedness,
-            alignment = uiState.settings.boardAlignment,
-            deals = uiState.deals,
-        )
+        // Phone view on a tablet: the traditional board, as wide as a phone's, at the top of the room it has, on the
+        // side the player chose.
+        val phoneView = uiState.settings.phoneView &&
+            LocalConfiguration.current.smallestScreenWidthDp >= TABLET_WIDTH_DP
+        val side = when (uiState.settings.phoneViewSide) {
+            PhoneViewSide.LEFT -> Alignment.TopStart
+            PhoneViewSide.CENTER -> Alignment.TopCenter
+            PhoneViewSide.RIGHT -> Alignment.TopEnd
+        }
+        Box(modifier, contentAlignment = side) {
+            GameBoard(
+                state = session.state,
+                hint = uiState.hint,
+                onIntent = onIntent,
+                modifier = (if (phoneView) Modifier.widthIn(max = PHONE_WIDTH) else Modifier).fillMaxSize(),
+                destinations = uiState.destinations,
+                handedness = uiState.settings.handedness,
+                alignment = uiState.settings.boardAlignment,
+                deals = uiState.deals,
+                sideways = sideways && !phoneView,
+            )
+        }
     }
 }
 
+/** Phone view's board width: a typical modern phone's (412dp), chosen with the user. */
+private val PHONE_WIDTH = 412.dp
+
+/** From this short side (Material's medium window), the screen is a tablet's and phone view applies. */
+private const val TABLET_WIDTH_DP = 600
 private val TOOLBAR_SPACE = 88.dp
 private const val STUCK_MESSAGE_MILLIS = 5_000L

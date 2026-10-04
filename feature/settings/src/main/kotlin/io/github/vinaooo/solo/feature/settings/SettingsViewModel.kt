@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
+import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
@@ -51,6 +52,14 @@ sealed interface SettingsChange {
 
     data class BoardAlignmentChanged(val value: BoardAlignment) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(boardAlignment = value)
+    }
+
+    data class PhoneViewChanged(val value: Boolean) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(phoneView = value)
+    }
+
+    data class PhoneViewSideChanged(val value: PhoneViewSide) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(phoneViewSide = value)
     }
 }
 

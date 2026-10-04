@@ -93,7 +93,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 
 **Board rendering**
 - `BoardLayout` is pure geometry. It maps each card to absolute pixel positions, compresses long columns, and does hit-testing (`pileAt`, `dropTarget`).
-- The board sits at the top or, with Settings' board position on Bottom, as low as it can while leaving room for the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Landscape has no height to spare, so it stays put.
+- The board sits at the top or, with Settings' board position on Bottom, as low as it can while leaving room for the tallest possible column (a bar of 6 face-down cards and a run from king to ace), so it never moves during play. Board position only applies to portrait.
 - `GameBoard` keys every card by its identity and animates it to its position with the motion scheme's spatial spring.
 - **Layers:** waste 100+, stock 150+, stock cover 198, stock count 199, foundations 200+, columns 300+ (by depth), and in-flight cards `LIFTED_Z` (10 000) + their layer.
   - Only a card arriving in a new pile is lifted. A card shifting within its own pile (the Draw 3 fan closing up, a column re-spacing) keeps its layer, or it covers newer cards.
@@ -116,6 +116,9 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Layouts**
 - Portrait: stats and the Scores/Settings buttons on top, the board below, and a horizontal floating toolbar at the bottom.
 - Landscape: `CenteredRow` puts stats and buttons on the left, the board centered, and a vertical floating toolbar on the right. Both sides get the width of the wider one, so the board stays centered.
+  - The board is `sideways` (`BoardLayout`): no top row. On the handedness edge, the stock with the waste under it (the Draw 3 fan grows down); next to it, the four foundations one under the other; then the tableau, which gets the whole height. Right-handed is the mirror image.
+  - The stacked foundations set the card size (4 cards tall), so landscape cards are smaller than a top row would allow.
+- **Phone view** (Settings, shown only when the short side is 600dp+): on a tablet, the traditional board (top row, never `sideways`), at most 412dp wide like a phone's, at the top of the board's room, in both orientations, on the side Settings' board side picks (left, center or right; revealed under the switch only while phone view is on); the stats and toolbar stay at the edges.
 - **Toolbar:**
   - The auto-complete button grows only along the toolbar. Growing across it leaves the toolbar's balanced padding stale.
   - Tips (`TipBox`) are Material tooltips with a caret, offset 16dp so they clear the toolbar.
@@ -126,7 +129,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 - `SoloApp` is the type-safe `NavHost`. Only the game route carries the ad banner, in a `Column` under the game: the banner pads for the navigation bar and the game consumes that inset. Scores and Settings have no ads and pad for the system bars themselves.
 
 **Ads (`:core:ads`)**
-- AdMob through `AdBannerProvider` (`AdMobBanner`): a full-width inline adaptive banner capped at 60dp (`AdSize.getInlineAdaptiveBannerAdSize`; the user found the large anchored size, about 130dp, too big, and the other anchored sizes are deprecated). Its slot always takes the 60dp, so the board never jumps when an ad loads or fails.
+- AdMob through `AdBannerProvider` (`AdMobBanner`): an inline adaptive banner (`AdSize.getInlineAdaptiveBannerAdSize`; the user found the large anchored size, about 130dp, too big, and the other anchored sizes are deprecated), capped at 60dp tall. A phone in portrait gets it full width; in landscape or on a tablet (600dp+ wide) it is at most 320dp wide (a standard banner) and centered, and in landscape, where height is short, 50dp tall. Its full-width slot always takes that height, so the board never jumps when an ad loads or fails.
 - Consent comes before ads. `MainActivity` calls `AdConsent.gather` once per launch. `DefaultAdConsent` updates the status, shows the consent form if needed, and only then starts the SDK and lets the banner load. The SDKs sit behind `ConsentClient` / `AdsSdk` (`GoogleAds.kt`), so the order is unit-tested with fakes. Settings always links to the privacy policy (`privacy_policy_url`, `#en` or `#pt-br` by language) and shows "Privacy options" only when the consent SDK says it's required.
 - IDs: debug builds always use Google's test IDs. Release builds read `solo.ads.appId` / `solo.ads.bannerId` from `local.properties` (or `SOLO_ADS_APP_ID` / `SOLO_ADS_BANNER_ID`), and fall back to test IDs when neither is set (`AdIds` in `build-logic`; it rejects swapped or partial IDs). `solo.ads.testDeviceIds` lists hashed device IDs that always get test ads. Debug builds make the consent SDK act as in the EEA, and that only works on test devices: emulators, or phones listed there.
 - **Real IDs on this machine:** the user's `local.properties` holds Solo's real AdMob IDs, so every local release build serves real ads. Install it only on devices listed in `solo.ads.testDeviceIds` (the hash is printed in logcat by the ads and consent SDKs), and never tap its ads.

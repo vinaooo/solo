@@ -70,14 +70,23 @@ class CardRoleTest {
         readingOrder(Handedness.RIGHT, PileRef.Foundation(0), PileRef.Foundation(3), PileRef.Waste, PileRef.Stock)
     }
 
-    private fun readingOrder(handedness: Handedness, vararg topRow: PileRef) {
+    @Test
+    fun `sideways, TalkBack reads the stock before the waste under it on either hand`() {
+        val foundations = arrayOf(PileRef.Foundation(0), PileRef.Foundation(3))
+        readingOrder(Handedness.LEFT, PileRef.Stock, PileRef.Waste, *foundations, sideways = true)
+        readingOrder(Handedness.RIGHT, *foundations, PileRef.Stock, PileRef.Waste, sideways = true)
+    }
+
+    private fun readingOrder(handedness: Handedness, vararg topRow: PileRef, sideways: Boolean = false) {
         val columns = listOf(
             PileRef.Tableau(0) to 0,
             PileRef.Tableau(0) to 18,
             PileRef.Tableau(1) to 0,
             PileRef.Tableau(6) to 18,
         )
-        val order = (topRow.map { it to 0 } + columns).map { (pile, index) -> traversalOrder(pile, index, handedness) }
+        val order = (topRow.map { it to 0 } + columns).map { (pile, index) ->
+            traversalOrder(pile, index, handedness, sideways)
+        }
 
         order shouldBeSortedWith naturalOrder()
         order.toSet().size shouldBe order.size

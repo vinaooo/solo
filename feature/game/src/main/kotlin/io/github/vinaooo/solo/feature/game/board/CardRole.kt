@@ -41,11 +41,16 @@ internal fun cardRole(state: GameState, placed: PlacedCard): CardRole {
 
 /**
  * TalkBack reading order: the top row from left to right as [handedness] lays it out, then each column from top to
- * bottom. Without it, cards would be read row by row across the columns.
+ * bottom. Without it, cards would be read row by row across the columns. [sideways], the stock stands above the waste,
+ * so it is read first on either hand.
  */
-internal fun traversalOrder(pile: PileRef, index: Int, handedness: Handedness): Float = when (pile) {
+internal fun traversalOrder(pile: PileRef, index: Int, handedness: Handedness, sideways: Boolean): Float = when (pile) {
     PileRef.Stock -> if (handedness == Handedness.RIGHT) RIGHT_HANDED_STOCK_ORDER else 0f
-    PileRef.Waste -> if (handedness == Handedness.RIGHT) RIGHT_HANDED_STOCK_ORDER - 1 else 1f
+    PileRef.Waste -> when {
+        handedness == Handedness.LEFT -> 1f
+        sideways -> RIGHT_HANDED_STOCK_ORDER + 1
+        else -> RIGHT_HANDED_STOCK_ORDER - 1
+    }
     is PileRef.Foundation -> pile.index + if (handedness == Handedness.RIGHT) 0f else FIRST_FOUNDATION_ORDER
     is PileRef.Tableau -> FIRST_COLUMN_ORDER + pile.index * COLUMN_ORDER_SPAN + index
 }

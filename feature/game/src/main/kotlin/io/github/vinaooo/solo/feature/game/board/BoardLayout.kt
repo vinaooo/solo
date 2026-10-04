@@ -24,11 +24,17 @@ data class Cover(val edge: CardCover.Edge, val strip: Float)
 data class PlacedCard(val card: Card, val pile: PileRef, val index: Int, val position: Position, val z: Float)
 
 /**
- * Pure geometry of the table, in pixels. Cards fill the width in portrait and shrink to fit the height in
- * landscape; tableau columns compress when they would run off the board. The stock and waste sit on the
- * [handedness] side of the top row, the foundations on the other. At the [alignment] bottom, the board sits as low
- * as it can with room for the tallest column a game can have: a bar of six face-down cards and a run from king to ace.
+ * Pure geometry of the table, in pixels; tableau columns compress when they would run off the board.
+ *
+ * Classic (portrait): cards fill the width, and the stock and waste sit on the [handedness] side of a top row, the
+ * foundations on the other. At the [alignment] bottom, the board sits as low as it can with room for the tallest
+ * column a game can have: a bar of six face-down cards and a run from king to ace.
+ *
+ * [sideways] (landscape): the piles stand in two columns beside the tableau, which gets the whole height. On the
+ * [handedness] edge, the stock with the waste under it (its draw-three fan growing down); next to it, the four
+ * foundations one under the other, which set the card size.
  */
+@Suppress("LongParameterList") // The board's size and spacing, and the three settings that place its piles.
 class BoardLayout(
     val width: Float,
     val height: Float,
@@ -37,14 +43,26 @@ class BoardLayout(
     /** Space between neighbouring columns (and top-row piles); [gap] is the margin and the vertical spacing. */
     val columnGap: Float = gap,
     val alignment: BoardAlignment = BoardAlignment.TOP,
+    val sideways: Boolean = false,
 ) {
 
-    val cardWidth: Float = minOf(
-        (width - gap * 2 - columnGap * (COLUMNS - 1)) / COLUMNS,
-        (height - gap * (TOP_ROW_GAPS + 2)) / HEIGHT_IN_CARDS * CardDimensions.ASPECT_RATIO,
-    )
+    /** Between the piles and the tableau: under the top row, or beside the foundations (72dp with the 4dp gap). */
+    private val groupGap = gap * if (sideways) SIDEWAYS_GAPS else TOP_ROW_GAPS
+
+    val cardWidth: Float = if (sideways) {
+        minOf(
+            (width - gap * 2 - columnGap * COLUMNS - groupGap) / (COLUMNS + SIDE_COLUMNS),
+            (height - gap * 2 - columnGap * (FOUNDATIONS - 1)) / FOUNDATIONS * CardDimensions.ASPECT_RATIO,
+        )
+    } else {
+        minOf(
+            (width - gap * 2 - columnGap * (COLUMNS - 1)) / COLUMNS,
+            (height - gap * (TOP_ROW_GAPS + 2)) / HEIGHT_IN_CARDS * CardDimensions.ASPECT_RATIO,
+        )
+    }
     val cardHeight: Float = cardWidth / CardDimensions.ASPECT_RATIO
-    val boardWidth: Float = cardWidth * COLUMNS + gap * 2 + columnGap * (COLUMNS - 1)
+    val boardWidth: Float = cardWidth * COLUMNS + gap * 2 + columnGap * (COLUMNS - 1) +
+        if (sideways) (cardWidth + columnGap) * SIDE_COLUMNS - columnGap + groupGap else 0f
     val faceDownStep: Float = cardHeight * FACE_DOWN_STEP
     val faceUpStep: Float = cardHeight * FACE_UP_STEP
 
@@ -54,10 +72,13 @@ class BoardLayout(
     private val hiddenBarSpread = gap * HIDDEN_BAR_SPREAD
     private val hiddenBarGap = gap * HIDDEN_BAR_GAP
 
+    /** The thinnest bar's height, a single face-down card's, unsqueezed. */
+    val singleBarHeight: Float = faceDownStep + hiddenBarExtra
+
     private val left = (width - boardWidth) / 2
-    private val topRowY = gap + when (alignment) {
-        BoardAlignment.TOP -> 0f
-        BoardAlignment.BOTTOM -> {
+    private val topRowY = gap + when {
+        sideways || alignment == BoardAlignment.TOP -> 0f
+        else -> {
             // As columnOffsets lays it out, unsqueezed.
             val bar = MAX_HIDDEN * faceDownStep + hiddenBarExtra + (MAX_HIDDEN - 1) * hiddenBarSpread + hiddenBarGap
             val tallestColumn = bar + (Rank.entries.size - 1) * faceUpStep + cardHeight
@@ -65,19 +86,37 @@ class BoardLayout(
             (height - boardHeight).coerceAtLeast(0f)
         }
     }
-    private val tableauY = topRowY + cardHeight + gap * TOP_ROW_GAPS
+    private val tableauY = if (sideways) topRowY else topRowY + cardHeight + gap * TOP_ROW_GAPS
 
-    // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste.
-    private val wasteFanStep = cardWidth * WASTE_FAN_STEP
+    // Wide enough for the shrunk rank and suit of the cards under the top one, into the empty column beside the waste;
+    // sideways, tall enough for them, down the stock's column.
+    private val wasteFanStep = (if (sideways) cardHeight else cardWidth) * WASTE_FAN_STEP
     private val rightHanded = handedness == Handedness.RIGHT
 
-    fun columnX(column: Int): Float = left + gap + column * (cardWidth + columnGap)
+    // Sideways and left-handed, the stock's and the foundations' columns come first.
+    private val tableauX = left + gap +
+        if (sideways && !rightHanded) (cardWidth + columnGap) * SIDE_COLUMNS - columnGap + groupGap else 0f
+    private val foundationsX = if (rightHanded) {
+        tableauX + (cardWidth + columnGap) * COLUMNS - columnGap + groupGap
+    } else {
+        left + gap + cardWidth + columnGap
+    }
+    private val stockX = if (rightHanded) foundationsX + cardWidth + columnGap else left + gap
+
+    fun columnX(column: Int): Float = tableauX + column * (cardWidth + columnGap)
 
     fun slot(pile: PileRef): Position = when (pile) {
-        PileRef.Stock -> Position(columnX(if (rightHanded) COLUMNS - 1 else 0), topRowY)
-        PileRef.Waste -> Position(columnX(if (rightHanded) COLUMNS - 2 else 1), topRowY)
-        is PileRef.Foundation ->
+        PileRef.Stock -> Position(if (sideways) stockX else columnX(if (rightHanded) COLUMNS - 1 else 0), topRowY)
+        PileRef.Waste -> if (sideways) {
+            Position(stockX, topRowY + cardHeight + columnGap)
+        } else {
+            Position(columnX(if (rightHanded) COLUMNS - 2 else 1), topRowY)
+        }
+        is PileRef.Foundation -> if (sideways) {
+            Position(foundationsX, topRowY + pile.index * (cardHeight + columnGap))
+        } else {
             Position(columnX(pile.index + if (rightHanded) 0 else FIRST_FOUNDATION_COLUMN), topRowY)
+        }
         is PileRef.Tableau -> Position(columnX(pile.index), tableauY)
     }
 
@@ -122,10 +161,13 @@ class BoardLayout(
         PileRef.Waste -> if (placed.index < state.waste.lastIndex) {
             val positions = wastePositions(state)
             val dx = positions[placed.index + 1].x - positions[placed.index].x
+            val dy = positions[placed.index + 1].y - positions[placed.index].y
             when {
+                dy > 0 -> Cover(CardCover.Edge.TOP, dy)
                 dx > 0 -> Cover(CardCover.Edge.LEFT, dx)
                 dx < 0 -> Cover(CardCover.Edge.RIGHT, -dx)
-                state.drawMode == DrawMode.THREE -> Cover(CardCover.Edge.LEFT, wasteFanStep)
+                state.drawMode == DrawMode.THREE ->
+                    Cover(if (sideways) CardCover.Edge.TOP else CardCover.Edge.LEFT, wasteFanStep)
                 else -> null
             }
         } else {
@@ -161,10 +203,10 @@ class BoardLayout(
         val fanned = if (state.drawMode == DrawMode.THREE) VISIBLE_WASTE_CARDS else 1
         val firstFanned = (state.waste.size - fanned).coerceAtLeast(0)
         // Right-handed, the fan grows leftward so the top card stays next to the stock.
-        val shift = if (rightHanded) (state.waste.lastIndex - firstFanned).coerceAtLeast(0) else 0
+        val shift = if (rightHanded && !sideways) (state.waste.lastIndex - firstFanned).coerceAtLeast(0) else 0
         return state.waste.indices.map { i ->
-            val fanIndex = (i - firstFanned).coerceAtLeast(0)
-            Position(base.x + (fanIndex - shift) * wasteFanStep, base.y)
+            val step = ((i - firstFanned).coerceAtLeast(0) - shift) * wasteFanStep
+            if (sideways) Position(base.x, base.y + step) else Position(base.x + step, base.y)
         }
     }
 
@@ -204,6 +246,13 @@ class BoardLayout(
         /** Face-down cards in the last column of the deal, the most any column can have. */
         const val MAX_HIDDEN = 6
         const val FIRST_FOUNDATION_COLUMN = 3
+        const val FOUNDATIONS = 4
+
+        /** Gaps between the foundations and the tableau, sideways. */
+        const val SIDEWAYS_GAPS = 18
+
+        /** Sideways: the stock and waste's column and the foundations'. */
+        const val SIDE_COLUMNS = 2
 
         /** Gaps between the top row and the tableau. */
         const val TOP_ROW_GAPS = 3

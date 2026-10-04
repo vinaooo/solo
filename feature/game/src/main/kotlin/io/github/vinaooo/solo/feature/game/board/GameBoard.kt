@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
@@ -84,10 +83,12 @@ fun GameBoard(
     handedness: Handedness = Handedness.RIGHT,
     alignment: BoardAlignment = BoardAlignment.TOP,
     deals: Int = 0,
+    /** Landscape: the piles in two columns beside the tableau instead of a row above it. */
+    sideways: Boolean = false,
 ) {
     BoxWithConstraints(modifier = modifier.semantics { isTraversalGroup = true }) {
         val density = LocalDensity.current
-        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness, alignment)
+        val layout = rememberBoardLayout(constraints.maxWidth, constraints.maxHeight, handedness, alignment, sideways)
         val cardWidth = with(density) { layout.cardWidth.toDp() }
         val highlighted = remember(state, hint) { hint?.let { hintedCards(state, it) }.orEmpty() }
         var drag by remember { mutableStateOf<DragState?>(null) }
@@ -109,7 +110,7 @@ fun GameBoard(
                     placed = placed,
                     hinted = isHighlighted,
                     destinations = destinations[CardSpot(placed.pile, placed.index)].orEmpty(),
-                    handedness = handedness,
+                    layout = layout,
                     onIntent = onIntent,
                 )
                 BoardCard(
@@ -154,11 +155,20 @@ private fun rememberBoardLayout(
     height: Int,
     handedness: Handedness,
     alignment: BoardAlignment,
+    sideways: Boolean,
 ): BoardLayout {
     val density = LocalDensity.current
-    return remember(width, height, density, handedness, alignment) {
+    return remember(width, height, density, handedness, alignment, sideways) {
         with(density) {
-            BoardLayout(width.toFloat(), height.toFloat(), GAP.toPx(), handedness, COLUMN_GAP.toPx(), alignment)
+            BoardLayout(
+                width.toFloat(),
+                height.toFloat(),
+                GAP.toPx(),
+                handedness,
+                COLUMN_GAP.toPx(),
+                alignment,
+                sideways,
+            )
         }
     }
 }
@@ -327,13 +337,17 @@ private fun FaceDownPiles(
     val color = SoloThemeExtras.cardColors.back
     // The card's corners in absolute size: CardDimensions.shape is a percentage of the shorter side, the bar's height.
     val shape = RoundedCornerShape(cardWidth * CardDimensions.CORNER_PERCENT / 100)
-    val count: @Composable (Int) -> Unit = { value ->
+    // Sized to the thinnest bar, a single face-down card's: its digits fill a share of its height, so they scale with
+    // the cards instead of staying one size on every screen.
+    val barCountPx = layout.singleBarHeight * COUNT_FILL / DIGIT_HEIGHT
+    val count: @Composable (Int, Float) -> Unit = { value, countPx ->
+        val countSize = with(density) { countPx.toSp() }
         Text(
             text = value.toString(),
             color = MaterialTheme.colorScheme.onPrimary,
-            fontSize = COUNT_SIZE,
+            fontSize = countSize,
             style = LocalTextStyle.current.copy(
-                lineHeight = COUNT_SIZE,
+                lineHeight = countSize,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
             ),
             modifier = Modifier
@@ -342,7 +356,7 @@ private fun FaceDownPiles(
                 // space below the digits: free to overflow, it is placed so the ink's middle is the box's middle.
                 .layout { measurable, constraints ->
                     val text = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-                    val inkCenter = text[FirstBaseline] - COUNT_SIZE.toPx() * DIGIT_HEIGHT / 2
+                    val inkCenter = text[FirstBaseline] - countPx * DIGIT_HEIGHT / 2
                     val height = text.height.coerceAtMost(constraints.maxHeight)
                     layout(text.width, height) { text.place(0, (height / 2f - inkCenter).roundToInt()) }
                 },
@@ -362,7 +376,7 @@ private fun FaceDownPiles(
                         .size(cardWidth, height)
                         .background(color, shape),
                     contentAlignment = Alignment.Center,
-                ) { if (hidden > 0) count(hidden) }
+                ) { if (hidden > 0) count(hidden, barCountPx) }
             }
         }
     }
@@ -378,7 +392,7 @@ private fun FaceDownPiles(
                 .size(cardWidth, cardHeight)
                 .zIndex(STOCK_COUNT_Z),
             contentAlignment = Alignment.Center,
-        ) { count(state.stock.size) }
+        ) { count(state.stock.size, barCountPx * STOCK_COUNT_SCALE) }
     }
 }
 
@@ -397,7 +411,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                 .width(cardWidth)
                 .semantics {
                     contentDescription = description
-                    traversalIndex = traversalOrder(pile, 0, layout.handedness)
+                    traversalIndex = traversalOrder(pile, 0, layout.handedness, layout.sideways)
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
@@ -478,7 +492,12 @@ private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */
 private const val STOCK_COUNT_Z = 199f
-private val COUNT_SIZE = 9.sp
+
+/** How much of a one-card bar's height the count's digits fill. */
+private const val COUNT_FILL = 0.6f
+
+/** The stock's count has a whole card to itself: twice the bars'. */
+private const val STOCK_COUNT_SCALE = 2
 
 /** Roboto's digit height, as a fraction of the font size. */
 private const val DIGIT_HEIGHT = 0.71f

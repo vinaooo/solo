@@ -10,6 +10,7 @@ import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
+import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.rules.GameEngine
@@ -34,8 +35,7 @@ class GameScreenScreenshotTest {
         name: String,
         themeMode: ThemeMode = ThemeMode.LIGHT,
         drawMode: DrawMode = DrawMode.ONE,
-        handedness: Handedness = Handedness.RIGHT,
-        alignment: BoardAlignment = BoardAlignment.TOP,
+        settings: Settings = Settings(),
     ) {
         val session = midGame(drawMode)
         compose.setContent {
@@ -44,7 +44,7 @@ class GameScreenScreenshotTest {
                     uiState = GameUiState(
                         session = session,
                         hint = HintEngine().bestHint(session.state),
-                        settings = Settings(handedness = handedness, boardAlignment = alignment),
+                        settings = settings,
                     ),
                     onIntent = {},
                     onOpenScores = {},
@@ -66,10 +66,11 @@ class GameScreenScreenshotTest {
 
     @Test
     fun game_phone_left_handed() =
-        capture("game_phone_left_handed", drawMode = DrawMode.THREE, handedness = Handedness.LEFT)
+        capture("game_phone_left_handed", drawMode = DrawMode.THREE, settings = Settings(handedness = Handedness.LEFT))
 
     @Test
-    fun game_phone_board_bottom() = capture("game_phone_board_bottom", alignment = BoardAlignment.BOTTOM)
+    fun game_phone_board_bottom() =
+        capture("game_phone_board_bottom", settings = Settings(boardAlignment = BoardAlignment.BOTTOM))
 
     @Test
     @Config(qualifiers = PHONE_LANDSCAPE)
@@ -78,6 +79,24 @@ class GameScreenScreenshotTest {
     @Test
     @Config(qualifiers = TABLET)
     fun game_tablet() = capture("game_tablet")
+
+    @Test
+    @Config(qualifiers = TABLET)
+    fun game_tablet_phone_view() = capture("game_tablet_phone_view", settings = Settings(phoneView = true))
+
+    @Test
+    @Config(qualifiers = TABLET)
+    fun game_tablet_phone_view_left() = capture(
+        "game_tablet_phone_view_left",
+        settings = Settings(phoneView = true, phoneViewSide = PhoneViewSide.LEFT),
+    )
+
+    @Test
+    @Config(qualifiers = TABLET_PORTRAIT)
+    fun game_tablet_portrait_phone_view() = capture(
+        "game_tablet_portrait_phone_view",
+        settings = Settings(phoneView = true),
+    )
 
     @Test
     @Config(qualifiers = "pt-rBR-$PHONE")
@@ -103,3 +122,4 @@ class GameScreenScreenshotTest {
 private const val PHONE = "w411dp-h891dp-xhdpi"
 private const val PHONE_LANDSCAPE = "w891dp-h411dp-land-xhdpi"
 private const val TABLET = "w1280dp-h800dp-land-mdpi"
+private const val TABLET_PORTRAIT = "w800dp-h1280dp-port-mdpi"

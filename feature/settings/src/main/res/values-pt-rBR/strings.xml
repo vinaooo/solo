@@ -11,6 +11,12 @@
     <string name="draw_mode_confirm">Confirmar</string>
     <string name="draw_mode_cancel">Cancelar</string>
     <string name="show_timer">Mostrar cronômetro</string>
+    <string name="phone_view">Visão de celular</string>
+    <string name="phone_view_note">Cartas do tamanho de um celular</string>
+    <string name="phone_view_side">Lado da mesa</string>
+    <string name="side_left">Esquerda</string>
+    <string name="side_center">Centro</string>
+    <string name="side_right">Direita</string>
     <string name="theme">Tema</string>
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>

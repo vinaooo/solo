@@ -106,6 +106,8 @@ class BoardLayoutTest {
         // The unseen face-down cards wait under the face-up one, so the next to turn over slides up from there.
         ys.take(6).forEach { it shouldBe ys[6] }
         portrait.hiddenBarHeight(dealt.tableau[0]) shouldBe 0f
+        portrait.hiddenBarHeight(dealt.tableau[1]).toDouble() shouldBe
+            (portrait.singleBarHeight.toDouble() plusOrMinus 0.01)
         // Each first face-up card is a step per face-down card down, lifted when there is a bar; level with it if not.
         val firsts = dealt.tableau.mapIndexed { column, pile ->
             placed.getValue(pile.last().identity()).position.y - portrait.slot(PileRef.Tableau(column)).y
@@ -260,4 +262,106 @@ class BoardLayoutTest {
         portrait.dropTarget(dealt, top, 3f, 3f).shouldBeNull()
         portrait.dropTarget(dealt, top, portrait.columnX(4) - top.position.x, -top.position.y).shouldBeNull()
     }
+
+    @Test
+    fun `sideways, the four stacked foundations set the card size and nine columns fit the width`() {
+        listOf(sideways(Handedness.LEFT), sideways(Handedness.RIGHT), sideways(Handedness.LEFT, width = 1000f))
+            .forEach { layout ->
+                val bottom = layout.slot(PileRef.Foundation(3)).y + layout.cardHeight
+                bottom shouldBeLessThanOrEqual layout.height - layout.gap + 0.01f
+                layout.boardWidth shouldBeLessThanOrEqual layout.width + 0.01f
+            }
+        val tall = sideways(Handedness.LEFT)
+        (tall.height - tall.gap - (tall.slot(PileRef.Foundation(3)).y + tall.cardHeight)).toDouble() shouldBe
+            (0.0 plusOrMinus 0.5)
+    }
+
+    @Test
+    fun `sideways and left-handed, stock over waste, the foundations, then the tableau from the top`() {
+        val layout = sideways(Handedness.LEFT)
+        val left = (layout.width - layout.boardWidth) / 2 + layout.gap
+        layout.slot(PileRef.Stock) shouldBe Position(left, layout.gap)
+        layout.slot(PileRef.Waste) shouldBe Position(left, layout.gap + layout.cardHeight + 24f)
+        val foundationsX = left + layout.cardWidth + 24f
+        (0 until 4).forEach {
+            layout.slot(PileRef.Foundation(it)) shouldBe
+                Position(foundationsX, layout.gap + it * (layout.cardHeight + 24f))
+        }
+        val tableau = layout.slot(PileRef.Tableau(0))
+        tableau.x.toDouble() shouldBe ((foundationsX + layout.cardWidth + 216f).toDouble() plusOrMinus 0.01)
+        tableau.y shouldBe layout.gap
+    }
+
+    @Test
+    fun `sideways and right-handed, the mirror image`() {
+        val layout = sideways(Handedness.RIGHT)
+        val left = (layout.width - layout.boardWidth) / 2 + layout.gap
+        layout.slot(PileRef.Tableau(0)) shouldBe Position(left, layout.gap)
+        val foundationsX = layout.columnX(6) + layout.cardWidth + 216f
+        (0 until 4).forEach { layout.slot(PileRef.Foundation(it)).x shouldBe foundationsX }
+        val stock = layout.slot(PileRef.Stock)
+        stock shouldBe Position(foundationsX + layout.cardWidth + 24f, layout.gap)
+        (stock.x + layout.cardWidth + layout.gap).toDouble() shouldBe
+            ((layout.width - (layout.width - layout.boardWidth) / 2).toDouble() plusOrMinus 0.5)
+        layout.slot(PileRef.Waste).x shouldBe stock.x
+    }
+
+    @Test
+    fun `sideways, the draw three fan grows down on either hand, its cards showing their top`() {
+        val waste = listOf(
+            Card(Suit.CLUBS, Rank.TWO, true),
+            Card(Suit.CLUBS, Rank.THREE, true),
+            Card(Suit.CLUBS, Rank.FOUR, true),
+            Card(Suit.CLUBS, Rank.FIVE, true),
+        )
+        val state = GameState(
+            stock = emptyList(),
+            waste = waste,
+            foundations = List(4) { emptyList() },
+            tableau = List(7) { emptyList() },
+            drawMode = DrawMode.THREE,
+        )
+        listOf(sideways(Handedness.LEFT), sideways(Handedness.RIGHT)).forEach { layout ->
+            val placed = layout.positions(state)
+            val positions = waste.map { placed.getValue(it.identity()).position }
+            val slot = layout.slot(PileRef.Waste)
+            val step = layout.cardHeight * 0.4f
+            positions.forEach { it.x shouldBe slot.x }
+            positions[0].y shouldBe slot.y
+            positions[1].y shouldBe slot.y
+            positions[3].y.toDouble() shouldBe ((slot.y + step * 2).toDouble() plusOrMinus 0.01)
+            listOf(waste[0], waste[1], waste[2]).forEach {
+                val cover = layout.cover(state, placed.getValue(it.identity()))!!
+                cover.edge shouldBe CardCover.Edge.TOP
+                cover.strip.toDouble() shouldBe (step.toDouble() plusOrMinus 0.01)
+            }
+            layout.cover(state, placed.getValue(waste[3].identity())).shouldBeNull()
+        }
+    }
+
+    @Test
+    fun `sideways, columns get the whole height and hit testing finds the stacked piles`() {
+        val layout = sideways(Handedness.LEFT)
+        val tall = List(19) { i -> Card(Suit.entries[i % 4], Rank.entries[i % 13], isFaceUp = i >= 6) }
+        val state = GameState(
+            stock = emptyList(),
+            waste = emptyList(),
+            foundations = List(4) { emptyList() },
+            tableau = List(7) { if (it == 0) tall else emptyList() },
+            drawMode = DrawMode.ONE,
+        )
+        val last = layout.positions(state).values.maxOf { it.position.y }
+        (last + layout.cardHeight) shouldBeLessThanOrEqual layout.height
+        (last + layout.cardHeight) shouldBeGreaterThan layout.height - layout.gap * 2
+
+        val foundation = layout.slot(PileRef.Foundation(3))
+        layout.pileAt(foundation.x + 5, foundation.y + 5, state) shouldBe PileRef.Foundation(3)
+        val waste = layout.slot(PileRef.Waste)
+        layout.pileAt(waste.x + 5, waste.y + 5, state) shouldBe PileRef.Waste
+        val column = layout.slot(PileRef.Tableau(6))
+        layout.pileAt(column.x + 5, layout.height - 5, state) shouldBe PileRef.Tableau(6)
+    }
+
+    private fun sideways(handedness: Handedness, width: Float = 2200f) =
+        BoardLayout(width, height = 900f, gap = 12f, handedness, columnGap = 24f, sideways = true)
 }
