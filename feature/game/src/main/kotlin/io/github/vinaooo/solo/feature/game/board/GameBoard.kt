@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -401,7 +402,14 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
     val density = LocalDensity.current
 
     @Composable
-    fun Slot(pile: PileRef, description: String, isEmpty: Boolean, icon: ImageVector? = null, borderWidth: Dp? = null) {
+    fun Slot(
+        pile: PileRef,
+        description: String,
+        isEmpty: Boolean,
+        icon: ImageVector? = null,
+        borderWidth: Dp? = null,
+        enabled: Boolean = true,
+    ) {
         val position = layout.slot(pile)
         val offset = with(density) { IntOffset(position.x.roundToInt(), position.y.roundToInt()) }
         val touches = remember { MutableInteractionSource() }
@@ -415,7 +423,7 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
                     // A slot under cards is covered, so TalkBack reads the top card instead.
                     if (!isEmpty) hideFromAccessibility()
                 }
-                .clickable(touches, indication = null) { onIntent(GameIntent.Tap(pile, 0)) },
+                .clickable(touches, indication = null, enabled = enabled) { onIntent(GameIntent.Tap(pile, 0)) },
         ) {
             EmptyPileSlot(Modifier.width(cardWidth), icon = icon, borderWidth = borderWidth)
             // Its touch ripple follows the slot's rounded corners, over the outline instead of clipping it.
@@ -432,8 +440,13 @@ private fun EmptySlots(state: GameState, layout: BoardLayout, cardWidth: Dp, onI
             },
         ),
         isEmpty = state.stock.isEmpty(),
-        // Out of passes (Vegas), the empty stock offers nothing: no turn-over icon.
-        icon = Icons.Rounded.Refresh.takeIf { state.canRecycle },
+        // Out of passes (Vegas), the empty stock offers nothing: an X, and no ripple on tap.
+        icon = when {
+            state.canRecycle -> Icons.Rounded.Refresh
+            state.waste.isNotEmpty() -> Icons.Rounded.Close
+            else -> null
+        },
+        enabled = state.canRecycle || state.waste.isEmpty(),
     )
     state.foundations.indices.forEach {
         Slot(
