@@ -35,13 +35,14 @@ internal fun reportBody(info: ReportInfo, description: String): String = buildSt
     appendLine("Screen: ${info.screen}")
     with(info.settings) {
         appendLine(
-            "Settings: $drawMode, $gameMode, $handedness hand, board $boardAlignment, theme $themeMode, " +
+            "Settings: $drawMode, $gameMode, $difficulty, $handedness hand, board $boardAlignment, theme $themeMode, " +
                 "dynamic color $dynamicColor, phone view $phoneView",
         )
     }
     info.session?.let {
         appendLine(
-            "Game: seed ${it.seed}, ${it.state.mode}, ${it.state.drawMode}, ${it.state.moves} moves, " +
+            "Game: seed ${it.seed}, ${it.state.mode}, ${it.state.drawMode}, ${it.state.difficulty}, " +
+                "${it.state.moves} moves, " +
                 "score ${it.state.score}, ${it.state.elapsedSeconds}s",
         )
         // The exact board, for the debug build to replay (GameCodec).

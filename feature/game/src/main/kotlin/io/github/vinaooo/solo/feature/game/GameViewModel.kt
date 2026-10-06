@@ -7,6 +7,7 @@ import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
 import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Move
@@ -84,17 +85,18 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             val resumed = resumeGame()
             val settings = settingsRepository.settings.first()
-            show(resumed ?: startNewGame(settings.drawMode, settings.gameMode))
+            show(resumed ?: startNewGame(settings.drawMode, settings.gameMode, settings.difficulty))
             // A game dealt now, not one picked up where it was left, is dealt on the board.
             if (resumed == null) state.update { it.copy(deals = it.deals + 1) }
             // Its time ran out while the app was away.
             if (resumed?.state?.isTimeUp == true) timeUp()
         }
         viewModelScope.launch {
-            // Switching the draw or game mode in Settings (confirmed there) deals a new game in those modes; both
-            // together, as one change, so a single settings write never deals twice.
-            settingsRepository.settings.map { it.drawMode to it.gameMode }.distinctUntilChanged().drop(1)
-                .collect { (drawMode, mode) -> newGame(restart = false, drawMode = drawMode, mode = mode) }
+            // Switching the draw mode, game mode or difficulty in Settings (confirmed there) deals a new game with
+            // them; all together, as one change, so a single settings write never deals twice.
+            settingsRepository.settings.map { Triple(it.drawMode, it.gameMode, it.difficulty) }.distinctUntilChanged()
+                .drop(1)
+                .collect { (drawMode, mode, difficulty) -> newGame(restart = false, drawMode, mode, difficulty) }
         }
     }
 
@@ -181,15 +183,16 @@ class GameViewModel @Inject constructor(
         restart: Boolean,
         drawMode: DrawMode = state.value.settings.drawMode,
         mode: GameMode = state.value.settings.gameMode,
+        difficulty: Difficulty = state.value.settings.difficulty,
     ) {
         autoCompleteJob?.cancel()
         viewModelScope.launch {
-            // A restarted deal keeps its own modes, whatever Settings say now.
+            // A restarted deal keeps its own modes and difficulty, whatever Settings say now.
             val replay = state.value.session?.takeIf { restart }
             val session = if (replay != null) {
-                startNewGame(replay.state.drawMode, replay.state.mode, replay.seed)
+                startNewGame(replay.state.drawMode, replay.state.mode, replay.state.difficulty, replay.seed)
             } else {
-                startNewGame(drawMode, mode)
+                startNewGame(drawMode, mode, difficulty)
             }
             // A new game is dealt on the board; a restarted deal just goes back to its start.
             state.update {
