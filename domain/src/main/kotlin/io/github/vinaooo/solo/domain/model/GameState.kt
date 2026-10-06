@@ -17,6 +17,8 @@ data class GameState(
     val recycles: Int = 0,
     val elapsedSeconds: Long = 0,
     val mode: GameMode = GameMode.STANDARD,
+    /** Games saved before difficulty existed were any shuffle: Hard. */
+    val difficulty: Difficulty = Difficulty.HARD,
 ) {
     val isWon: Boolean
         get() = foundations.all { it.size == Rank.entries.size }

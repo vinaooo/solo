@@ -14,6 +14,7 @@ enum class PhoneViewSide { LEFT, CENTER, RIGHT }
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,
     val gameMode: GameMode = GameMode.STANDARD,
+    val difficulty: Difficulty = Difficulty.NORMAL,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val themeColor: ThemeColor = ThemeColor.GREEN,

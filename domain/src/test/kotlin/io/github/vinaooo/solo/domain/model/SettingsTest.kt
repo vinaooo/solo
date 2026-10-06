@@ -18,6 +18,7 @@ class SettingsTest {
             dynamicColor shouldBe true
             soundEnabled shouldBe true
             hapticsEnabled shouldBe true
+            difficulty shouldBe Difficulty.NORMAL
         }
     }
 }

@@ -2,10 +2,12 @@ package io.github.vinaooo.solo.domain.usecase
 
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.deal.WinnableDeals
 import io.github.vinaooo.solo.domain.emptyState
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
@@ -52,6 +54,34 @@ class GameUseCasesTest {
         @Test
         fun `can replay a given seed`() = runTest {
             startNewGame(DrawMode.ONE, seed = 5).seed shouldBe 5
+        }
+
+        @Test
+        fun `easy and normal deal a winnable seed, and the game keeps its difficulty`() = runTest {
+            val easy = startNewGame(DrawMode.ONE, GameMode.VEGAS, Difficulty.EASY)
+
+            easy.seed shouldBe WinnableDeals.pick(77, DrawMode.ONE, GameMode.VEGAS, Difficulty.EASY)
+            easy.state.difficulty shouldBe Difficulty.EASY
+            startNewGame(DrawMode.THREE, difficulty = Difficulty.NORMAL).seed shouldBe
+                WinnableDeals.pick(77, DrawMode.THREE, GameMode.STANDARD, Difficulty.NORMAL)
+        }
+
+        @Test
+        fun `a replayed seed is dealt as it is, whatever the difficulty`() = runTest {
+            startNewGame(DrawMode.ONE, difficulty = Difficulty.EASY, seed = 5).seed shouldBe 5
+        }
+
+        @Test
+        fun `an abandoned game's score keeps its difficulty`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(
+                1,
+                deal.copy(mode = GameMode.VEGAS, difficulty = Difficulty.EASY, score = -37, moves = 20),
+            )
+
+            startNewGame(DrawMode.ONE, GameMode.VEGAS)
+
+            scores.records.value.single().difficulty shouldBe Difficulty.EASY
         }
 
         @Test
