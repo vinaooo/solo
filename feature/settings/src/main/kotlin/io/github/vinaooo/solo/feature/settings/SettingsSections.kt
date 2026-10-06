@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.domain.model.BoardAlignment
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
@@ -31,6 +32,16 @@ internal fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit)
         options = listOf(DrawMode.ONE to R.string.draw_one, DrawMode.THREE to R.string.draw_three),
         selected = settings.drawMode,
         onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
+    )
+    Choice(
+        title = stringResource(R.string.difficulty),
+        options = listOf(
+            Difficulty.EASY to R.string.difficulty_easy,
+            Difficulty.NORMAL to R.string.difficulty_normal,
+            Difficulty.HARD to R.string.difficulty_hard,
+        ),
+        selected = settings.difficulty,
+        onSelect = { onChange(SettingsChange.DifficultyChanged(it)) },
     )
     GameModeChoice(settings.gameMode) { onChange(SettingsChange.GameModeChanged(it)) }
     // Only a tablet (Material's medium window and up) has room to spare; a phone already shows a phone's cards.

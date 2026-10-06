@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vinaooo.solo.domain.model.BoardAlignment
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
@@ -26,6 +27,10 @@ sealed interface SettingsChange {
 
     data class DrawModeChanged(val value: DrawMode) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(drawMode = value)
+    }
+
+    data class DifficultyChanged(val value: Difficulty) : SettingsChange {
+        override fun applyTo(settings: Settings) = settings.copy(difficulty = value)
     }
 
     data class ThemeModeChanged(val value: ThemeMode) : SettingsChange {
@@ -81,8 +86,8 @@ class SettingsViewModel @Inject constructor(
     private val pending = MutableStateFlow<SettingsChange?>(null)
 
     /**
-     * A draw or game mode change waiting for the player to confirm abandoning the game in progress, which the switch
-     * would end.
+     * A draw mode, game mode or difficulty change waiting for the player to confirm abandoning the game in progress,
+     * which the switch would end.
      */
     val pendingChange: StateFlow<SettingsChange?> = pending.asStateFlow()
 
@@ -109,6 +114,7 @@ class SettingsViewModel @Inject constructor(
     private fun startsNewGame(change: SettingsChange): Boolean = when (change) {
         is SettingsChange.DrawModeChanged -> change.value != settings.value.drawMode
         is SettingsChange.GameModeChanged -> change.value != settings.value.gameMode
+        is SettingsChange.DifficultyChanged -> change.value != settings.value.difficulty
         else -> false
     }
 
