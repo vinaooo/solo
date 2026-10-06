@@ -9,6 +9,9 @@
     <string name="stat_best_streak">Melhor sequência</string>
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
-    <string name="score_details">%1$d jogadas · %2$s · %3$s</string>
+    <string name="difficulty_easy">Fácil</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Difícil</string>
+    <string name="score_details">%1$d jogadas · %2$s · %3$s · %4$s</string>
     <string name="rank_description">%1$dº lugar</string>
 </resources>
