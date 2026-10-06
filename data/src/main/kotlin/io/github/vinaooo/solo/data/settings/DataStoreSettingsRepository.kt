@@ -27,6 +27,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         return Settings(
             drawMode = enumOrDefault(this[Keys.DRAW_MODE], defaults.drawMode),
             gameMode = enumOrDefault(this[Keys.GAME_MODE], defaults.gameMode),
+            difficulty = enumOrDefault(this[Keys.DIFFICULTY], defaults.difficulty),
             themeMode = enumOrDefault(this[Keys.THEME_MODE], defaults.themeMode),
             dynamicColor = this[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
             themeColor = enumOrDefault(this[Keys.THEME_COLOR], defaults.themeColor),
@@ -43,6 +44,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
     private fun MutablePreferences.write(settings: Settings) {
         this[Keys.DRAW_MODE] = settings.drawMode.name
         this[Keys.GAME_MODE] = settings.gameMode.name
+        this[Keys.DIFFICULTY] = settings.difficulty.name
         this[Keys.THEME_MODE] = settings.themeMode.name
         this[Keys.DYNAMIC_COLOR] = settings.dynamicColor
         this[Keys.THEME_COLOR] = settings.themeColor.name
@@ -61,6 +63,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
     private object Keys {
         val DRAW_MODE = stringPreferencesKey("draw_mode")
         val GAME_MODE = stringPreferencesKey("game_mode")
+        val DIFFICULTY = stringPreferencesKey("difficulty")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val THEME_COLOR = stringPreferencesKey("theme_color")

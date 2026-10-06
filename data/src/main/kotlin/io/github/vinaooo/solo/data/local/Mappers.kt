@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.data.local
 
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
@@ -12,6 +13,7 @@ internal fun ScoreRecord.toEntity() = ScoreEntity(
     drawMode = drawMode.name,
     playedAtMillis = playedAtMillis,
     mode = mode.name,
+    difficulty = difficulty.name,
 )
 
 internal fun ScoreEntity.toDomain() = ScoreRecord(
@@ -21,6 +23,7 @@ internal fun ScoreEntity.toDomain() = ScoreRecord(
     drawMode = DrawMode.valueOf(drawMode),
     playedAtMillis = playedAtMillis,
     mode = gameModeOf(mode),
+    difficulty = Difficulty.entries.firstOrNull { it.name == difficulty } ?: Difficulty.HARD,
 )
 
 /** A mode this version doesn't know (written by a newer one) reads as Standard. */

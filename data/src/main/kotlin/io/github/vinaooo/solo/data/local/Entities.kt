@@ -14,6 +14,8 @@ data class ScoreEntity(
     val playedAtMillis: Long,
     /** Scores from before game modes (database version 1) were all Standard. */
     @ColumnInfo(defaultValue = "STANDARD") val mode: String = "STANDARD",
+    /** Scores from before difficulty (database version 2) were all dealt any shuffle: Hard. */
+    @ColumnInfo(defaultValue = "HARD") val difficulty: String = "HARD",
 )
 
 /** Single-row table: the lifetime statistics. */

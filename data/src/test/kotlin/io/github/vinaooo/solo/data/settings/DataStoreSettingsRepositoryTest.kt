@@ -2,6 +2,7 @@ package io.github.vinaooo.solo.data.settings
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import io.github.vinaooo.solo.domain.model.BoardAlignment
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PhoneViewSide
@@ -38,6 +39,7 @@ class DataStoreSettingsRepositoryTest {
         val repository = repository()
         val changed = Settings(
             drawMode = DrawMode.THREE,
+            difficulty = Difficulty.EASY,
             themeMode = ThemeMode.DARK,
             dynamicColor = false,
             themeColor = ThemeColor.PURPLE,

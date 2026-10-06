@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.data.local
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.kotest.matchers.collections.shouldHaveSize
@@ -19,8 +20,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * The scores and stats a player already has survive the move to game modes (version 1 to 2): a version 1 database,
- * built from its exported schema, is opened by the current app, which runs the real migration.
+ * The scores and stats a player already has survive the move to game modes (version 1 to 2) and to difficulty (2 to
+ * 3): a version 1 database, built from its exported schema, is opened by the current app, which runs the real
+ * migrations.
  */
 @RunWith(RobolectricTestRunner::class)
 class SoloDatabaseMigrationTest {
@@ -28,7 +30,7 @@ class SoloDatabaseMigrationTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     @Test
-    fun `version 1 scores become Standard scores, and the stats keep their values with no balance`() = runTest {
+    fun `version 1 scores become Standard, Hard scores, and the stats keep their values with no balance`() = runTest {
         val file = context.getDatabasePath(NAME).also { it.parentFile?.mkdirs() }
         createVersion1(file)
 
@@ -37,6 +39,7 @@ class SoloDatabaseMigrationTest {
             val standard = RoomScoreRepository(migrated.scoreDao()).observeTopScores(GameMode.STANDARD).first()
             standard shouldHaveSize 1
             standard.single().points shouldBe 900
+            standard.single().difficulty shouldBe Difficulty.HARD
             RoomStatsRepository(migrated, migrated.statsDao()).observe().first() shouldBe
                 GameStats(played = 5, won = 3, currentStreak = 1, bestStreak = 2, vegasBank = 0)
         } finally {
