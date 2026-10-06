@@ -10,7 +10,10 @@ import io.github.vinaooo.solo.domain.model.GameMode
  */
 object WinnableDeals {
 
-    /** Easy deals were won within this many positions searched, Normal ones within [NORMAL_POSITIONS]. */
+    /**
+     * Easy deals were won within this many positions searched; Normal ones needed more, but were won within
+     * [NORMAL_POSITIONS].
+     */
     const val EASY_POSITIONS = 1_000
     const val NORMAL_POSITIONS = 20_000
 

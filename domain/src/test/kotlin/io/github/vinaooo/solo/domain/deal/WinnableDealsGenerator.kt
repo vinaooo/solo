@@ -10,7 +10,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
 /**
- * Writes the deal lists [WinnableDeals] reads: `./gradlew :domain:generateDeals` (about 12 minutes). Run it again if
+ * Writes the deal lists [WinnableDeals] reads: `./gradlew :domain:generateDeals` (about half an hour). Run it again if
  * Kotlin's seeded random ever changes, which `WinnableDealsTest` catches. It runs outside the test task: run as a
  * test, in parallel, the search was about 50 times slower, likely because of the coverage agent.
  */
@@ -45,10 +45,15 @@ internal fun dealLists(): List<Triple<DrawMode, Boolean, Difficulty>> = DrawMode
     }
 }
 
-/** Whether the solver wins the deal of [seed] within [difficulty]'s budget, under the given rules. */
+/**
+ * Whether the deal of [seed] belongs to [difficulty]'s list, under the given rules: Easy if the solver wins it within
+ * [WinnableDeals.EASY_POSITIONS], Normal if it needs more than that but wins within [WinnableDeals.NORMAL_POSITIONS],
+ * so the two lists share no deal.
+ */
 internal fun isWinnable(seed: Long, drawMode: DrawMode, limitedPasses: Boolean, difficulty: Difficulty): Boolean {
     val mode = if (limitedPasses) GameMode.VEGAS else GameMode.STANDARD
     val deal = Dealer().deal(SeededShuffler(seed), drawMode).copy(mode = mode)
     val budget = if (difficulty == Difficulty.EASY) WinnableDeals.EASY_POSITIONS else WinnableDeals.NORMAL_POSITIONS
-    return runBlocking { DealSolver().positionsToWin(deal, budget) } != null
+    val positions = runBlocking { DealSolver().positionsToWin(deal, budget) } ?: return false
+    return difficulty == Difficulty.EASY || positions > WinnableDeals.EASY_POSITIONS
 }

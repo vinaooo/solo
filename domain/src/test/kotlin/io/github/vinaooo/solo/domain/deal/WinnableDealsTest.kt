@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.domain.deal
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeStrictlyIncreasing
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
@@ -18,6 +19,16 @@ class WinnableDealsTest {
             val seeds = WinnableDeals.seeds(drawMode, limitedPasses, difficulty).toList()
             seeds.size shouldBeGreaterThanOrEqual 1_000
             seeds.shouldBeStrictlyIncreasing()
+        }
+    }
+
+    @Test
+    fun `easy and normal share no deal, so normal is never an easy game`() {
+        DrawMode.entries.forEach { drawMode ->
+            listOf(false, true).forEach { limitedPasses ->
+                val easy = WinnableDeals.seeds(drawMode, limitedPasses, Difficulty.EASY).toSet()
+                WinnableDeals.seeds(drawMode, limitedPasses, Difficulty.NORMAL).filter { it in easy }.shouldBeEmpty()
+            }
         }
     }
 
