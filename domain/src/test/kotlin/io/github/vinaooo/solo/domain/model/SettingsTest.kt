@@ -13,13 +13,11 @@ class SettingsTest {
             dynamicColor = true,
             soundEnabled = true,
             hapticsEnabled = true,
-            showTimer = true,
         )
         with(Settings()) {
             dynamicColor shouldBe true
             soundEnabled shouldBe true
             hapticsEnabled shouldBe true
-            showTimer shouldBe true
         }
     }
 }

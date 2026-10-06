@@ -32,7 +32,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             themeColor = enumOrDefault(this[Keys.THEME_COLOR], defaults.themeColor),
             soundEnabled = this[Keys.SOUND] ?: defaults.soundEnabled,
             hapticsEnabled = this[Keys.HAPTICS] ?: defaults.hapticsEnabled,
-            showTimer = this[Keys.SHOW_TIMER] ?: defaults.showTimer,
             handedness = enumOrDefault(this[Keys.HANDEDNESS], defaults.handedness),
             boardAlignment = enumOrDefault(this[Keys.BOARD_ALIGNMENT], defaults.boardAlignment),
             phoneView = this[Keys.PHONE_VIEW] ?: defaults.phoneView,
@@ -49,7 +48,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.THEME_COLOR] = settings.themeColor.name
         this[Keys.SOUND] = settings.soundEnabled
         this[Keys.HAPTICS] = settings.hapticsEnabled
-        this[Keys.SHOW_TIMER] = settings.showTimer
         this[Keys.HANDEDNESS] = settings.handedness.name
         this[Keys.BOARD_ALIGNMENT] = settings.boardAlignment.name
         this[Keys.PHONE_VIEW] = settings.phoneView
@@ -68,7 +66,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val THEME_COLOR = stringPreferencesKey("theme_color")
         val SOUND = booleanPreferencesKey("sound")
         val HAPTICS = booleanPreferencesKey("haptics")
-        val SHOW_TIMER = booleanPreferencesKey("show_timer")
         val HANDEDNESS = stringPreferencesKey("handedness")
         val BOARD_ALIGNMENT = stringPreferencesKey("board_alignment")
         val PHONE_VIEW = booleanPreferencesKey("phone_view")

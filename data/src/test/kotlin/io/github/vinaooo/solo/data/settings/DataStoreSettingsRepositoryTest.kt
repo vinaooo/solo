@@ -43,7 +43,6 @@ class DataStoreSettingsRepositoryTest {
             themeColor = ThemeColor.PURPLE,
             soundEnabled = false,
             hapticsEnabled = false,
-            showTimer = false,
             handedness = Handedness.LEFT,
             boardAlignment = BoardAlignment.BOTTOM,
             phoneView = true,
@@ -59,8 +58,8 @@ class DataStoreSettingsRepositoryTest {
     fun `updates transform the current value`() = scope.runTest {
         val repository = repository()
         repository.update { it.copy(themeMode = ThemeMode.LIGHT) }
-        repository.update { it.copy(showTimer = false) }
+        repository.update { it.copy(soundEnabled = false) }
 
-        repository.settings.first() shouldBe Settings(themeMode = ThemeMode.LIGHT, showTimer = false)
+        repository.settings.first() shouldBe Settings(themeMode = ThemeMode.LIGHT, soundEnabled = false)
     }
 }

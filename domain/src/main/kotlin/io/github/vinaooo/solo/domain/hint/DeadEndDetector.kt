@@ -1,7 +1,6 @@
 package io.github.vinaooo.solo.domain.hint
 
 import io.github.vinaooo.solo.domain.model.GameState
-import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.rules.KlondikeRules
 import io.github.vinaooo.solo.domain.rules.RuleSet
 import kotlinx.coroutines.currentCoroutineContext
@@ -9,10 +8,10 @@ import kotlinx.coroutines.ensureActive
 
 /**
  * Tells whether a game is stuck: no sequence of moves can put another card on a foundation or turn a face-down card
- * up. It searches every position reachable by drawing, recycling and moving cards between columns (taking cards back
- * off the foundations doesn't count). If the search grows past [maxPositions] it gives up and says not stuck, so it
- * never claims a dead end that isn't one. A dead end takes the whole search, so callers run it in the background; it
- * stops as soon as its coroutine is cancelled.
+ * up. It searches every position reachable by any move, taking a card back off a foundation included: a card
+ * brought down can hold the one that frees a column. If the search grows past [maxPositions] it gives up and says not
+ * stuck, so it never claims a dead end that isn't one. A dead end takes the whole search, so callers run it in the
+ * background; it stops as soon as its coroutine is cancelled.
  */
 class DeadEndDetector(private val rules: RuleSet = KlondikeRules(), private val maxPositions: Int = MAX_POSITIONS) {
 
@@ -28,7 +27,6 @@ class DeadEndDetector(private val rules: RuleSet = KlondikeRules(), private val 
             if (seen.size > maxPositions) return false
             currentCoroutineContext().ensureActive()
             for (move in rules.legalMoves(position)) {
-                if (move is Move.FoundationToTableau) continue
                 val next = rules.perform(position, move).state
                 if (next.foundationCards() > foundationCards || next.faceDownCards() < faceDownCards) return false
                 queue.addLast(next)

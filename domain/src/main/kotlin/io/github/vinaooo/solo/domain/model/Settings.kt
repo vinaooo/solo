@@ -19,7 +19,6 @@ data class Settings(
     val themeColor: ThemeColor = ThemeColor.GREEN,
     val soundEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
-    val showTimer: Boolean = true,
     val handedness: Handedness = Handedness.RIGHT,
     val boardAlignment: BoardAlignment = BoardAlignment.TOP,
     /** On a tablet, cards at the size a phone shows them, instead of filling the screen. */

@@ -51,7 +51,6 @@ class SettingsViewModelTest {
         vm.onChange(SettingsChange.DynamicColorChanged(false))
         vm.onChange(SettingsChange.SoundChanged(false))
         vm.onChange(SettingsChange.HapticsChanged(false))
-        vm.onChange(SettingsChange.ShowTimerChanged(false))
         runCurrent()
 
         repository.current.value shouldBe Settings(
@@ -60,19 +59,18 @@ class SettingsViewModelTest {
             dynamicColor = false,
             soundEnabled = false,
             hapticsEnabled = false,
-            showTimer = false,
         )
     }
 
     @Test
     fun `exposes the stored settings`() = runTest(dispatcher) {
-        repository.current.value = Settings(showTimer = false)
+        repository.current.value = Settings(soundEnabled = false)
         val vm = viewModel()
         val collected = mutableListOf<Settings>()
         val job = backgroundScope.launch { vm.settings.collect { collected += it } }
         runCurrent()
 
-        collected.last() shouldBe Settings(showTimer = false)
+        collected.last() shouldBe Settings(soundEnabled = false)
         job.cancel()
     }
 
