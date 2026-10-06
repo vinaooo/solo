@@ -49,6 +49,7 @@ class DataStoreSettingsRepositoryTest {
             boardAlignment = BoardAlignment.BOTTOM,
             phoneView = true,
             phoneViewSide = PhoneViewSide.LEFT,
+            dealCursor = 4_321,
         )
 
         repository.update { changed }

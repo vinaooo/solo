@@ -32,18 +32,13 @@ class WinnableDealsTest {
     }
 
     @Test
-    fun `hard deals the random seed itself`() {
-        WinnableDeals.pick(-123_456_789L, DrawMode.ONE, GameMode.STANDARD, Difficulty.HARD) shouldBe -123_456_789L
-    }
-
-    @Test
-    fun `easy and normal pick from the list for the mode's passes, any random seed landing in it`() {
+    fun `picks from the list for the mode's passes, any index landing in it`() {
         val vegas = WinnableDeals.seeds(DrawMode.THREE, limitedPasses = true, Difficulty.EASY)
-        WinnableDeals.pick(1, DrawMode.THREE, GameMode.VEGAS_CUMULATIVE, Difficulty.EASY) shouldBe vegas[1]
-        WinnableDeals.pick(-1, DrawMode.THREE, GameMode.VEGAS, Difficulty.EASY) shouldBe vegas.last()
+        WinnableDeals.seedAt(1, DrawMode.THREE, GameMode.VEGAS_CUMULATIVE, Difficulty.EASY) shouldBe vegas[1]
+        WinnableDeals.seedAt(-1, DrawMode.THREE, GameMode.VEGAS, Difficulty.EASY) shouldBe vegas.last()
 
         val standard = WinnableDeals.seeds(DrawMode.ONE, limitedPasses = false, Difficulty.NORMAL)
-        WinnableDeals.pick(standard.size + 2L, DrawMode.ONE, GameMode.COUNTER_TIME, Difficulty.NORMAL) shouldBe
+        WinnableDeals.seedAt(standard.size + 2L, DrawMode.ONE, GameMode.COUNTER_TIME, Difficulty.NORMAL) shouldBe
             standard[2]
     }
 

@@ -16,11 +16,10 @@ object WinnableDeals {
 
     private val lists = HashMap<String, LongArray>()
 
-    /** The seed to deal: [random] itself on Hard, or the winnable seed it picks from the list. */
-    fun pick(random: Long, drawMode: DrawMode, mode: GameMode, difficulty: Difficulty): Long {
-        if (difficulty == Difficulty.HARD) return random
+    /** The seed at [index] of the list for these rules and [difficulty] (Easy or Normal), wrapping around. */
+    fun seedAt(index: Long, drawMode: DrawMode, mode: GameMode, difficulty: Difficulty): Long {
         val seeds = seeds(drawMode, mode.recycleLimit(drawMode) != null, difficulty)
-        return seeds[Math.floorMod(random, seeds.size)]
+        return seeds[index.mod(seeds.size)]
     }
 
     fun seeds(drawMode: DrawMode, limitedPasses: Boolean, difficulty: Difficulty): LongArray {

@@ -27,4 +27,6 @@ data class Settings(
     val phoneViewSide: PhoneViewSide = PhoneViewSide.CENTER,
     /** How many times the game has pointed out the auto-complete button; it stops after the first few. */
     val autoCompleteTipsShown: Int = 0,
+    /** Where the next Easy or Normal deal is taken from its list (`DealPicker`); null until the first one. */
+    val dealCursor: Long? = null,
 )

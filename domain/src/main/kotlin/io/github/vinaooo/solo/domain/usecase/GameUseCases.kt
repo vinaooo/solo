@@ -1,8 +1,8 @@
 package io.github.vinaooo.solo.domain.usecase
 
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
-import io.github.vinaooo.solo.domain.deal.WinnableDeals
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
@@ -12,7 +12,6 @@ import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.repository.Clock
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
 import io.github.vinaooo.solo.domain.repository.ScoreRepository
-import io.github.vinaooo.solo.domain.repository.SeedSource
 import io.github.vinaooo.solo.domain.repository.StatsRepository
 import io.github.vinaooo.solo.domain.session.GameSession
 import kotlinx.coroutines.flow.Flow
@@ -29,20 +28,21 @@ class StartNewGame(
     private val stats: StatsRepository,
     private val scores: ScoreRepository,
     private val dealer: Dealer,
-    private val seedSource: SeedSource,
+    private val deals: DealPicker,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(
         drawMode: DrawMode,
         mode: GameMode = GameMode.STANDARD,
         difficulty: Difficulty = Difficulty.HARD,
-        seed: Long = WinnableDeals.pick(seedSource.nextSeed(), drawMode, mode, difficulty),
+        seed: Long? = null,
     ): GameSession {
+        val dealt = seed ?: deals.next(drawMode, mode, difficulty)
         savedGames.load()?.let { abandon(it) }
         val bank = stats.observe().first().vegasBank
-        val deal = dealer.deal(SeededShuffler(seed), drawMode)
+        val deal = dealer.deal(SeededShuffler(dealt), drawMode)
         val session = GameSession(
-            seed,
+            dealt,
             deal.copy(mode = mode, difficulty = difficulty, score = mode.startingScore(bank)),
         )
         savedGames.save(session)

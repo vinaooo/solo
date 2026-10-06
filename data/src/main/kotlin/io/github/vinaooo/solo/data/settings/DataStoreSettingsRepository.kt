@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
@@ -38,6 +39,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             phoneView = this[Keys.PHONE_VIEW] ?: defaults.phoneView,
             phoneViewSide = enumOrDefault(this[Keys.PHONE_VIEW_SIDE], defaults.phoneViewSide),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
+            dealCursor = this[Keys.DEAL_CURSOR],
         )
     }
 
@@ -55,6 +57,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.PHONE_VIEW] = settings.phoneView
         this[Keys.PHONE_VIEW_SIDE] = settings.phoneViewSide.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
+        settings.dealCursor?.let { this[Keys.DEAL_CURSOR] = it } ?: remove(Keys.DEAL_CURSOR)
     }
 
     private inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
@@ -74,5 +77,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val PHONE_VIEW = booleanPreferencesKey("phone_view")
         val PHONE_VIEW_SIDE = stringPreferencesKey("phone_view_side")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
+        val DEAL_CURSOR = longPreferencesKey("deal_cursor")
     }
 }

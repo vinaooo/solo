@@ -1,6 +1,7 @@
 package io.github.vinaooo.solo.feature.game
 
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.deal.WinnableDeals
@@ -78,7 +79,14 @@ class GameViewModelTest {
     }
 
     private fun TestScope.viewModel(): GameViewModel = GameViewModel(
-        startNewGame = StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 42 }, clock = { 5_000 }),
+        startNewGame = StartNewGame(
+            savedGames,
+            stats,
+            scores,
+            Dealer(),
+            DealPicker({ 42 }, settings),
+            clock = { 5_000 },
+        ),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
         finishGame = FinishGame(scores, stats, savedGames, clock = { 5_000 }),
@@ -128,7 +136,7 @@ class GameViewModelTest {
 
         val vm = viewModel()
 
-        vm.session.seed shouldBe WinnableDeals.pick(42, DrawMode.THREE, GameMode.STANDARD, Difficulty.NORMAL)
+        vm.session.seed shouldBe WinnableDeals.seedAt(42, DrawMode.THREE, GameMode.STANDARD, Difficulty.NORMAL)
         vm.session.state.drawMode shouldBe DrawMode.THREE
         vm.session.state.difficulty shouldBe Difficulty.NORMAL
     }

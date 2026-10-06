@@ -4,11 +4,13 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.repository.Clock
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
 import io.github.vinaooo.solo.domain.repository.ScoreRepository
 import io.github.vinaooo.solo.domain.repository.SeedSource
+import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.repository.StatsRepository
 import io.github.vinaooo.solo.domain.usecase.FinishGame
 import io.github.vinaooo.solo.domain.usecase.LoseGame
@@ -30,9 +32,11 @@ object UseCaseModule {
         stats: StatsRepository,
         scores: ScoreRepository,
         dealer: Dealer,
-        seeds: SeedSource,
+        deals: DealPicker,
         clock: Clock,
-    ) = StartNewGame(savedGames, stats, scores, dealer, seeds, clock)
+    ) = StartNewGame(savedGames, stats, scores, dealer, deals, clock)
+
+    @Provides fun dealPicker(seeds: SeedSource, settings: SettingsRepository) = DealPicker(seeds, settings)
 
     @Provides fun resumeGame(savedGames: SavedGameRepository) = ResumeGame(savedGames)
 
