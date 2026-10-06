@@ -59,6 +59,13 @@ class DeadEndDetectorTest {
     }
 
     @Test
+    fun `a card taken back off a foundation can open the way`() {
+        // The jack of spades comes down onto a red queen, then the ten of hearts on it, turning the two of hearts up.
+        val spades = up("AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "10S", "JS")
+        isStuck(blocked("3C", "5D", "7C").withFoundation(0, spades)).shouldBeFalse()
+    }
+
+    @Test
     fun `a search cut short assumes there is still a way`() {
         isStuck(DeadEndDetector(maxPositions = 1), blocked("3C", "5S", "7C")).shouldBeFalse()
     }

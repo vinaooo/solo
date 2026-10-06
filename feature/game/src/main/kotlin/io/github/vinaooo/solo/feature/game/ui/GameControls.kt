@@ -100,7 +100,7 @@ internal fun GameSidePanel(
 @Composable
 /**
  * [large] in landscape's side panel, which has the room for it. Vegas scores in dollars; counter time ranks by time
- * alone, so it shows the time left instead of points, whether or not the timer is on.
+ * alone, so it shows the time left instead of points. Only Standard shows the time played; Vegas doesn't score it.
  */
 private fun Stats(uiState: GameUiState, large: Boolean = false) {
     val state = uiState.session?.state
@@ -114,7 +114,7 @@ private fun Stats(uiState: GameUiState, large: Boolean = false) {
     val left = state?.secondsLeft
     if (left != null) {
         Stat(stringResource(R.string.time_left), formatElapsed(left), large, spoken = spokenElapsed(left))
-    } else if (uiState.settings.showTimer) {
+    } else if (mode == GameMode.STANDARD) {
         val elapsed = state?.elapsedSeconds ?: 0
         Stat(stringResource(R.string.time), formatElapsed(elapsed), large, spoken = spokenElapsed(elapsed))
     }

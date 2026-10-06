@@ -48,10 +48,6 @@ sealed interface SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(hapticsEnabled = value)
     }
 
-    data class ShowTimerChanged(val value: Boolean) : SettingsChange {
-        override fun applyTo(settings: Settings) = settings.copy(showTimer = value)
-    }
-
     data class HandednessChanged(val value: Handedness) : SettingsChange {
         override fun applyTo(settings: Settings) = settings.copy(handedness = value)
     }

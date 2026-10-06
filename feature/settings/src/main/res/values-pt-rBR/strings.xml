@@ -10,7 +10,6 @@
     <string name="draw_mode_confirm_text">Isso vai começar uma nova partida. A partida atual conta como derrota.</string>
     <string name="draw_mode_confirm">Confirmar</string>
     <string name="draw_mode_cancel">Cancelar</string>
-    <string name="show_timer">Mostrar cronômetro</string>
     <string name="phone_view">Visão de celular</string>
     <string name="phone_view_note">Cartas do tamanho de um celular</string>
     <string name="phone_view_side">Lado da mesa</string>

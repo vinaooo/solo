@@ -10,7 +10,6 @@
     <string name="draw_mode_confirm_text">This will start a new game. The current game counts as a loss.</string>
     <string name="draw_mode_confirm">Confirm</string>
     <string name="draw_mode_cancel">Cancel</string>
-    <string name="show_timer">Show timer</string>
     <string name="phone_view">Phone view</string>
     <string name="phone_view_note">Cards at a phone\'s size</string>
     <string name="phone_view_side">Board side</string>

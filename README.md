@@ -22,6 +22,38 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 - JDK 21
 - Android SDK Platform 37 (compileSdk); targetSdk 36; minSdk 26
 
+## Building
+
+1. Clone the whole history. The version is computed from git, so a shallow clone (`--depth`) fails the build:
+
+   ```bash
+   git clone https://github.com/vinaooo/solo.git
+   cd solo
+   ```
+
+2. Point Gradle at the Android SDK, either with `ANDROID_HOME` or a `local.properties` file in the project root (Android Studio writes it for you):
+
+   ```properties
+   sdk.dir=/path/to/Android/Sdk
+   ```
+
+3. Build, or build and install on a connected device or emulator:
+
+   ```bash
+   ./gradlew assembleDebug   # app/build/outputs/apk/debug/app-debug.apk
+   ./gradlew installDebug
+   ```
+
+   Debug builds show Google's test ads and need no keys.
+
+4. Optionally, build the minified release APK. Without an upload key (see [Secrets](#secrets)) it is unsigned:
+
+   ```bash
+   ./gradlew :app:assembleRelease   # app/build/outputs/apk/release/
+   ```
+
+Or open the project in Android Studio and run the `app` configuration.
+
 ## Common tasks
 
 ```bash

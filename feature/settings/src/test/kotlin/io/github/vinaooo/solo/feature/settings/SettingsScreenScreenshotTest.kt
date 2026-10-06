@@ -47,4 +47,9 @@ class SettingsScreenScreenshotTest {
     @Test
     @Config(qualifiers = "pt-rBR-w411dp-h891dp-xhdpi")
     fun settings_pt_br() = capture("settings_pt_br", ThemeMode.LIGHT)
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-mdpi")
+    fun settings_tablet() =
+        capture("settings_tablet", ThemeMode.LIGHT, Settings(themeMode = ThemeMode.LIGHT, phoneView = true))
 }

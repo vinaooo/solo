@@ -14,10 +14,10 @@ import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
+import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.ScoreRecord
-import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.feature.game.GameIntent
@@ -71,11 +71,11 @@ class GameScreenTest {
     }
 
     @Test
-    fun `hides the time when the timer is off`() {
-        show(playing.copy(settings = Settings(showTimer = false)))
+    fun `hides the time in Vegas`() {
+        show(playing.copy(session = GameSession(seed = 3, state = dealt.copy(mode = GameMode.VEGAS, score = -47))))
 
         compose.onNodeWithContentDescription("Time", substring = true).assertDoesNotExist()
-        compose.onNodeWithContentDescription("Score, 25").assertExists()
+        compose.onNodeWithContentDescription("Score, ", substring = true).assertExists()
     }
 
     @Test

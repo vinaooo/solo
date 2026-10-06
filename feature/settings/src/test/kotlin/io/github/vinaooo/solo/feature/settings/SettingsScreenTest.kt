@@ -44,7 +44,6 @@ class SettingsScreenTest {
         compose.onNodeWithText("Sound effects").performScrollTo().performClick()
         compose.onNodeWithText("Vibration").performScrollTo().performClick()
         compose.onNodeWithText("Left").performScrollTo().performClick()
-        compose.onNodeWithText("Show timer").performScrollTo().performClick()
 
         changes shouldContainExactly listOf(
             SettingsChange.DrawModeChanged(DrawMode.THREE),
@@ -52,7 +51,6 @@ class SettingsScreenTest {
             SettingsChange.SoundChanged(false),
             SettingsChange.HapticsChanged(false),
             SettingsChange.HandednessChanged(Handedness.LEFT),
-            SettingsChange.ShowTimerChanged(false),
         )
     }
 
@@ -105,8 +103,8 @@ class SettingsScreenTest {
         compose.onNodeWithText("Board side").assertDoesNotExist()
         compose.onNodeWithText("Phone view").performScrollTo().performClick()
         settings = Settings(phoneView = true)
-        // The second "Right": the first is the preferred hand's.
-        compose.onAllNodesWithText("Right")[1].performScrollTo().performClick()
+        // The first "Right": the preferred hand's comes after it, in Appearance.
+        compose.onAllNodesWithText("Right")[0].performScrollTo().performClick()
 
         changes shouldContainExactly listOf(
             SettingsChange.PhoneViewChanged(true),

@@ -260,7 +260,7 @@ class GameViewModelTest {
         val vm = viewModel()
         val before = vm.session
 
-        settings.current.value = Settings(showTimer = false)
+        settings.current.value = Settings(soundEnabled = false)
         runCurrent()
 
         vm.session shouldBe before
@@ -531,13 +531,6 @@ class GameViewModelTest {
 
         vm.uiState.value.winRecord.shouldBeNull()
         vm.session.state.isWon.shouldBeFalse()
-    }
-
-    @Test
-    fun `timer visibility follows the settings`() = gameTest {
-        settings.current.value = Settings(showTimer = false)
-
-        viewModel().uiState.value.settings.showTimer.shouldBeFalse()
     }
 
     private val nineOnTen = readyToAutoComplete.copy(
