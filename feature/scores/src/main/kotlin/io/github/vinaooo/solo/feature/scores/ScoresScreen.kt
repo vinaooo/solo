@@ -40,6 +40,7 @@ import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.label
 import io.github.vinaooo.solo.core.ui.spokenDollars
 import io.github.vinaooo.solo.core.ui.spokenElapsed
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
@@ -139,6 +140,13 @@ private fun StatItem(label: String, value: String) {
 @Composable
 private fun ScoreRow(rank: Int, record: ScoreRecord) {
     val drawMode = stringResource(if (record.drawMode == DrawMode.ONE) R.string.draw_one else R.string.draw_three)
+    val difficulty = stringResource(
+        when (record.difficulty) {
+            Difficulty.EASY -> R.string.difficulty_easy
+            Difficulty.NORMAL -> R.string.difficulty_normal
+            Difficulty.HARD -> R.string.difficulty_hard
+        },
+    )
     val date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(record.playedAtMillis))
     val rankDescription = stringResource(R.string.rank_description, rank)
     val spokenTime = spokenElapsed(record.elapsedSeconds)
@@ -152,7 +160,7 @@ private fun ScoreRow(rank: Int, record: ScoreRecord) {
                 modifier = Modifier.semantics { contentDescription = rankDescription },
             )
         },
-        supportingContent = { Text(stringResource(R.string.score_details, record.moves, drawMode, date)) },
+        supportingContent = { Text(stringResource(R.string.score_details, record.moves, drawMode, difficulty, date)) },
         // Counter time ranks by time, so the time is the headline and there are no points to show.
         trailingContent = if (record.mode == GameMode.COUNTER_TIME) {
             null

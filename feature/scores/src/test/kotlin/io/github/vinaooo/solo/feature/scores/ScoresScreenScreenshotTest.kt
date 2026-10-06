@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
@@ -33,6 +34,7 @@ class ScoresScreenScreenshotTest {
                 moves = 104,
                 drawMode = DrawMode.ONE,
                 playedAtMillis = 1790510400000L,
+                difficulty = Difficulty.EASY,
             ),
             ScoreRecord(
                 points = 4321,
@@ -40,6 +42,7 @@ class ScoresScreenScreenshotTest {
                 moves = 97,
                 drawMode = DrawMode.THREE,
                 playedAtMillis = 1789905600000L,
+                difficulty = Difficulty.NORMAL,
             ),
             ScoreRecord(
                 points = 2750,

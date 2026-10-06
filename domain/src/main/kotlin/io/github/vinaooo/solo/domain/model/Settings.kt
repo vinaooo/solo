@@ -14,6 +14,7 @@ enum class PhoneViewSide { LEFT, CENTER, RIGHT }
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,
     val gameMode: GameMode = GameMode.STANDARD,
+    val difficulty: Difficulty = Difficulty.NORMAL,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val themeColor: ThemeColor = ThemeColor.GREEN,
@@ -26,4 +27,6 @@ data class Settings(
     val phoneViewSide: PhoneViewSide = PhoneViewSide.CENTER,
     /** How many times the game has pointed out the auto-complete button; it stops after the first few. */
     val autoCompleteTipsShown: Int = 0,
+    /** Where the next Easy or Normal deal is taken from its list (`DealPicker`); null until the first one. */
+    val dealCursor: Long? = null,
 )

@@ -35,3 +35,10 @@ pitest {
     mutationThreshold.set(80)
     coverageThreshold.set(90)
 }
+
+// Rewrites the winnable deal lists (WinnableDealsGenerator), outside the test task, where the search ran far slower.
+tasks.register<JavaExec>("generateDeals") {
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("io.github.vinaooo.solo.domain.deal.WinnableDealsGenerator")
+    args(layout.projectDirectory.dir("src/main/resources/deals").asFile.path)
+}

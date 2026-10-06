@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Handedness
@@ -40,6 +41,7 @@ class SettingsScreenTest {
         compose.setContent { SoloTheme { SettingsScreen(Settings(), onChange = { changes += it }, onBack = {}) } }
 
         compose.onNodeWithText("Draw 3").performScrollTo().performClick()
+        compose.onNodeWithText("Easy").performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
         compose.onNodeWithText("Sound effects").performScrollTo().performClick()
         compose.onNodeWithText("Vibration").performScrollTo().performClick()
@@ -47,6 +49,7 @@ class SettingsScreenTest {
 
         changes shouldContainExactly listOf(
             SettingsChange.DrawModeChanged(DrawMode.THREE),
+            SettingsChange.DifficultyChanged(Difficulty.EASY),
             SettingsChange.ThemeModeChanged(ThemeMode.DARK),
             SettingsChange.SoundChanged(false),
             SettingsChange.HapticsChanged(false),

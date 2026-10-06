@@ -1,8 +1,10 @@
 package io.github.vinaooo.solo.feature.game
 
 import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.deal.WinnableDeals
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
@@ -11,6 +13,7 @@ import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
 import io.github.vinaooo.solo.domain.model.Card
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameState
@@ -76,7 +79,14 @@ class GameViewModelTest {
     }
 
     private fun TestScope.viewModel(): GameViewModel = GameViewModel(
-        startNewGame = StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 42 }, clock = { 5_000 }),
+        startNewGame = StartNewGame(
+            savedGames,
+            stats,
+            scores,
+            Dealer(),
+            DealPicker({ 42 }, settings),
+            clock = { 5_000 },
+        ),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
         finishGame = FinishGame(scores, stats, savedGames, clock = { 5_000 }),
@@ -121,13 +131,33 @@ class GameViewModelTest {
     }
 
     @Test
-    fun `deals a new game with the configured draw mode when nothing is saved`() = gameTest {
+    fun `deals a new game with the configured draw mode and difficulty when nothing is saved`() = gameTest {
         settings.current.value = Settings(drawMode = DrawMode.THREE)
 
         val vm = viewModel()
 
-        vm.session.seed shouldBe 42
+        vm.session.seed shouldBe WinnableDeals.seedAt(42, DrawMode.THREE, GameMode.STANDARD, Difficulty.NORMAL)
         vm.session.state.drawMode shouldBe DrawMode.THREE
+        vm.session.state.difficulty shouldBe Difficulty.NORMAL
+    }
+
+    @Test
+    fun `switching the difficulty deals a new game at it, which a restart keeps`() = gameTest {
+        val vm = viewModel()
+
+        settings.current.value = Settings(difficulty = Difficulty.HARD)
+        runCurrent()
+        vm.session.seed shouldBe 42
+        vm.session.state.difficulty shouldBe Difficulty.HARD
+
+        settings.current.value = Settings(difficulty = Difficulty.EASY)
+        runCurrent()
+        val easy = vm.session
+        easy.state.difficulty shouldBe Difficulty.EASY
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        vm.onIntent(GameIntent.RestartDeal)
+        runCurrent()
+        vm.session shouldBe easy
     }
 
     @Test

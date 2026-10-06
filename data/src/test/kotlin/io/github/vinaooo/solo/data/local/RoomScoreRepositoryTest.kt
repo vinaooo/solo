@@ -2,6 +2,7 @@ package io.github.vinaooo.solo.data.local
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.ScoreRecord
@@ -57,5 +58,14 @@ class RoomScoreRepositoryTest {
         repository.observeTopScores(GameMode.STANDARD).first() shouldContainExactly listOf(standard)
         repository.observeRankedModes().first() shouldBe
             setOf(GameMode.STANDARD, GameMode.VEGAS, GameMode.COUNTER_TIME)
+    }
+
+    @Test
+    fun `a score keeps its difficulty`() = runTest {
+        val easy = ScoreRecord(300, 200, 100, DrawMode.ONE, playedAtMillis = 1, difficulty = Difficulty.EASY)
+
+        repository.add(easy)
+
+        repository.observeTopScores(GameMode.STANDARD).first() shouldContainExactly listOf(easy)
     }
 }

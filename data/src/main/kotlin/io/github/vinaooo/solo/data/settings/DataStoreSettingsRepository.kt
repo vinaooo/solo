@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
@@ -27,6 +28,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         return Settings(
             drawMode = enumOrDefault(this[Keys.DRAW_MODE], defaults.drawMode),
             gameMode = enumOrDefault(this[Keys.GAME_MODE], defaults.gameMode),
+            difficulty = enumOrDefault(this[Keys.DIFFICULTY], defaults.difficulty),
             themeMode = enumOrDefault(this[Keys.THEME_MODE], defaults.themeMode),
             dynamicColor = this[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
             themeColor = enumOrDefault(this[Keys.THEME_COLOR], defaults.themeColor),
@@ -37,12 +39,14 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             phoneView = this[Keys.PHONE_VIEW] ?: defaults.phoneView,
             phoneViewSide = enumOrDefault(this[Keys.PHONE_VIEW_SIDE], defaults.phoneViewSide),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
+            dealCursor = this[Keys.DEAL_CURSOR],
         )
     }
 
     private fun MutablePreferences.write(settings: Settings) {
         this[Keys.DRAW_MODE] = settings.drawMode.name
         this[Keys.GAME_MODE] = settings.gameMode.name
+        this[Keys.DIFFICULTY] = settings.difficulty.name
         this[Keys.THEME_MODE] = settings.themeMode.name
         this[Keys.DYNAMIC_COLOR] = settings.dynamicColor
         this[Keys.THEME_COLOR] = settings.themeColor.name
@@ -53,6 +57,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.PHONE_VIEW] = settings.phoneView
         this[Keys.PHONE_VIEW_SIDE] = settings.phoneViewSide.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
+        settings.dealCursor?.let { this[Keys.DEAL_CURSOR] = it } ?: remove(Keys.DEAL_CURSOR)
     }
 
     private inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
@@ -61,6 +66,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
     private object Keys {
         val DRAW_MODE = stringPreferencesKey("draw_mode")
         val GAME_MODE = stringPreferencesKey("game_mode")
+        val DIFFICULTY = stringPreferencesKey("difficulty")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val THEME_COLOR = stringPreferencesKey("theme_color")
@@ -71,5 +77,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val PHONE_VIEW = booleanPreferencesKey("phone_view")
         val PHONE_VIEW_SIDE = stringPreferencesKey("phone_view_side")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
+        val DEAL_CURSOR = longPreferencesKey("deal_cursor")
     }
 }

@@ -7,6 +7,7 @@ data class ScoreRecord(
     val drawMode: DrawMode,
     val playedAtMillis: Long,
     val mode: GameMode = GameMode.STANDARD,
+    val difficulty: Difficulty = Difficulty.HARD,
 ) {
     companion object {
         /** Highest points (or dollars) first; ties go to the fastest game. */

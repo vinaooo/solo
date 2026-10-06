@@ -9,6 +9,9 @@
     <string name="stat_best_streak">Best streak</string>
     <string name="draw_one">Draw 1</string>
     <string name="draw_three">Draw 3</string>
-    <string name="score_details">%1$d moves · %2$s · %3$s</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="score_details">%1$d moves · %2$s · %3$s · %4$s</string>
     <string name="rank_description">Rank %1$d</string>
 </resources>

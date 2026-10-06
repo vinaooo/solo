@@ -4,6 +4,7 @@ import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
@@ -103,6 +104,21 @@ class SettingsViewModelTest {
         vm.confirmChange()
         runCurrent()
         repository.current.value.gameMode shouldBe GameMode.VEGAS
+    }
+
+    @Test
+    fun `switching the difficulty mid-game waits for confirmation too`() = runTest(dispatcher) {
+        gameInProgress()
+        val vm = viewModel()
+
+        vm.onChange(SettingsChange.DifficultyChanged(Difficulty.HARD))
+        runCurrent()
+        vm.pendingChange.value shouldBe SettingsChange.DifficultyChanged(Difficulty.HARD)
+        repository.current.value.difficulty shouldBe Difficulty.NORMAL
+
+        vm.confirmChange()
+        runCurrent()
+        repository.current.value.difficulty shouldBe Difficulty.HARD
     }
 
     @Test

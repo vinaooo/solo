@@ -1,7 +1,9 @@
 package io.github.vinaooo.solo.domain.usecase
 
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameState
@@ -10,34 +12,39 @@ import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.repository.Clock
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
 import io.github.vinaooo.solo.domain.repository.ScoreRepository
-import io.github.vinaooo.solo.domain.repository.SeedSource
 import io.github.vinaooo.solo.domain.repository.StatsRepository
 import io.github.vinaooo.solo.domain.session.GameSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 /**
- * Deals a new game in [GameMode]. Abandoning a game that was already being played counts as a loss; an abandoned
- * Vegas game still enters the Vegas ranking with the dollars it made, and an abandoned cumulative Vegas game leaves
- * the balance where it was, its $52 spent even if it was never played.
+ * Deals a new game in [GameMode] at a [Difficulty]; a given seed (restarting a deal) is dealt as it is. Abandoning a
+ * game that was already being played counts as a loss; an abandoned Vegas game still enters the Vegas ranking with
+ * the dollars it made, and an abandoned cumulative Vegas game leaves the balance where it was, its $52 spent even if
+ * it was never played.
  */
 class StartNewGame(
     private val savedGames: SavedGameRepository,
     private val stats: StatsRepository,
     private val scores: ScoreRepository,
     private val dealer: Dealer,
-    private val seedSource: SeedSource,
+    private val deals: DealPicker,
     private val clock: Clock,
 ) {
     suspend operator fun invoke(
         drawMode: DrawMode,
         mode: GameMode = GameMode.STANDARD,
-        seed: Long = seedSource.nextSeed(),
+        difficulty: Difficulty = Difficulty.HARD,
+        seed: Long? = null,
     ): GameSession {
+        val dealt = seed ?: deals.next(drawMode, mode, difficulty)
         savedGames.load()?.let { abandon(it) }
         val bank = stats.observe().first().vegasBank
-        val deal = dealer.deal(SeededShuffler(seed), drawMode)
-        val session = GameSession(seed, deal.copy(mode = mode, score = mode.startingScore(bank)))
+        val deal = dealer.deal(SeededShuffler(dealt), drawMode)
+        val session = GameSession(
+            dealt,
+            deal.copy(mode = mode, difficulty = difficulty, score = mode.startingScore(bank)),
+        )
         savedGames.save(session)
         return session
     }
@@ -103,4 +110,5 @@ class ObserveStats(private val stats: StatsRepository) {
     operator fun invoke(): Flow<GameStats> = stats.observe()
 }
 
-private fun GameState.toRecord(nowMillis: Long) = ScoreRecord(score, elapsedSeconds, moves, drawMode, nowMillis, mode)
+private fun GameState.toRecord(nowMillis: Long) =
+    ScoreRecord(score, elapsedSeconds, moves, drawMode, nowMillis, mode, difficulty)

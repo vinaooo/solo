@@ -7,6 +7,10 @@
     <string name="draw_mode">Cartas viradas do monte</string>
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
+    <string name="difficulty">Dificuldade</string>
+    <string name="difficulty_easy">Fácil</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Difícil</string>
     <string name="draw_mode_confirm_text">Isso vai começar uma nova partida. A partida atual conta como derrota.</string>
     <string name="draw_mode_confirm">Confirmar</string>
     <string name="draw_mode_cancel">Cancelar</string>

@@ -7,6 +7,10 @@
     <string name="draw_mode">Cards drawn from the stock</string>
     <string name="draw_one">Draw 1</string>
     <string name="draw_three">Draw 3</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Hard</string>
     <string name="draw_mode_confirm_text">This will start a new game. The current game counts as a loss.</string>
     <string name="draw_mode_confirm">Confirm</string>
     <string name="draw_mode_cancel">Cancel</string>

@@ -1,11 +1,15 @@
 package io.github.vinaooo.solo.domain.usecase
 
+import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.deal.WinnableDeals
 import io.github.vinaooo.solo.domain.emptyState
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
+import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
@@ -27,6 +31,7 @@ class GameUseCasesTest {
     private val savedGames = FakeSavedGameRepository()
     private val stats = FakeStatsRepository()
     private val scores = FakeScoreRepository()
+    private val settings = FakeSettingsRepository()
 
     private val wonState = emptyState()
         .copy(score = 1234, moves = 110, elapsedSeconds = 300)
@@ -38,7 +43,7 @@ class GameUseCasesTest {
     @Nested
     inner class StartNewGameTest {
         private val startNewGame =
-            StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 77 }, clock = { 9L })
+            StartNewGame(savedGames, stats, scores, Dealer(), DealPicker({ 77 }, settings), clock = { 9L })
 
         @Test
         fun `deals a fresh game from a new seed and saves it`() = runTest {
@@ -52,6 +57,34 @@ class GameUseCasesTest {
         @Test
         fun `can replay a given seed`() = runTest {
             startNewGame(DrawMode.ONE, seed = 5).seed shouldBe 5
+        }
+
+        @Test
+        fun `easy and normal deal a winnable seed, and the game keeps its difficulty`() = runTest {
+            val easy = startNewGame(DrawMode.ONE, GameMode.VEGAS, Difficulty.EASY)
+
+            easy.seed shouldBe WinnableDeals.seedAt(77, DrawMode.ONE, GameMode.VEGAS, Difficulty.EASY)
+            easy.state.difficulty shouldBe Difficulty.EASY
+            startNewGame(DrawMode.THREE, difficulty = Difficulty.NORMAL).seed shouldBe
+                WinnableDeals.seedAt(78, DrawMode.THREE, GameMode.STANDARD, Difficulty.NORMAL)
+        }
+
+        @Test
+        fun `a replayed seed is dealt as it is, whatever the difficulty`() = runTest {
+            startNewGame(DrawMode.ONE, difficulty = Difficulty.EASY, seed = 5).seed shouldBe 5
+        }
+
+        @Test
+        fun `an abandoned game's score keeps its difficulty`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(
+                1,
+                deal.copy(mode = GameMode.VEGAS, difficulty = Difficulty.EASY, score = -37, moves = 20),
+            )
+
+            startNewGame(DrawMode.ONE, GameMode.VEGAS)
+
+            scores.records.value.single().difficulty shouldBe Difficulty.EASY
         }
 
         @Test
@@ -169,7 +202,7 @@ class GameUseCasesTest {
             savedGames.saved = GameSession(1, deal.copy(mode = GameMode.COUNTER_TIME, moves = 5, elapsedSeconds = 600))
 
             LoseGame(stats, savedGames)()
-            StartNewGame(savedGames, stats, scores, Dealer(), seedSource = { 2 }, clock = { 0L })(DrawMode.ONE)
+            StartNewGame(savedGames, stats, scores, Dealer(), DealPicker({ 2 }, settings), clock = { 0L })(DrawMode.ONE)
 
             stats.stats.value shouldBe GameStats(played = 1)
         }

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
+import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
@@ -30,7 +31,9 @@ class ScoresScreenTest {
             SoloTheme {
                 ScoresScreen(
                     uiState = ScoresUiState(
-                        scores = listOf(ScoreRecord(4321, 185, 97, DrawMode.THREE, 0)),
+                        scores = listOf(
+                            ScoreRecord(4321, 185, 97, DrawMode.THREE, 0, difficulty = Difficulty.EASY),
+                        ),
                         stats = GameStats(played = 4, won = 3, currentStreak = 2, bestStreak = 3),
                         isLoading = false,
                     ),
@@ -41,6 +44,7 @@ class ScoresScreenTest {
 
         compose.onNodeWithText("4321").assertExists()
         compose.onNodeWithText("3:05").assertExists()
+        compose.onNodeWithText("97 moves · Draw 3 · Easy", substring = true).assertExists()
         compose.onNodeWithContentDescription("Win rate, 75%").assertExists()
         compose.onNodeWithContentDescription("Back").performClick()
         back shouldBe true
