@@ -7,7 +7,6 @@ import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.key
-import io.github.vinaooo.solo.domain.model.ranking
 import io.github.vinaooo.solo.domain.model.toRecord
 import io.github.vinaooo.solo.domain.repository.Clock
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
@@ -21,9 +20,9 @@ import kotlinx.coroutines.flow.first
 
 /**
  * Deals a new game in [GameMode] at a [Difficulty]; a given seed (restarting a deal) is dealt as it is. Abandoning a
- * game that was already being played counts as a loss; an abandoned Vegas game still enters the Vegas ranking with
- * the dollars it made, and an abandoned cumulative Vegas game leaves the balance where it was, its $52 spent even if
- * it was never played.
+ * game that was already being played counts as a loss; an abandoned Vegas game (either kind) still enters its ranking
+ * with its dollars, and an abandoned cumulative Vegas game leaves the balance where it was, its $52 spent even if it
+ * was never played.
  */
 @Suppress("LongParameterList") // A new game reads and writes every store a finished one touches.
 class StartNewGame(
@@ -59,7 +58,7 @@ class StartNewGame(
         if (state.mode == GameMode.VEGAS_CUMULATIVE) vegasBank.set(state.score)
         if (!saved.isInProgress) return
         stats.update(state.mode.key, GameStats::afterLoss)
-        if (state.mode == GameMode.VEGAS) scores.add(state.toRecord(clock.nowMillis()))
+        if (state.mode.isVegas) scores.add(state.toRecord(clock.nowMillis()))
     }
 }
 
@@ -72,8 +71,8 @@ class SaveGame(private val savedGames: SavedGameRepository) {
 }
 
 /**
- * Records a won game: its score in its mode's ranking (cumulative Vegas has none, only its balance, which the win
- * carries over), the win in the stats, and removes the saved game.
+ * Records a won game: its score in its mode's ranking (cumulative Vegas: the balance, which the win also carries
+ * over), the win in the stats, and removes the saved game.
  */
 class FinishGame(
     private val scores: ScoreRepository,
@@ -85,7 +84,7 @@ class FinishGame(
     suspend operator fun invoke(session: GameSession): ScoreRecord {
         val state = session.state
         val record = state.toRecord(clock.nowMillis())
-        if (state.mode.ranking() != null) scores.add(record)
+        scores.add(record)
         stats.update(state.mode.key, GameStats::afterWin)
         if (state.mode == GameMode.VEGAS_CUMULATIVE) vegasBank.set(state.score)
         savedGames.clear()

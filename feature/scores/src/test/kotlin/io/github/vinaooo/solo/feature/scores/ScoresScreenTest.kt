@@ -23,7 +23,7 @@ class ScoresScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun show(mode: GameMode, vararg records: ScoreRecord) = compose.setContent {
+    private fun show(mode: GameMode, vararg records: ScoreRecord, bank: Int = 0) = compose.setContent {
         SoloTheme {
             ScoresScreen(
                 ScoresUiState(
@@ -33,6 +33,7 @@ class ScoresScreenTest {
                     sections = listOf(ModeSection(mode.name, GameStats(played = 4, won = 3), records.toList())),
                 ),
                 onBack = {},
+                bank = bank,
             )
         }
     }
@@ -60,5 +61,17 @@ class ScoresScreenTest {
         show(GameMode.STANDARD, soloRecord(4321, 185, 97, DrawMode.ONE, 0))
 
         compose.onNodeWithText("97 jogadas · Virar 1 · Difícil", substring = true).assertExists()
+    }
+
+    @Test
+    fun `cumulative Vegas shows its balance under its stats, and its games in dollars`() {
+        show(
+            GameMode.VEGAS_CUMULATIVE,
+            soloRecord(-32, 400, 90, DrawMode.ONE, 0, GameMode.VEGAS_CUMULATIVE),
+            bank = -104,
+        )
+
+        compose.onNodeWithText("Balance: -$104").assertExists()
+        compose.onNodeWithText("-$32").assertExists()
     }
 }

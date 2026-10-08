@@ -149,6 +149,17 @@ class GameUseCasesTest {
         }
 
         @Test
+        fun `an abandoned cumulative game in progress ranks with its balance`() = runTest {
+            val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
+            savedGames.saved = GameSession(1, deal.copy(mode = GameMode.VEGAS_CUMULATIVE, score = -32, moves = 9))
+
+            startNewGame(DrawMode.ONE, GameMode.VEGAS_CUMULATIVE)
+
+            scores.records.value.single().points shouldBe -32
+            bank.bank.value shouldBe -32
+        }
+
+        @Test
         fun `an abandoned cumulative game leaves the balance where it was, even untouched`() = runTest {
             val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
             savedGames.saved = GameSession(1, deal.copy(mode = GameMode.VEGAS_CUMULATIVE, score = -52))
@@ -202,14 +213,17 @@ class GameUseCasesTest {
         }
 
         @Test
-        fun `a cumulative win carries its balance over and enters no ranking`() = runTest {
+        fun `a cumulative win carries its balance over and ranks by it`() = runTest {
             val won = wonState.copy(mode = GameMode.VEGAS_CUMULATIVE, score = 156)
 
             finishGame(GameSession(3, won))
 
             bank.bank.value shouldBe 156
             stats.stats.value.getValue("VEGAS_CUMULATIVE").won shouldBe 1
-            scores.records.value.shouldBeEmpty()
+            scores.records.value.single().run {
+                mode shouldBe "VEGAS_CUMULATIVE"
+                points shouldBe 156
+            }
         }
     }
 
@@ -230,10 +244,10 @@ class GameUseCasesTest {
     }
 
     @Test
-    fun `each mode ranks its own way, and cumulative Vegas not at all`() {
+    fun `counter time ranks by the fastest win, the others by points`() {
         GameMode.STANDARD.ranking() shouldBe Ranking.HIGHEST_POINTS
         GameMode.VEGAS.ranking() shouldBe Ranking.HIGHEST_POINTS
+        GameMode.VEGAS_CUMULATIVE.ranking() shouldBe Ranking.HIGHEST_POINTS
         GameMode.COUNTER_TIME.ranking() shouldBe Ranking.FASTEST
-        GameMode.VEGAS_CUMULATIVE.ranking().shouldBeNull()
     }
 }

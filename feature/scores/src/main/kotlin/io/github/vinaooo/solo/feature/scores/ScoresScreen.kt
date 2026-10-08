@@ -24,15 +24,20 @@ import io.github.vinaooo.vinkit.scores.ScoresUiState
 @Composable
 fun ScoresRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: SoloScoresViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ScoresScreen(uiState, onBack, modifier, viewModel::selectGroup)
+    val bank by viewModel.bank.collectAsStateWithLifecycle()
+    ScoresScreen(uiState, onBack, modifier, bank, viewModel::selectGroup)
 }
 
-/** vinkit's Scores screen in Solo's words: Vegas in dollars, and each score's moves, draw mode and difficulty. */
+/**
+ * vinkit's Scores screen in Solo's words: Vegas in dollars, cumulative Vegas's balance ([bank]) under its stats, and
+ * each score's moves, draw mode and difficulty.
+ */
 @Composable
 fun ScoresScreen(
     uiState: ScoresUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    bank: Int = 0,
     onSelectMode: (String) -> Unit = {},
 ) {
     VinkitScoresScreen(
@@ -43,6 +48,15 @@ fun ScoresScreen(
         onSelectGroup = onSelectMode,
         details = { details(it) },
         points = { points(it) },
+        note = {
+            if (it ==
+                GameMode.VEGAS_CUMULATIVE.name
+            ) {
+                stringResource(R.string.vegas_balance, formatDollars(bank))
+            } else {
+                null
+            }
+        },
     )
 }
 

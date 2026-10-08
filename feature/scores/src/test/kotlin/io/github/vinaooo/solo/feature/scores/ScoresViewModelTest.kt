@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.feature.scores
 import app.cash.turbine.test
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.vinkit.core.GameStats
@@ -41,12 +42,13 @@ class ScoresViewModelTest {
 
     @Test
     fun `a tab per mode played, in Solo's order, each in its own ranking`() = runTest(dispatcher) {
-        val vm = SoloScoresViewModel(scores, stats)
+        val vm = SoloScoresViewModel(scores, stats, FakeVegasBankRepository(-104))
         vm.uiState.test {
             skipItems(1)
             val state = awaitItem()
             state.groups shouldBe listOf("VEGAS_CUMULATIVE", "COUNTER_TIME")
-            state.sections.single().ranking shouldBe null
+            state.sections.single().ranking shouldBe Ranking.HIGHEST_POINTS
+            vm.bank.value shouldBe 0 // Not collected yet: the screen collects it.
 
             vm.selectGroup("COUNTER_TIME")
             val timed = awaitItem().sections.single()

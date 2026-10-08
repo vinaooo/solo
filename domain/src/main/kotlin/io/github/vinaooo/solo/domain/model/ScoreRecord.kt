@@ -6,12 +6,8 @@ import io.github.vinaooo.vinkit.core.ScoreRecord
 /** Solo's scores are vinkit's: the mode's key is [GameMode]'s name, and the game's details go in the extras. */
 val GameMode.key: String get() = name
 
-/** How each mode ranks: counter time by the fastest win, cumulative Vegas not at all (by the user's choice). */
-fun GameMode.ranking(): Ranking? = when (this) {
-    GameMode.COUNTER_TIME -> Ranking.FASTEST
-    GameMode.VEGAS_CUMULATIVE -> null
-    else -> Ranking.HIGHEST_POINTS
-}
+/** How each mode ranks: counter time by the fastest win, the others by points (both Vegas modes: dollars). */
+fun GameMode.ranking(): Ranking = if (this == GameMode.COUNTER_TIME) Ranking.FASTEST else Ranking.HIGHEST_POINTS
 
 /** This game as a score played at [nowMillis]. */
 fun GameState.toRecord(nowMillis: Long) = ScoreRecord(
