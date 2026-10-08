@@ -9,13 +9,14 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 | Module | Responsibility |
 |---|---|
 | `:domain` | Pure Kotlin game rules, scoring, use cases, repository interfaces |
-| `:data` | Room (scores/stats), DataStore (settings), saved game serialization |
-| `:core:designsystem` | `SoloTheme` (dynamic color, light/dark, expressive motion), card composables |
-| `:core:ui` | Shared UI helpers |
-| `:core:ads` | AdMob banner and consent (UMP) behind `AdBannerProvider` / `AdConsent` |
-| `:feature:game` / `:feature:scores` / `:feature:settings` | Screens + ViewModels |
-| `:app` | Application, navigation, app scaffold with the bottom banner |
-| `build-logic` | Gradle convention plugins |
+| `:data` | Wires vinkit's scores database and settings, Solo's own settings and Vegas bank (DataStore), saved game serialization |
+| `:core:designsystem` | `SoloTheme` (vinkit's theme plus card colors), card composables |
+| `:core:ui` | Solo's text helpers (mode names, dollars) |
+| `:feature:game` / `:feature:scores` / `:feature:settings` | Screens + ViewModels, on vinkit's shell, Scores and Settings screens |
+| `:app` | Application, navigation, Hilt wiring of vinkit's ads and feedback, app scaffold with the bottom banner |
+
+Shared pieces (build plugins, version catalog, theme, ads, bug report, settings, scores, game shell) come from
+[vinkit](https://github.com/vinaooo/vinkit), pinned by `vinkit.tag` in `gradle.properties`.
 
 ## Requirements
 
@@ -72,22 +73,22 @@ Signing keys and ad unit IDs live in `local.properties` / GitHub Secrets and are
 To sign release builds, keep the upload keystore outside the repository (and backed up) and add to `local.properties`:
 
 ```properties
-solo.signing.storeFile=/path/to/solo-upload.jks
-solo.signing.storePassword=…
-solo.signing.keyAlias=solo-upload
-solo.signing.keyPassword=…
+vinkit.signing.storeFile=/path/to/solo-upload.jks
+vinkit.signing.storePassword=…
+vinkit.signing.keyAlias=solo-upload
+vinkit.signing.keyPassword=…
 ```
 
-On CI, set the same values as the `SOLO_SIGNING_STORE_FILE`, `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS` and `SOLO_SIGNING_KEY_PASSWORD` environment variables. Without them, `./gradlew :app:assembleRelease` builds an unsigned APK.
+On CI, set the same values as the `VINKIT_SIGNING_STORE_FILE`, `VINKIT_SIGNING_STORE_PASSWORD`, `VINKIT_SIGNING_KEY_ALIAS` and `VINKIT_SIGNING_KEY_PASSWORD` environment variables. Without them, `./gradlew :app:assembleRelease` builds an unsigned APK.
 
 ### Ads
 
-Debug builds always show Google's test ads. For release builds, add your AdMob IDs to `local.properties` (or set `SOLO_ADS_APP_ID` / `SOLO_ADS_BANNER_ID` on CI); without them, release builds show test ads too:
+Debug builds always show Google's test ads. For release builds, add your AdMob IDs to `local.properties` (or set `VINKIT_ADS_APP_ID` / `VINKIT_ADS_BANNER_ID` on CI); without them, release builds show test ads too:
 
 ```properties
-solo.ads.appId=ca-app-pub-…~…        # the app ID, with a ~
-solo.ads.bannerId=ca-app-pub-…/…     # the banner ad unit ID, with a /
-solo.ads.testDeviceIds=…             # optional: hashed IDs of your own devices (from logcat), which always get test ads
+vinkit.ads.appId=ca-app-pub-…~…        # the app ID, with a ~
+vinkit.ads.bannerId=ca-app-pub-…/…     # the banner ad unit ID, with a /
+vinkit.ads.testDeviceIds=…             # optional: hashed IDs of your own devices (from logcat), which always get test ads
 ```
 
 ### Releasing to Google Play
@@ -107,9 +108,9 @@ To turn it on:
 
 | Secret | Value |
 |---|---|
-| `SOLO_UPLOAD_KEYSTORE_BASE64` | `base64 -w0 /path/to/solo-upload.jks` |
-| `SOLO_SIGNING_STORE_PASSWORD`, `SOLO_SIGNING_KEY_ALIAS`, `SOLO_SIGNING_KEY_PASSWORD` | same as in `local.properties` |
-| `SOLO_ADS_APP_ID`, `SOLO_ADS_BANNER_ID` | the AdMob IDs |
+| `VINKIT_UPLOAD_KEYSTORE_BASE64` | `base64 -w0 /path/to/solo-upload.jks` |
+| `VINKIT_SIGNING_STORE_PASSWORD`, `VINKIT_SIGNING_KEY_ALIAS`, `VINKIT_SIGNING_KEY_PASSWORD` | same as in `local.properties` |
+| `VINKIT_ADS_APP_ID`, `VINKIT_ADS_BANNER_ID` | the AdMob IDs |
 | `PLAY_SERVICE_ACCOUNT_JSON` | the whole JSON key file |
 
 5. **Add the repository variable** `PLAY_UPLOAD_ENABLED` = `true` (same page, Variables tab).

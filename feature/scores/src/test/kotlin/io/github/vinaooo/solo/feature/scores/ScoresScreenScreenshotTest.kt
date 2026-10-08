@@ -7,9 +7,11 @@ import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
-import io.github.vinaooo.solo.domain.model.GameStats
-import io.github.vinaooo.solo.domain.model.ScoreRecord
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.GameStats
+import io.github.vinaooo.vinkit.core.Ranking
+import io.github.vinaooo.vinkit.core.ThemeMode
+import io.github.vinaooo.vinkit.scores.ModeSection
+import io.github.vinaooo.vinkit.scores.ScoresUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,35 +27,29 @@ class ScoresScreenScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
+    private val stats = GameStats(played = 12, won = 3, currentStreak = 1, bestStreak = 2)
+
     // Noon UTC, so the dates read the same in any time zone within ±11 h.
-    private val filled = ScoresUiState(
-        scores = listOf(
-            ScoreRecord(
-                points = 5812,
-                elapsedSeconds = 148,
-                moves = 104,
-                drawMode = DrawMode.ONE,
-                playedAtMillis = 1790510400000L,
-                difficulty = Difficulty.EASY,
-            ),
-            ScoreRecord(
-                points = 4321,
-                elapsedSeconds = 185,
-                moves = 97,
-                drawMode = DrawMode.THREE,
-                playedAtMillis = 1789905600000L,
-                difficulty = Difficulty.NORMAL,
-            ),
-            ScoreRecord(
-                points = 2750,
-                elapsedSeconds = 402,
-                moves = 131,
-                drawMode = DrawMode.ONE,
-                playedAtMillis = 1789214400000L,
+    private val filled = state(
+        GameMode.STANDARD,
+        ModeSection(
+            "STANDARD",
+            stats,
+            listOf(
+                soloRecord(5812, 148, 104, DrawMode.ONE, 1790510400000L, difficulty = Difficulty.EASY),
+                soloRecord(4321, 185, 97, DrawMode.THREE, 1789905600000L, difficulty = Difficulty.NORMAL),
+                soloRecord(2750, 402, 131, DrawMode.ONE, 1789214400000L),
             ),
         ),
-        stats = GameStats(played = 12, won = 3, currentStreak = 1, bestStreak = 2),
+    )
+
+    private fun state(group: GameMode, section: ModeSection, vararg groups: GameMode = arrayOf(group)) = ScoresUiState(
         isLoading = false,
+        groups = groups.map {
+            it.name
+        },
+        group = group.name,
+        sections = listOf(section),
     )
 
     private fun capture(name: String, uiState: ScoresUiState, themeMode: ThemeMode) {
@@ -72,15 +68,19 @@ class ScoresScreenScreenshotTest {
     @Test
     fun scores_vegas_tabs() = capture(
         "scores_vegas_tabs",
-        ScoresUiState(
-            scores = listOf(
-                ScoreRecord(83, 512, 140, DrawMode.ONE, 1790510400000L, GameMode.VEGAS),
-                ScoreRecord(-17, 301, 88, DrawMode.THREE, 1789905600000L, GameMode.VEGAS),
+        state(
+            GameMode.VEGAS,
+            ModeSection(
+                "VEGAS",
+                stats,
+                listOf(
+                    soloRecord(83, 512, 140, DrawMode.ONE, 1790510400000L, GameMode.VEGAS),
+                    soloRecord(-17, 301, 88, DrawMode.THREE, 1789905600000L, GameMode.VEGAS),
+                ),
             ),
-            stats = GameStats(played = 12, won = 3, currentStreak = 1, bestStreak = 2),
-            isLoading = false,
-            modes = listOf(GameMode.STANDARD, GameMode.VEGAS, GameMode.COUNTER_TIME),
-            mode = GameMode.VEGAS,
+            GameMode.STANDARD,
+            GameMode.VEGAS,
+            GameMode.COUNTER_TIME,
         ),
         ThemeMode.LIGHT,
     )
@@ -88,11 +88,16 @@ class ScoresScreenScreenshotTest {
     @Test
     fun scores_counter_time() = capture(
         "scores_counter_time",
-        ScoresUiState(
-            scores = listOf(ScoreRecord(1200, 233, 97, DrawMode.ONE, 1790510400000L, GameMode.COUNTER_TIME)),
-            isLoading = false,
-            modes = listOf(GameMode.STANDARD, GameMode.COUNTER_TIME),
-            mode = GameMode.COUNTER_TIME,
+        state(
+            GameMode.COUNTER_TIME,
+            ModeSection(
+                "COUNTER_TIME",
+                GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1),
+                listOf(soloRecord(1200, 233, 97, DrawMode.ONE, 1790510400000L, GameMode.COUNTER_TIME)),
+                Ranking.FASTEST,
+            ),
+            GameMode.STANDARD,
+            GameMode.COUNTER_TIME,
         ),
         ThemeMode.DARK,
     )

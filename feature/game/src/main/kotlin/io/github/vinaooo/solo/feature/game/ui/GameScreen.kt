@@ -9,24 +9,13 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,45 +24,38 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.roundToIntRect
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
-import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.GameViewModel
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.solo.feature.game.SoloReports
 import io.github.vinaooo.solo.feature.game.board.GameBoard
+import io.github.vinaooo.solo.feature.game.gameReport
+import io.github.vinaooo.vinkit.shell.GameFrame
+import io.github.vinaooo.vinkit.shell.GameSurface
+import io.github.vinaooo.vinkit.shell.GameToolbar
+import io.github.vinaooo.vinkit.shell.LocalFrameInfo
+import io.github.vinaooo.vinkit.shell.WinDialog
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun GameRoute(
@@ -100,39 +82,21 @@ fun GameScreen(
 ) {
     val snackbar = remember { SnackbarHostState() }
     val noMoves = stringResource(R.string.no_moves)
-    // The screen as last drawn, for a bug report's screenshot.
-    val frame = rememberGraphicsLayer()
-    var report by remember { mutableStateOf<BugReport?>(null) }
-    val scope = rememberCoroutineScope()
-    val handle: (GameIntent) -> Unit = { intent ->
-        if (intent == GameIntent.ReportBug) {
-            // After the menu and its scrim have gone, so the screenshot shows the board as it was.
-            scope.launch {
-                delay(MENU_CLOSED_MILLIS)
-                report = BugReport(frame.toImageBitmap())
-            }
-        } else {
-            onIntent(intent)
-        }
-    }
     LaunchedEffect(uiState.message) {
         if (uiState.message == GameMessage.NO_MOVES) {
             snackbar.showSnackbar(noMoves)
             onIntent(GameIntent.MessageShown)
         }
     }
-    var area by remember { mutableStateOf(IntRect.Zero) }
-    Surface(
-        modifier = modifier.fillMaxSize()
-            .onGloballyPositioned { area = it.boundsInWindow().roundToIntRect() }
-            .drawWithContent {
-                frame.record { this@drawWithContent.drawContent() }
-                drawLayer(frame)
-            },
+    val announced = uiState.announcement
+    GameSurface(
+        announcement = announced?.let { announcementText(it.announcement) },
+        announcementSequence = announced?.sequence ?: 0,
+        modifier = modifier,
         color = SoloThemeExtras.cardColors.table,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        // Surface stretches each direct child to its full size, so the tiny announcer sits in a Box of its own.
+        reportTarget = SoloReports,
+        gameReport = { gameReport(uiState.settings, uiState.appSettings, uiState.session) },
+    ) { reportBug ->
         // While the stuck message shows, any tap anywhere dismisses it, and still reaches the game.
         Box(
             Modifier.pointerInput(uiState.showStuckTip) {
@@ -143,15 +107,31 @@ fun GameScreen(
                 }
             },
         ) {
-            CompositionLocalProvider(LocalGameArea provides area) {
-                GameContent(uiState, handle, onOpenScores, onOpenSettings, snackbar)
-            }
+            GameFrame(
+                settings = uiState.appSettings,
+                info = { GameInfo(uiState, large = it.landscape) },
+                board = { BoardOrLoading(uiState, onIntent) },
+                toolbar = { frame ->
+                    GameToolbar(
+                        actions = toolbarActions(uiState, onIntent),
+                        menuOptions = menuOptions(onIntent),
+                        onReportBug = reportBug,
+                        vertical = frame.landscape,
+                        mirrored = frame.mirrored,
+                    )
+                },
+                onOpenScores = onOpenScores,
+                onOpenSettings = onOpenSettings,
+                // The board sizes its cards from all the room it gets, and places itself in it.
+                boardAspectRatio = null,
+                // Landscape's side holds only the stats: the sideways board gets the rest.
+                sideWidth = null,
+            )
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = SNACKBAR_SPACE))
             StuckMessage(uiState.showStuckTip, { onIntent(GameIntent.StuckTipShown) }, Modifier.align(Alignment.Center))
-            Announcer(uiState.announcement)
         }
     }
-    uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
-    report?.let { BugReportDialog(uiState, it.screenshot, onDone = { report = null }) }
+    uiState.winRecord?.let { WinDialog(winLines(it), onNewGame = { onIntent(GameIntent.NewGame) }) }
     if (uiState.isTimeUp) {
         TimeUpDialog(onNewGame = { onIntent(GameIntent.NewGame) }, onRestart = { onIntent(GameIntent.RestartDeal) })
     }
@@ -201,126 +181,28 @@ private fun StuckMessage(show: Boolean, onShown: () -> Unit, modifier: Modifier)
     }
 }
 
-/**
- * Portrait: stats on top, board below, toolbar floating at the bottom.
- * Landscape: stats, board and toolbar side by side, the board centered.
- */
-@Composable
-private fun GameContent(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    onOpenScores: () -> Unit,
-    onOpenSettings: () -> Unit,
-    snackbar: SnackbarHostState,
-) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        if (maxWidth > maxHeight) {
-            LandscapeGame(uiState, onIntent, onOpenScores, onOpenSettings)
-            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
-        } else {
-            PortraitGame(uiState, onIntent, onOpenScores, onOpenSettings)
-            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = TOOLBAR_SPACE))
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun PortraitGame(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    onOpenScores: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            GameTopBar(uiState, onOpenScores, onOpenSettings)
-            BoardOrLoading(
-                uiState,
-                onIntent,
-                Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = TOOLBAR_SPACE),
-            )
-        }
-        HorizontalGameToolbar(
-            uiState = uiState,
+private fun BoardOrLoading(uiState: GameUiState, onIntent: (GameIntent) -> Unit) {
+    val session = uiState.session
+    if (session == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
+    } else {
+        GameBoard(
+            state = session.state,
+            hint = uiState.hint,
             onIntent = onIntent,
-            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -FloatingToolbarDefaults.ScreenOffset),
+            modifier = Modifier.fillMaxSize(),
+            destinations = uiState.destinations,
+            handedness = uiState.appSettings.handedness,
+            alignment = uiState.appSettings.boardAlignment,
+            deals = uiState.deals,
+            // In landscape the cards lie sideways (phone view keeps its column, and the traditional board).
+            sideways = LocalFrameInfo.current.landscape,
         )
     }
 }
 
-/** The board centered at full height, info on its left and the game actions in a vertical toolbar on its right. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun LandscapeGame(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    onOpenScores: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    CenteredRow(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
-        start = { GameSidePanel(uiState, onOpenScores, onOpenSettings, Modifier.fillMaxHeight()) },
-        center = {
-            BoardOrLoading(uiState, onIntent, Modifier.fillMaxSize().padding(vertical = 8.dp), sideways = true)
-        },
-        end = {
-            VerticalGameToolbar(
-                uiState = uiState,
-                onIntent = onIntent,
-                modifier = Modifier.padding(end = FloatingToolbarDefaults.ScreenOffset),
-            )
-        },
-    )
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun BoardOrLoading(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    modifier: Modifier,
-    sideways: Boolean = false,
-) {
-    val session = uiState.session
-    if (session == null) {
-        Box(modifier, contentAlignment = Alignment.Center) { LoadingIndicator() }
-    } else {
-        // Phone view on a tablet: the traditional board, as wide as a phone's, at the top of the room it has, on the
-        // side the player chose.
-        val phoneView = uiState.settings.phoneView &&
-            LocalConfiguration.current.smallestScreenWidthDp >= TABLET_WIDTH_DP
-        val side = when (uiState.settings.phoneViewSide) {
-            PhoneViewSide.LEFT -> Alignment.TopStart
-            PhoneViewSide.CENTER -> Alignment.TopCenter
-            PhoneViewSide.RIGHT -> Alignment.TopEnd
-        }
-        Box(modifier, contentAlignment = side) {
-            GameBoard(
-                state = session.state,
-                hint = uiState.hint,
-                onIntent = onIntent,
-                modifier = (if (phoneView) Modifier.widthIn(max = PHONE_WIDTH) else Modifier).fillMaxSize(),
-                destinations = uiState.destinations,
-                handedness = uiState.settings.handedness,
-                alignment = uiState.settings.boardAlignment,
-                deals = uiState.deals,
-                sideways = sideways && !phoneView,
-            )
-        }
-    }
-}
-
-/** Phone view's board width: a typical modern phone's (412dp), chosen with the user. */
-private val PHONE_WIDTH = 412.dp
-
-/** From this short side (Material's medium window), the screen is a tablet's and phone view applies. */
-private const val TABLET_WIDTH_DP = 600
-private val TOOLBAR_SPACE = 88.dp
+/** Keeps the snackbar above the toolbar. */
+private val SNACKBAR_SPACE = 88.dp
 private const val STUCK_MESSAGE_MILLIS = 5_000L
-private const val MENU_CLOSED_MILLIS = 400L
-
-/** A bug report being written, with the board's [screenshot]. */
-private class BugReport(val screenshot: ImageBitmap)

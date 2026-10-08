@@ -2,8 +2,8 @@ package io.github.vinaooo.solo.feature.game.board
 
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.GameState
-import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
+import io.github.vinaooo.vinkit.core.Handedness
 
 /**
  * How TalkBack presents a card. Only the cards a player can act on or needs to know are exposed: the top of the

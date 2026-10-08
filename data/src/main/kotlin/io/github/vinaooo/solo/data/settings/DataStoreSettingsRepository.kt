@@ -3,7 +3,6 @@ package io.github.vinaooo.solo.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -14,6 +13,10 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * Solo's own settings, in the DataStore vinkit's `DataStoreAppSettingsRepository` keeps the common ones in: each writes
+ * only its own keys.
+ */
 class DataStoreSettingsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) :
     SettingsRepository {
 
@@ -29,15 +32,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             drawMode = enumOrDefault(this[Keys.DRAW_MODE], defaults.drawMode),
             gameMode = enumOrDefault(this[Keys.GAME_MODE], defaults.gameMode),
             difficulty = enumOrDefault(this[Keys.DIFFICULTY], defaults.difficulty),
-            themeMode = enumOrDefault(this[Keys.THEME_MODE], defaults.themeMode),
-            dynamicColor = this[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
-            themeColor = enumOrDefault(this[Keys.THEME_COLOR], defaults.themeColor),
-            soundEnabled = this[Keys.SOUND] ?: defaults.soundEnabled,
-            hapticsEnabled = this[Keys.HAPTICS] ?: defaults.hapticsEnabled,
-            handedness = enumOrDefault(this[Keys.HANDEDNESS], defaults.handedness),
-            boardAlignment = enumOrDefault(this[Keys.BOARD_ALIGNMENT], defaults.boardAlignment),
-            phoneView = this[Keys.PHONE_VIEW] ?: defaults.phoneView,
-            phoneViewSide = enumOrDefault(this[Keys.PHONE_VIEW_SIDE], defaults.phoneViewSide),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
             dealCursor = this[Keys.DEAL_CURSOR],
         )
@@ -47,15 +41,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.DRAW_MODE] = settings.drawMode.name
         this[Keys.GAME_MODE] = settings.gameMode.name
         this[Keys.DIFFICULTY] = settings.difficulty.name
-        this[Keys.THEME_MODE] = settings.themeMode.name
-        this[Keys.DYNAMIC_COLOR] = settings.dynamicColor
-        this[Keys.THEME_COLOR] = settings.themeColor.name
-        this[Keys.SOUND] = settings.soundEnabled
-        this[Keys.HAPTICS] = settings.hapticsEnabled
-        this[Keys.HANDEDNESS] = settings.handedness.name
-        this[Keys.BOARD_ALIGNMENT] = settings.boardAlignment.name
-        this[Keys.PHONE_VIEW] = settings.phoneView
-        this[Keys.PHONE_VIEW_SIDE] = settings.phoneViewSide.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
         settings.dealCursor?.let { this[Keys.DEAL_CURSOR] = it } ?: remove(Keys.DEAL_CURSOR)
     }
@@ -67,15 +52,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val DRAW_MODE = stringPreferencesKey("draw_mode")
         val GAME_MODE = stringPreferencesKey("game_mode")
         val DIFFICULTY = stringPreferencesKey("difficulty")
-        val THEME_MODE = stringPreferencesKey("theme_mode")
-        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
-        val THEME_COLOR = stringPreferencesKey("theme_color")
-        val SOUND = booleanPreferencesKey("sound")
-        val HAPTICS = booleanPreferencesKey("haptics")
-        val HANDEDNESS = stringPreferencesKey("handedness")
-        val BOARD_ALIGNMENT = stringPreferencesKey("board_alignment")
-        val PHONE_VIEW = booleanPreferencesKey("phone_view")
-        val PHONE_VIEW_SIDE = stringPreferencesKey("phone_view_side")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
         val DEAL_CURSOR = longPreferencesKey("deal_cursor")
     }

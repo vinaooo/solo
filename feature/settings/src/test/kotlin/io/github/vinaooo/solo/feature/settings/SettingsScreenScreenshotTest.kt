@@ -5,8 +5,9 @@ import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeColor
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.core.ThemeMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,10 +23,14 @@ class SettingsScreenScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun capture(name: String, themeMode: ThemeMode, settings: Settings = Settings(themeMode = themeMode)) {
+    private fun capture(
+        name: String,
+        themeMode: ThemeMode,
+        app: AppSettings = AppSettings(themeMode, themeColor = ThemeColor.GREEN),
+    ) {
         compose.setContent {
-            SoloTheme(themeMode = themeMode, dynamicColor = false, themeColor = settings.themeColor) {
-                SettingsScreen(settings, onChange = {}, onBack = {})
+            SoloTheme(themeMode = themeMode, dynamicColor = false, themeColor = app.themeColor) {
+                SettingsScreen(Settings(), app, onChange = {}, onAppChange = {}, onBack = {})
             }
         }
         compose.onRoot().captureRoboImage("src/test/screenshots/$name.png")
@@ -41,7 +46,7 @@ class SettingsScreenScreenshotTest {
     fun settings_colors() = capture(
         "settings_colors",
         ThemeMode.DARK,
-        Settings(themeMode = ThemeMode.DARK, dynamicColor = false, themeColor = ThemeColor.PURPLE),
+        AppSettings(themeMode = ThemeMode.DARK, dynamicColor = false, themeColor = ThemeColor.PURPLE),
     )
 
     @Test
@@ -50,6 +55,9 @@ class SettingsScreenScreenshotTest {
 
     @Test
     @Config(qualifiers = "w1280dp-h800dp-mdpi")
-    fun settings_tablet() =
-        capture("settings_tablet", ThemeMode.LIGHT, Settings(themeMode = ThemeMode.LIGHT, phoneView = true))
+    fun settings_tablet() = capture(
+        "settings_tablet",
+        ThemeMode.LIGHT,
+        AppSettings(ThemeMode.LIGHT, themeColor = ThemeColor.GREEN, phoneView = true),
+    )
 }

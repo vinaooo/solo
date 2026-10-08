@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.solo.android.library)
-    alias(libs.plugins.solo.android.compose)
+    alias(libs.plugins.vinkit.android.library)
+    alias(libs.plugins.vinkit.android.compose)
     alias(libs.plugins.roborazzi)
 }
 
@@ -10,6 +10,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    api("com.github.vinaooo.vinkit:designsystem:${providers.gradleProperty("vinkit.tag").get()}")
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.material.icons.extended)
 

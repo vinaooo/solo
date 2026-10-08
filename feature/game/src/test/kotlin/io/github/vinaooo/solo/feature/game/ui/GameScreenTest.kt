@@ -17,12 +17,12 @@ import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
-import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
+import io.github.vinaooo.vinkit.core.ScoreRecord
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -169,7 +169,7 @@ class GameScreenTest {
 
     @Test
     fun `the win dialog shows the result and starts a new game`() {
-        show(playing.copy(winRecord = ScoreRecord(4321, 185, 97, DrawMode.ONE, 0)))
+        show(playing.copy(winRecord = ScoreRecord("STANDARD", 4321, 185, 0, mapOf("moves" to "97"))))
 
         compose.onNodeWithText("You won!").assertExists()
         compose.onNodeWithText("Score: 4321").assertExists()

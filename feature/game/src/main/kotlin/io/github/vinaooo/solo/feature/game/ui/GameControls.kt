@@ -1,99 +1,48 @@
 package io.github.vinaooo.solo.feature.game.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalFloatingToolbar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.VerticalFloatingToolbar
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.ui.formatDollars
-import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.spokenDollars
-import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.domain.model.GameMode
+import io.github.vinaooo.solo.domain.model.gameMode
+import io.github.vinaooo.solo.domain.model.moves
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.R
-import kotlinx.coroutines.withTimeoutOrNull
+import io.github.vinaooo.vinkit.core.ScoreRecord
+import io.github.vinaooo.vinkit.core.formatElapsed
+import io.github.vinaooo.vinkit.designsystem.spokenElapsed
+import io.github.vinaooo.vinkit.shell.MenuOption
+import io.github.vinaooo.vinkit.shell.ToolbarAction
+import io.github.vinaooo.vinkit.shell.ToolbarTip
 
-/** Portrait: stats in a row, the Scores and Settings buttons at its end. */
+/** The stats: in a row on top in portrait, stacked in landscape's side column, which has the room for them. */
 @Composable
-internal fun GameTopBar(uiState: GameUiState, onOpenScores: () -> Unit, onOpenSettings: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Stats(uiState)
-        Spacer(Modifier.weight(1f))
-        NavigationButtons(onOpenScores, onOpenSettings)
-    }
-}
-
-/** Landscape: stats stacked on the left of the board, the Scores and Settings buttons below them. */
-@Composable
-internal fun GameSidePanel(
-    uiState: GameUiState,
-    onOpenScores: () -> Unit,
-    onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Stats(uiState, large = true)
-        Spacer(Modifier.weight(1f))
-        Row { NavigationButtons(onOpenScores, onOpenSettings) }
+internal fun GameInfo(uiState: GameUiState, large: Boolean) {
+    if (large) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Stats(uiState, large = true) }
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { Stats(uiState) }
     }
 }
 
@@ -138,161 +87,56 @@ private fun Stat(label: String, value: String, large: Boolean, spoken: String = 
     }
 }
 
-@Composable
-private fun NavigationButtons(onOpenScores: () -> Unit, onOpenSettings: () -> Unit) {
-    IconButton(onClick = onOpenScores) { Icon(Icons.Rounded.EmojiEvents, stringResource(R.string.open_scores)) }
-    IconButton(onClick = onOpenSettings) { Icon(Icons.Rounded.Settings, stringResource(R.string.open_settings)) }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-internal fun HorizontalGameToolbar(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val dim by animateFloatAsState(
-        if (menuOpen) MENU_SCRIM_ALPHA else 0f,
-        MaterialTheme.motionScheme.defaultEffectsSpec(),
-    )
-    HorizontalFloatingToolbar(
-        expanded = true,
-        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim }
-            .keepingEnd(vertical = false, hold = rememberMenuHold(menuOpen)),
-    ) { ToolbarActions(uiState, onIntent, vertical = false, menuOpen) { menuOpen = it } }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-internal fun VerticalGameToolbar(uiState: GameUiState, onIntent: (GameIntent) -> Unit, modifier: Modifier = Modifier) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val dim by animateFloatAsState(
-        if (menuOpen) MENU_SCRIM_ALPHA else 0f,
-        MaterialTheme.motionScheme.defaultEffectsSpec(),
-    )
-    VerticalFloatingToolbar(
-        expanded = true,
-        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-        modifier = modifier.scrimBehind(MaterialTheme.colorScheme.scrim) { dim }
-            .keepingEnd(vertical = true, hold = rememberMenuHold(menuOpen)),
-    ) { ToolbarActions(uiState, onIntent, vertical = true, menuOpen) { menuOpen = it } }
-}
-
 /**
- * Undo, redo, hint, auto-complete (when possible) and the new game menu, in either toolbar. The toolbar owns whether
- * the menu is open, because it dims the game behind itself meanwhile.
+ * Undo, redo, hint and auto-complete, which joins the toolbar only when it can play; the first few times it does, a
+ * bubble points it out.
  */
 @Composable
-private fun ToolbarActions(
-    uiState: GameUiState,
-    onIntent: (GameIntent) -> Unit,
-    vertical: Boolean,
-    menuOpen: Boolean,
-    onMenuOpenChange: (Boolean) -> Unit,
-) {
-    // A button grows out of its slot, widening the toolbar (lengthening it in landscape), and scales up into place;
-    // it leaves the same way. Only along the toolbar: growing across it too leaves the toolbar's balanced padding, and
-    // so its thickness, wrong. While the menu is open every button but its close button leaves, so the toolbar shrinks
-    // to that one button, and grows back when the menu closes.
-    val size = MaterialTheme.motionScheme.defaultSpatialSpec<IntSize>()
-    val scale = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    val fade = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
-    val enter = if (vertical) {
-        expandVertically(size, Alignment.CenterVertically)
-    } else {
-        expandHorizontally(size, Alignment.CenterHorizontally)
-    } + scaleIn(scale) + fadeIn(fade)
-    val exit = if (vertical) {
-        shrinkVertically(size, Alignment.CenterVertically)
-    } else {
-        shrinkHorizontally(size, Alignment.CenterHorizontally)
-    } + scaleOut(scale) + fadeOut(fade)
-    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
-        IconButton(onClick = { onIntent(GameIntent.Undo) }, enabled = uiState.session?.canUndo == true) {
-            Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.undo))
-        }
-    }
-    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
-        IconButton(onClick = { onIntent(GameIntent.Redo) }, enabled = uiState.session?.canRedo == true) {
-            Icon(Icons.AutoMirrored.Rounded.Redo, stringResource(R.string.redo))
-        }
-    }
-    AnimatedVisibility(!menuOpen, enter = enter, exit = exit) {
-        IconButton(onClick = { onIntent(GameIntent.Hint) }) {
-            Icon(Icons.Rounded.Lightbulb, stringResource(R.string.hint))
-        }
-    }
-    AnimatedVisibility(uiState.canAutoComplete && !menuOpen, enter = enter, exit = exit) {
-        // The first few times the button appears, a bubble points it out.
-        TipBox(
-            show = uiState.showAutoCompleteTip,
-            text = stringResource(R.string.auto_complete_tip),
-            icon = Icons.Rounded.AutoAwesome,
-            vertical = vertical,
-            onShown = { onIntent(GameIntent.AutoCompleteTipShown) },
-        ) {
-            IconButton(onClick = { onIntent(GameIntent.AutoComplete) }, enabled = !uiState.isAutoCompleting) {
-                Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.auto_complete))
-            }
-        }
-    }
-    NewGameMenu(menuOpen, onMenuOpenChange, onIntent, vertical)
-}
-
-/**
- * A toolbar button ([content]) that, when [show] turns true, gets a speech bubble pointing at it (from above, or from
- * the left of the vertical toolbar) until the player taps anywhere or a few seconds pass; then [onShown].
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun TipBox(
-    show: Boolean,
-    text: String,
-    icon: ImageVector,
-    vertical: Boolean,
-    onShown: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    val tip = rememberTooltipState(isPersistent = true)
-    LaunchedEffect(show) {
-        if (!show) return@LaunchedEffect
-        try {
-            withTimeoutOrNull(TIP_MILLIS) { tip.show() }
-        } finally {
-            tip.dismiss()
-            onShown()
-        }
-    }
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-            if (vertical) TooltipAnchorPosition.Left else TooltipAnchorPosition.Above,
-            // Clears the toolbar's own padding around the button, so the bubble floats just off the toolbar.
-            spacingBetweenTooltipAndAnchor = 16.dp,
-        ),
-        tooltip = {
-            // Expressive: a pill in the accent (tertiary) color, with the button's icon and emphasized text.
-            PlainTooltip(
-                caretShape = TooltipDefaults.caretShape(),
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.tertiary,
-                contentColor = MaterialTheme.colorScheme.onTertiary,
-                shadowElevation = 3.dp,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(text, style = MaterialTheme.typography.labelLargeEmphasized)
+internal fun toolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit): List<ToolbarAction> {
+    val tip = stringResource(R.string.auto_complete_tip)
+    return listOf(
+        ToolbarAction.Button(
+            Icons.AutoMirrored.Rounded.Undo,
+            stringResource(R.string.undo),
+            enabled = uiState.session?.canUndo == true,
+        ) { onIntent(GameIntent.Undo) },
+        ToolbarAction.Button(
+            Icons.AutoMirrored.Rounded.Redo,
+            stringResource(R.string.redo),
+            enabled = uiState.session?.canRedo == true,
+        ) { onIntent(GameIntent.Redo) },
+        ToolbarAction.Button(Icons.Rounded.Lightbulb, stringResource(R.string.hint)) { onIntent(GameIntent.Hint) },
+        ToolbarAction.Button(
+            Icons.Rounded.AutoAwesome,
+            stringResource(R.string.auto_complete),
+            enabled = !uiState.isAutoCompleting,
+            visible = uiState.canAutoComplete,
+            tip = if (uiState.showAutoCompleteTip) {
+                ToolbarTip(tip) {
+                    onIntent(GameIntent.AutoCompleteTipShown)
                 }
-            }
-        },
-        state = tip,
-        content = content,
+            } else {
+                null
+            },
+        ) { onIntent(GameIntent.AutoComplete) },
     )
 }
 
-private const val TIP_MILLIS = 5_000L
+/** The new game menu: a new deal, or this deal again. */
+@Composable
+internal fun menuOptions(onIntent: (GameIntent) -> Unit): List<MenuOption> = listOf(
+    MenuOption(Icons.Rounded.Style, stringResource(R.string.new_game)) { onIntent(GameIntent.NewGame) },
+    MenuOption(Icons.Rounded.Refresh, stringResource(R.string.restart_deal)) { onIntent(GameIntent.RestartDeal) },
+)
+
+/** What a win shows: Vegas's winnings, or the score (counter time ranks by time alone), then the time and moves. */
+@Composable
+internal fun winLines(record: ScoreRecord): List<String> = listOfNotNull(
+    when {
+        record.gameMode.isVegas -> stringResource(R.string.win_money, formatDollars(record.points))
+        record.gameMode != GameMode.COUNTER_TIME -> stringResource(R.string.win_score, record.points)
+        else -> null
+    },
+    stringResource(R.string.win_time, formatElapsed(record.elapsedSeconds)),
+    stringResource(R.string.win_moves, record.moves),
+)

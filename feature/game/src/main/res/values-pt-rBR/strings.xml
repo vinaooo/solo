@@ -11,11 +11,7 @@
     <string name="stuck_body">Desfaça ou comece uma nova partida.</string>
     <string name="new_game">Nova partida</string>
     <string name="restart_deal">Reiniciar partida</string>
-    <string name="close_menu">Fechar menu</string>
-    <string name="open_scores">Pontuações</string>
-    <string name="open_settings">Configurações</string>
     <string name="no_moves">Não há jogadas úteis. Tente uma nova partida.</string>
-    <string name="you_won">Você venceu!</string>
     <string name="win_score">Pontos: %1$d</string>
     <string name="win_time">Tempo: %1$s</string>
     <string name="win_moves">Jogadas: %1$d</string>
@@ -57,11 +53,9 @@
     <string name="time_up_body">A partida não terminou a tempo. Conta como derrota.</string>
     <string name="win_money">Saldo: %1$s</string>
     <string name="stock_no_passes">Sem passadas restantes</string>
-    <string name="report_bug">Relatar um problema</string>
-    <string name="report_bug_body">Conte o que aconteceu. Enviando por e-mail, vão juntos uma captura da mesa e a partida, para podermos repeti-la.</string>
-    <string name="report_bug_hint">O que deu errado?</string>
-    <string name="report_by_email">E-mail</string>
-    <string name="report_on_github">GitHub</string>
-    <string name="report_cancel">Cancelar</string>
-    <string name="report_subject">Solo: relato de problema</string>
+    <!-- As palavras do Solo para o shell e o relato de problema do vinkit. -->
+    <string name="vinkit_new_game">Nova partida</string>
+    <string name="vinkit_report_bug">Relatar um problema</string>
+    <string name="vinkit_report_bug_body">Conte o que aconteceu. Enviando por e-mail, vão juntos uma captura da mesa e a partida, para podermos repeti-la.</string>
+    <string name="vinkit_report_subject">%1$s: relato de problema</string>
 </resources>

@@ -1,6 +1,8 @@
 package io.github.vinaooo.solo.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.designsystem.paletteScheme
 import io.kotest.matchers.floats.plusOrMinus
 import io.kotest.matchers.floats.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.floats.shouldBeLessThan
@@ -15,7 +17,14 @@ class SuitInkTest {
     private val darkFace = Color(0xFF2B302D)
 
     private fun colorsWithAccent(accent: Color, darkTheme: Boolean): CardColors {
-        val scheme = if (darkTheme) BrandColors.dark else BrandColors.light
+        val scheme = if (darkTheme) {
+            paletteScheme(
+                ThemeColor.GREEN,
+                dark = true,
+            )
+        } else {
+            paletteScheme(ThemeColor.GREEN, dark = false)
+        }
         return cardColorsFor(scheme.copy(primary = accent), darkTheme)
     }
 

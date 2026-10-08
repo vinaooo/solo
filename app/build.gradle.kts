@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.solo.android.application)
-    alias(libs.plugins.solo.android.compose)
-    alias(libs.plugins.solo.hilt)
+    alias(libs.plugins.vinkit.android.application)
+    alias(libs.plugins.vinkit.android.compose)
+    alias(libs.plugins.vinkit.hilt)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
 }
@@ -45,7 +45,8 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
-    implementation(project(":core:ads"))
+    implementation("com.github.vinaooo.vinkit:ads:${providers.gradleProperty("vinkit.tag").get()}")
+    implementation("com.github.vinaooo.vinkit:shell:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(project(":feature:game"))
     implementation(project(":feature:scores"))
     implementation(project(":feature:settings"))

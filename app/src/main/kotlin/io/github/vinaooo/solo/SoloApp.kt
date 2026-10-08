@@ -16,13 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import io.github.vinaooo.solo.core.ads.AdBannerProvider
+import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
 import io.github.vinaooo.solo.feature.game.ui.GameRoute as GameScreenRoute
 import io.github.vinaooo.solo.feature.scores.ScoresRoute as ScoresScreenRoute
 import io.github.vinaooo.solo.feature.settings.SettingsRoute as SettingsScreenRoute
 import io.github.vinaooo.solo.navigation.GameRoute
 import io.github.vinaooo.solo.navigation.ScoresRoute
 import io.github.vinaooo.solo.navigation.SettingsRoute
+import io.github.vinaooo.vinkit.ads.AdBannerProvider
 
 /** The navigation host. Only the game screen carries the ad banner, at its bottom; Scores and Settings have none. */
 @Composable
@@ -48,7 +49,10 @@ fun SoloApp(
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
                 }
-                adBanner.Banner(Modifier.navigationBarsPadding())
+                // The slot takes the table's color, so it reads as part of the board rather than a separate strip.
+                MaterialTheme(MaterialTheme.colorScheme.copy(surface = SoloThemeExtras.cardColors.table)) {
+                    adBanner.Banner(Modifier.navigationBarsPadding())
+                }
             }
         }
         composable<ScoresRoute> { ScoresScreenRoute(onBack = navController::popBackStack) }

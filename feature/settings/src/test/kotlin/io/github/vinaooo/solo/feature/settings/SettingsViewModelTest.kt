@@ -2,18 +2,21 @@ package io.github.vinaooo.solo.feature.settings
 
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.fake.FakeAppSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
+import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.ThemeMode
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -28,9 +31,10 @@ class SettingsViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
     private val repository = FakeSettingsRepository()
+    private val appRepository = FakeAppSettingsRepository()
     private val savedGames = FakeSavedGameRepository()
 
-    private fun viewModel() = SettingsViewModel(repository, ResumeGame(savedGames))
+    private fun viewModel() = SettingsViewModel(repository, appRepository, ResumeGame(savedGames))
 
     private fun gameInProgress() {
         val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
@@ -44,34 +48,28 @@ class SettingsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `every change is saved`() = runTest(dispatcher) {
+    fun `game changes go to Solo's settings, the others to vinkit's`() = runTest(dispatcher) {
         val vm = viewModel()
 
         vm.onChange(SettingsChange.DrawModeChanged(DrawMode.THREE))
-        vm.onChange(SettingsChange.ThemeModeChanged(ThemeMode.DARK))
-        vm.onChange(SettingsChange.DynamicColorChanged(false))
-        vm.onChange(SettingsChange.SoundChanged(false))
-        vm.onChange(SettingsChange.HapticsChanged(false))
+        vm.onAppChange { it.copy(themeMode = ThemeMode.DARK, soundEnabled = false) }
         runCurrent()
 
-        repository.current.value shouldBe Settings(
-            drawMode = DrawMode.THREE,
-            themeMode = ThemeMode.DARK,
-            dynamicColor = false,
-            soundEnabled = false,
-            hapticsEnabled = false,
-        )
+        repository.current.value shouldBe Settings(drawMode = DrawMode.THREE)
+        appRepository.current.value.themeMode shouldBe ThemeMode.DARK
+        appRepository.current.value.soundEnabled shouldBe false
     }
 
     @Test
     fun `exposes the stored settings`() = runTest(dispatcher) {
-        repository.current.value = Settings(soundEnabled = false)
+        repository.current.value = Settings(difficulty = Difficulty.EASY)
+        appRepository.current.value = AppSettings(soundEnabled = false)
         val vm = viewModel()
-        val collected = mutableListOf<Settings>()
-        val job = backgroundScope.launch { vm.settings.collect { collected += it } }
+        val collected = mutableListOf<Pair<Settings, AppSettings>>()
+        val job = backgroundScope.launch { vm.settings.combine(vm.appSettings, ::Pair).collect { collected += it } }
         runCurrent()
 
-        collected.last() shouldBe Settings(soundEnabled = false)
+        collected.last() shouldBe (Settings(difficulty = Difficulty.EASY) to AppSettings(soundEnabled = false))
         job.cancel()
     }
 

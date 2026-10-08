@@ -11,18 +11,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.vinaooo.solo.core.ads.AdBannerProvider
-import io.github.vinaooo.solo.core.ads.AdConsent
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
-import io.github.vinaooo.solo.core.designsystem.theme.isDarkTheme
-import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.repository.SettingsRepository
+import io.github.vinaooo.vinkit.ads.AdBannerProvider
+import io.github.vinaooo.vinkit.ads.AdConsent
+import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.AppSettingsRepository
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.designsystem.isDarkTheme
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var appSettings: AppSettingsRepository
 
     @Inject lateinit var adBanner: AdBannerProvider
 
@@ -34,7 +35,7 @@ class MainActivity : ComponentActivity() {
         // Once per launch, not again when the activity is recreated (rotation, theme change).
         if (savedInstanceState == null) adConsent.gather(this)
         setContent {
-            val settings by settingsRepository.settings.collectAsStateWithLifecycle(initialValue = Settings())
+            val settings by appSettings.settings.collectAsStateWithLifecycle(AppSettings(themeColor = ThemeColor.GREEN))
             val darkTheme = isDarkTheme(settings.themeMode, isSystemInDarkTheme())
             LaunchedEffect(darkTheme) {
                 // System bar icons follow the in-app theme choice, not only the system's.

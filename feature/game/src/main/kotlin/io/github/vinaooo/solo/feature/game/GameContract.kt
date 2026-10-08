@@ -2,13 +2,16 @@ package io.github.vinaooo.solo.feature.game
 
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
-import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.session.GameSession
+import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.ScoreRecord
 
 data class GameUiState(
     val session: GameSession? = null,
     val settings: Settings = Settings(),
+    /** The settings every vinkit game has: feedback, hand, board position, phone view. */
+    val appSettings: AppSettings = AppSettings(),
     val hint: Move? = null,
     val canAutoComplete: Boolean = false,
     val isAutoCompleting: Boolean = false,
