@@ -41,7 +41,11 @@ internal object DataProvidersModule {
     /** vinkit's scores and per-mode stats (`vinkit_scores.db`). */
     @Provides
     @Singleton
-    fun scoresDatabase(@ApplicationContext context: Context): ScoresDatabase = ScoresDatabase.create(context)
+    fun scoresDatabase(@ApplicationContext context: Context): ScoresDatabase {
+        // Solo's own database before vinkit's; nothing reads it any more (a no-op once it's gone).
+        context.deleteDatabase("solo.db")
+        return ScoresDatabase.create(context)
+    }
 
     @Provides
     @Singleton
