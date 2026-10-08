@@ -110,7 +110,7 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
   - A card turning face up (`appearing`) snaps into place under the card leaving it and is never lifted.
   - A card turned face down by an undo stays drawn until the card coming back covers it.
   - Drawn cards keep the waste's layer and come out from under the `StockCover`. Changing a card's layer as it settles made card faces blink.
-  - Known gap: two cards in flight at once are layered by destination depth, not by launch order.
+  - Cards in flight are layered by launch: each takes the move that sent it (`rememberLaunch`, counting changes in the piles, not clock ticks), and a later move's cards fly above an earlier one's (`LAUNCH_Z`); cards launched by the same move keep their pile order.
 - `Deal` plays the new-game deal: the cards gather into a deck, then each column's bar grows and its top card flies out face up, then the stock. It uses the fast spring, and pauses are timed with `animate()` rather than `delay()` so the device's animation speed scales them.
 - **Pitfalls:**
   - `PlayingCard` keeps its face animation (covered strip ↔ center) outside its `BoxWithConstraints`, because Compose sometimes rebuilds that box's content when cards move and resets any state inside it.
