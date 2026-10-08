@@ -8,7 +8,7 @@ import androidx.compose.ui.test.performClick
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import io.github.vinaooo.solo.core.ads.AdBannerProvider
+import io.github.vinaooo.vinkit.ads.AdBannerProvider
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import org.junit.Rule
