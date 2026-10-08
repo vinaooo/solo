@@ -1,25 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- A bug report goes straight to the email apps, so the app needs to see which ones there are. -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.SENDTO" />
-            <data android:scheme="mailto" />
-        </intent>
-    </queries>
-
-    <application>
-        <!-- Shares a bug report's screenshot and game file with the player's email app. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.reports"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/report_paths" />
-        </provider>
-    </application>
 </manifest>

@@ -70,7 +70,10 @@ import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.GameViewModel
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.solo.feature.game.SoloReports
 import io.github.vinaooo.solo.feature.game.board.GameBoard
+import io.github.vinaooo.solo.feature.game.gameReport
+import io.github.vinaooo.vinkit.bugreport.BugReportDialog
 import io.github.vinaooo.vinkit.core.PhoneViewSide
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -151,7 +154,11 @@ fun GameScreen(
         }
     }
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
-    report?.let { BugReportDialog(uiState, it.screenshot, onDone = { report = null }) }
+    report?.let {
+        BugReportDialog(SoloReports, it.screenshot, onDone = { report = null }) {
+            gameReport(uiState.settings, uiState.session)
+        }
+    }
     if (uiState.isTimeUp) {
         TimeUpDialog(onNewGame = { onIntent(GameIntent.NewGame) }, onRestart = { onIntent(GameIntent.RestartDeal) })
     }
