@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+    api("com.github.vinaooo.vinkit:core:${providers.gradleProperty("vinkit.tag").get()}")
     api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
 

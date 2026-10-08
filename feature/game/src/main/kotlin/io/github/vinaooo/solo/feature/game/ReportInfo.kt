@@ -8,7 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.session.GameCodec
+import io.github.vinaooo.solo.domain.session.BoardCodec
 import io.github.vinaooo.solo.domain.session.GameSession
 import java.io.File
 import java.net.URLEncoder
@@ -45,11 +45,11 @@ internal fun reportBody(info: ReportInfo, description: String): String = buildSt
                 "${it.state.moves} moves, " +
                 "score ${it.state.score}, ${it.state.elapsedSeconds}s",
         )
-        // The exact board, for the debug build to replay (GameCodec).
+        // The exact board, for the debug build to replay (BoardCodec).
         appendLine()
         appendLine("State:")
         appendLine("```")
-        appendLine(GameCodec.encode(it.state))
+        appendLine(BoardCodec.encode(it.state))
         appendLine("```")
     }
 }.trimEnd()

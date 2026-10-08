@@ -11,8 +11,9 @@ import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
-import io.github.vinaooo.solo.domain.session.GameCodec
+import io.github.vinaooo.solo.domain.session.BoardCodec
 import io.github.vinaooo.solo.domain.session.GameSession
+import io.github.vinaooo.solo.domain.session.decodeSession
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -37,9 +38,9 @@ class DebugGameActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val report = intent.getStringExtra("state")?.let { GameSession(seed = 0, state = GameCodec.decode(it)) }
+        val report = intent.getStringExtra("state")?.let { GameSession(seed = 0, state = BoardCodec.decode(it)) }
             ?: intent.getStringExtra("load")?.let {
-                GameCodec.decodeSession(File(getExternalFilesDir(null), it).readText())
+                decodeSession(File(getExternalFilesDir(null), it).readText())
             }
         val game = when (intent.getStringExtra("game")) {
             "near_stuck" -> nearStuck()

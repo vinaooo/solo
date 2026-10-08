@@ -50,10 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.github.vinaooo.solo.core.ui.formatDollars
-import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.core.formatElapsed
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos

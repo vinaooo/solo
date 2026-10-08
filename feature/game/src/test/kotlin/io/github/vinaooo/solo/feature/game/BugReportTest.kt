@@ -6,7 +6,7 @@ import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.session.GameCodec
+import io.github.vinaooo.solo.domain.session.BoardCodec
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -41,7 +41,7 @@ class BugReportTest {
         body shouldContain "Settings: THREE, VEGAS, NORMAL, RIGHT hand"
         body shouldContain "Game: seed 77, VEGAS, THREE, EASY, 12 moves, score -32"
         val code = body.substringAfter("State:\n```\n").substringBefore("\n```")
-        GameCodec.decode(code) shouldBe session.state
+        BoardCodec.decode(code) shouldBe session.state
     }
 
     @Test

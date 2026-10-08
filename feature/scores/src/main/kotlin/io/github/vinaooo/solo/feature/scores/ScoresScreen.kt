@@ -36,15 +36,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.ui.formatDollars
-import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.label
 import io.github.vinaooo.solo.core.ui.spokenDollars
-import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
+import io.github.vinaooo.vinkit.core.formatElapsed
+import io.github.vinaooo.vinkit.designsystem.spokenElapsed
 import java.text.DateFormat
 import java.util.Date
 

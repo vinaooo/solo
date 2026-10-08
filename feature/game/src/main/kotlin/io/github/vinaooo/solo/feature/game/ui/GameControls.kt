@@ -56,13 +56,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.github.vinaooo.solo.core.ui.formatDollars
-import io.github.vinaooo.solo.core.ui.formatElapsed
 import io.github.vinaooo.solo.core.ui.spokenDollars
-import io.github.vinaooo.solo.core.ui.spokenElapsed
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.core.formatElapsed
+import io.github.vinaooo.vinkit.designsystem.spokenElapsed
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** Portrait: stats in a row, the Scores and Settings buttons at its end. */

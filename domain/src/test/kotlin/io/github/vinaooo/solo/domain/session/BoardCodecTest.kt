@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 
-class GameCodecTest {
+class BoardCodecTest {
 
     private val game = (1..40).fold(
         GameSession(9, Dealer().deal(SeededShuffler(9), DrawMode.THREE).copy(mode = GameMode.VEGAS, score = -52)),
@@ -19,21 +19,21 @@ class GameCodecTest {
 
     @Test
     fun `a board survives the trip through its code, short enough for an issue link`() {
-        val code = GameCodec.encode(game.state)
+        val code = BoardCodec.encode(game.state)
 
-        GameCodec.decode(code) shouldBe game.state
+        BoardCodec.decode(code) shouldBe game.state
         code.length shouldBeLessThan 2_000
     }
 
     @Test
     fun `a code wrapped over lines, as an issue shows it, still reads`() {
-        val wrapped = GameCodec.encode(game.state).chunked(60).joinToString("\n", prefix = "  ", postfix = "\n")
+        val wrapped = BoardCodec.encode(game.state).chunked(60).joinToString("\n", prefix = "  ", postfix = "\n")
 
-        GameCodec.decode(wrapped) shouldBe game.state
+        BoardCodec.decode(wrapped) shouldBe game.state
     }
 
     @Test
     fun `a report's game file reads back as the whole game`() {
-        GameCodec.decodeSession(Json.encodeToString(game)) shouldBe game
+        decodeSession(Json.encodeToString(game)) shouldBe game
     }
 }
