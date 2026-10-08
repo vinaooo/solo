@@ -93,9 +93,9 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Game screen (`:feature:game`)**
 - Unidirectional data flow: `GameViewModel` exposes a `StateFlow<GameUiState>` and receives `GameIntent`s.
 - It saves after every move, undo and pause.
-- The clock is a `Ticker` that runs only while the screen is resumed and the game is in progress.
+- The clock is vinkit's `Ticker`, which runs only while the screen is resumed and the game is in progress.
 - Auto-complete steps every 120 ms and must read the latest session on each step, or it overwrites clock ticks that happened in between.
-- Sound and haptics sit behind `GameFeedback`, and whether they play depends on the settings.
+- Sound and haptics sit behind vinkit's `GameFeedback` (`AndroidGameFeedback`, provided in `app/di/FeedbackModule`), and whether they play depends on the settings.
 - `DeadEndWatcher` runs the dead-end search after every move on the injected `@SearchDispatcher` (`Dispatchers.Default`; tests pass the test dispatcher). A new move cancels the previous search.
 - `GameUiState.deals` counts the games dealt (new game, first game; not a restarted deal or a resumed game). The board plays each new deal once and remembers what it played in `rememberSaveable`, so a draw mode changed in Settings, which starts a new game, is dealt on coming back.
 - Changing the draw mode or the scoring mode (vinkit's `IconChoice`) in Settings starts a new game. `SettingsViewModel` asks for confirmation first if a game is in progress (`pendingChange`). The Scores screen is vinkit's (`SoloScoresViewModel`): a tab per mode already played, each with its own stats and ranking; Vegas scores in dollars.

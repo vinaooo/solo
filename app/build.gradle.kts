@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
     implementation("com.github.vinaooo.vinkit:ads:${providers.gradleProperty("vinkit.tag").get()}")
+    implementation("com.github.vinaooo.vinkit:shell:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(project(":feature:game"))
     implementation(project(":feature:scores"))
     implementation(project(":feature:settings"))

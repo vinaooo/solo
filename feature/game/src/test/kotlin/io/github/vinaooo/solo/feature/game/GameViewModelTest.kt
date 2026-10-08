@@ -32,6 +32,7 @@ import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.GameStats
+import io.github.vinaooo.vinkit.shell.FeedbackEvent
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
