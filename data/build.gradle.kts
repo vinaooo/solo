@@ -15,6 +15,7 @@ ksp {
 
 dependencies {
     implementation(project(":domain"))
+    implementation("com.github.vinaooo.vinkit:settings:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)

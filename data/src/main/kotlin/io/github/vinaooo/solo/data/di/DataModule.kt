@@ -27,6 +27,10 @@ import io.github.vinaooo.solo.domain.repository.ScoreRepository
 import io.github.vinaooo.solo.domain.repository.SeedSource
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.repository.StatsRepository
+import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.AppSettingsRepository
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.settings.DataStoreAppSettingsRepository
 import java.io.File
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +54,12 @@ internal object DataProvidersModule {
     @Singleton
     fun settingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
+
+    /** The theme, feedback and layout settings every vinkit game has, in the same DataStore; green is Solo's brand. */
+    @Provides
+    @Singleton
+    fun appSettings(dataStore: DataStore<Preferences>): AppSettingsRepository =
+        DataStoreAppSettingsRepository(dataStore, AppSettings(themeColor = ThemeColor.GREEN))
 
     @Provides
     @Singleton

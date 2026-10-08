@@ -19,6 +19,7 @@ import io.github.vinaooo.solo.domain.usecase.LoseGame
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
+import io.github.vinaooo.vinkit.core.AppSettingsRepository
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -42,6 +43,7 @@ class GameViewModel @Inject constructor(
     private val finishGame: FinishGame,
     private val loseGame: LoseGame,
     private val settingsRepository: SettingsRepository,
+    private val appSettingsRepository: AppSettingsRepository,
     private val engine: GameEngine,
     private val resolver: MoveResolver,
     private val hints: HintEngine,
@@ -81,6 +83,9 @@ class GameViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.settings.collect { settings -> state.update { it.copy(settings = settings) } }
+        }
+        viewModelScope.launch {
+            appSettingsRepository.settings.collect { settings -> state.update { it.copy(appSettings = settings) } }
         }
         viewModelScope.launch {
             val resumed = resumeGame()
@@ -125,7 +130,7 @@ class GameViewModel @Inject constructor(
         val move = resolve(session)
         val next = move?.let { session.play(it, engine) }
         if (next == null) {
-            feedback.give(FeedbackEvent.REJECTED, state.value.settings)
+            feedback.give(FeedbackEvent.REJECTED, state.value.appSettings)
         } else {
             onPlayed(next)
             state.announce(announcementFor(session.state, move, next.state))
@@ -135,13 +140,13 @@ class GameViewModel @Inject constructor(
     private fun onPlayed(next: GameSession) {
         show(next)
         if (next.state.isWon) {
-            feedback.give(FeedbackEvent.WIN, state.value.settings)
+            feedback.give(FeedbackEvent.WIN, state.value.appSettings)
             viewModelScope.launch {
                 val record = finishGame(next)
                 state.update { it.copy(winRecord = record) }
             }
         } else {
-            feedback.give(FeedbackEvent.MOVE, state.value.settings)
+            feedback.give(FeedbackEvent.MOVE, state.value.appSettings)
             viewModelScope.launch { saveGame(next) }
         }
     }

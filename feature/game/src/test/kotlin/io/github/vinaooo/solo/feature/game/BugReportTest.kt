@@ -9,6 +9,7 @@ import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.session.BoardCodec
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.session.decodeSession
+import io.github.vinaooo.vinkit.core.AppSettings
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
@@ -24,7 +25,7 @@ class BugReportTest {
 
     @Test
     fun `a report holds the settings, the game, its exact board and its file`() {
-        val report = gameReport(settings, session)
+        val report = gameReport(settings, AppSettings(), session)
 
         report.details shouldContainExactly listOf(
             "Settings: THREE, VEGAS, NORMAL, RIGHT hand, board TOP, theme SYSTEM, dynamic color true, phone view false",
@@ -36,7 +37,7 @@ class BugReportTest {
 
     @Test
     fun `no game means no game line, board or file`() {
-        val report = gameReport(settings, null)
+        val report = gameReport(settings, AppSettings(), null)
 
         report.details.size shouldBe 1
         report.state shouldBe null

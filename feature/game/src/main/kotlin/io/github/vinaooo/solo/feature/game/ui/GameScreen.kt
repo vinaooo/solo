@@ -156,7 +156,7 @@ fun GameScreen(
     uiState.winRecord?.let { WinDialog(it, onNewGame = { onIntent(GameIntent.NewGame) }) }
     report?.let {
         BugReportDialog(SoloReports, it.screenshot, onDone = { report = null }) {
-            gameReport(uiState.settings, uiState.session)
+            gameReport(uiState.settings, uiState.appSettings, uiState.session)
         }
     }
     if (uiState.isTimeUp) {
@@ -297,9 +297,9 @@ private fun BoardOrLoading(
     } else {
         // Phone view on a tablet: the traditional board, as wide as a phone's, at the top of the room it has, on the
         // side the player chose.
-        val phoneView = uiState.settings.phoneView &&
+        val phoneView = uiState.appSettings.phoneView &&
             LocalConfiguration.current.smallestScreenWidthDp >= TABLET_WIDTH_DP
-        val side = when (uiState.settings.phoneViewSide) {
+        val side = when (uiState.appSettings.phoneViewSide) {
             PhoneViewSide.LEFT -> Alignment.TopStart
             PhoneViewSide.CENTER -> Alignment.TopCenter
             PhoneViewSide.RIGHT -> Alignment.TopEnd
@@ -311,8 +311,8 @@ private fun BoardOrLoading(
                 onIntent = onIntent,
                 modifier = (if (phoneView) Modifier.widthIn(max = PHONE_WIDTH) else Modifier).fillMaxSize(),
                 destinations = uiState.destinations,
-                handedness = uiState.settings.handedness,
-                alignment = uiState.settings.boardAlignment,
+                handedness = uiState.appSettings.handedness,
+                alignment = uiState.appSettings.boardAlignment,
                 deals = uiState.deals,
                 sideways = sideways && !phoneView,
             )

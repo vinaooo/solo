@@ -1,0 +1,9 @@
+<resources>
+    <!-- Solo's words for vinkit's settings, as chosen for its pt-BR: "mesa", not "tabuleiro". -->
+    <string name="vinkit_section_feedback">Sons e vibração</string>
+    <string name="vinkit_phone_view_note">Cartas do tamanho de um celular</string>
+    <string name="vinkit_phone_view_side">Lado da mesa</string>
+    <string name="vinkit_board_alignment">Posição da mesa</string>
+    <string name="vinkit_board_top">Topo</string>
+    <string name="vinkit_board_bottom">Base</string>
+</resources>

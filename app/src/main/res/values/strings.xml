@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name" translatable="false">Solo</string>
+    <!-- Solo's words for vinkit's settings: a card game's board is its cards. The rest repeat vinkit's English, so
+         Solo's pt-BR wording below has a default. -->
+    <string name="vinkit_phone_view_note">Cards at a phone\'s size</string>
+    <string name="vinkit_section_feedback">Feedback</string>
+    <string name="vinkit_phone_view_side">Board side</string>
+    <string name="vinkit_board_alignment">Board position</string>
+    <string name="vinkit_board_top">Top</string>
+    <string name="vinkit_board_bottom">Bottom</string>
 </resources>

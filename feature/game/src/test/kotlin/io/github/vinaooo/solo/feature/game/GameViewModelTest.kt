@@ -5,6 +5,7 @@ import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.deal.WinnableDeals
+import io.github.vinaooo.solo.domain.fake.FakeAppSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
@@ -29,6 +30,7 @@ import io.github.vinaooo.solo.domain.usecase.LoseGame
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
+import io.github.vinaooo.vinkit.core.AppSettings
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -55,6 +57,7 @@ class GameViewModelTest {
     private val stats = FakeStatsRepository()
     private val scores = FakeScoreRepository()
     private val settings = FakeSettingsRepository()
+    private val appSettings = FakeAppSettingsRepository()
     private val feedback = FakeGameFeedback()
     private val engine = GameEngine()
 
@@ -92,6 +95,7 @@ class GameViewModelTest {
         finishGame = FinishGame(scores, stats, savedGames, clock = { 5_000 }),
         loseGame = LoseGame(stats, savedGames),
         settingsRepository = settings,
+        appSettingsRepository = appSettings,
         engine = engine,
         resolver = MoveResolver(),
         hints = HintEngine(),
@@ -290,7 +294,7 @@ class GameViewModelTest {
         val vm = viewModel()
         val before = vm.session
 
-        settings.current.value = Settings(soundEnabled = false)
+        appSettings.current.value = AppSettings(soundEnabled = false)
         runCurrent()
 
         vm.session shouldBe before
@@ -323,7 +327,7 @@ class GameViewModelTest {
 
     @Test
     fun `feedback respects the sound and haptics settings`() = gameTest {
-        settings.current.value = Settings(soundEnabled = false, hapticsEnabled = false)
+        appSettings.current.value = AppSettings(soundEnabled = false, hapticsEnabled = false)
         val vm = viewModel()
 
         vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))

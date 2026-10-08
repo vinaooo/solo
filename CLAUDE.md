@@ -87,7 +87,8 @@ The dependencies run `:app` → `:feature:*` → `:domain` ← `:data`, and `:fe
 **Data (`:data`)**
 - Room stores the scores (each with its mode; `observeTopScores(mode)` ranks them the mode's way) and a single stats row. Version 2 added the mode and the Vegas bank, version 3 each score's difficulty, both through an `AutoMigration`; `SoloDatabaseMigrationTest` builds a version 1 database from `schemas/.../1.json` and checks that the app migrates it. Never use a destructive fallback: it would wipe the players' scores.
 - The game in progress is saved to a file with an atomic temp-file-and-rename and a versioned envelope. A corrupt file is discarded.
-- Settings are in Preferences DataStore.
+- Settings are in one Preferences DataStore (`settings`), shared by two repositories that each write only their own keys: vinkit's `DataStoreAppSettingsRepository` (`AppSettings`: theme, feedback, hand, board position, phone view) and Solo's `DataStoreSettingsRepository` (`Settings`: draw mode, game mode, difficulty, tips shown, deal cursor).
+- The Settings screen is vinkit's `SettingsScreen` with Solo's `GameSection` as its game section. Solo's own wording for vinkit's strings ("mesa", "Sons e vibração") overrides them in `app/src/main/res` (same `vinkit_*` names; an app's resources win over a library's).
 
 **Game screen (`:feature:game`)**
 - Unidirectional data flow: `GameViewModel` exposes a `StateFlow<GameUiState>` and receives `GameIntent`s.

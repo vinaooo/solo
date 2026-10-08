@@ -9,10 +9,10 @@ import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
-import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.feature.game.GameUiState
+import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.BoardAlignment
 import io.github.vinaooo.vinkit.core.Handedness
 import io.github.vinaooo.vinkit.core.PhoneViewSide
@@ -36,7 +36,7 @@ class GameScreenScreenshotTest {
         name: String,
         themeMode: ThemeMode = ThemeMode.LIGHT,
         drawMode: DrawMode = DrawMode.ONE,
-        settings: Settings = Settings(),
+        settings: AppSettings = AppSettings(),
         modeScoreAndTime: Triple<GameMode, Int, Long>? = null,
     ) {
         val session = midGame(drawMode).let { game ->
@@ -50,7 +50,7 @@ class GameScreenScreenshotTest {
                     uiState = GameUiState(
                         session = session,
                         hint = HintEngine().bestHint(session.state),
-                        settings = settings,
+                        appSettings = settings,
                     ),
                     onIntent = {},
                     onOpenScores = {},
@@ -71,12 +71,15 @@ class GameScreenScreenshotTest {
     fun game_phone_draw_three() = capture("game_phone_draw_three", drawMode = DrawMode.THREE)
 
     @Test
-    fun game_phone_left_handed() =
-        capture("game_phone_left_handed", drawMode = DrawMode.THREE, settings = Settings(handedness = Handedness.LEFT))
+    fun game_phone_left_handed() = capture(
+        "game_phone_left_handed",
+        drawMode = DrawMode.THREE,
+        settings = AppSettings(handedness = Handedness.LEFT),
+    )
 
     @Test
     fun game_phone_board_bottom() =
-        capture("game_phone_board_bottom", settings = Settings(boardAlignment = BoardAlignment.BOTTOM))
+        capture("game_phone_board_bottom", settings = AppSettings(boardAlignment = BoardAlignment.BOTTOM))
 
     @Test
     fun game_phone_vegas() = capture("game_phone_vegas", modeScoreAndTime = Triple(GameMode.VEGAS, -17, 95L))
@@ -95,20 +98,20 @@ class GameScreenScreenshotTest {
 
     @Test
     @Config(qualifiers = TABLET)
-    fun game_tablet_phone_view() = capture("game_tablet_phone_view", settings = Settings(phoneView = true))
+    fun game_tablet_phone_view() = capture("game_tablet_phone_view", settings = AppSettings(phoneView = true))
 
     @Test
     @Config(qualifiers = TABLET)
     fun game_tablet_phone_view_left() = capture(
         "game_tablet_phone_view_left",
-        settings = Settings(phoneView = true, phoneViewSide = PhoneViewSide.LEFT),
+        settings = AppSettings(phoneView = true, phoneViewSide = PhoneViewSide.LEFT),
     )
 
     @Test
     @Config(qualifiers = TABLET_PORTRAIT)
     fun game_tablet_portrait_phone_view() = capture(
         "game_tablet_portrait_phone_view",
-        settings = Settings(phoneView = true),
+        settings = AppSettings(phoneView = true),
     )
 
     @Test
