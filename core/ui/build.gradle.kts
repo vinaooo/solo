@@ -10,5 +10,4 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":domain"))
-    api("com.github.vinaooo.vinkit:designsystem:${providers.gradleProperty("vinkit.tag").get()}")
 }

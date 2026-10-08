@@ -16,9 +16,9 @@ import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
-import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.rules.MoveOutcome
+import io.github.vinaooo.vinkit.core.ThemeMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

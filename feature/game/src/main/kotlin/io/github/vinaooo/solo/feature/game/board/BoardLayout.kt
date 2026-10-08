@@ -2,14 +2,14 @@ package io.github.vinaooo.solo.feature.game.board
 
 import io.github.vinaooo.solo.core.designsystem.component.CardCover
 import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
-import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameState
-import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Suit
+import io.github.vinaooo.vinkit.core.BoardAlignment
+import io.github.vinaooo.vinkit.core.Handedness
 
 data class Position(val x: Float, val y: Float)
 

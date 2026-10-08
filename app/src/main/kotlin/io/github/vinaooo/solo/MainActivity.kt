@@ -12,11 +12,11 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
-import io.github.vinaooo.solo.core.designsystem.theme.isDarkTheme
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.vinkit.ads.AdBannerProvider
 import io.github.vinaooo.vinkit.ads.AdConsent
+import io.github.vinaooo.vinkit.designsystem.isDarkTheme
 import javax.inject.Inject
 
 @AndroidEntryPoint

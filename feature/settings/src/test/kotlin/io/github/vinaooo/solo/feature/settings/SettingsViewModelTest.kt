@@ -8,9 +8,9 @@ import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeMode
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
+import io.github.vinaooo.vinkit.core.ThemeMode
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers

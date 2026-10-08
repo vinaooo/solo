@@ -16,13 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
-import io.github.vinaooo.solo.domain.model.Handedness
-import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.BoardAlignment
+import io.github.vinaooo.vinkit.core.Handedness
+import io.github.vinaooo.vinkit.core.PhoneViewSide
+import io.github.vinaooo.vinkit.core.ThemeMode
+import io.github.vinaooo.vinkit.designsystem.ColorChoice
 
 @Composable
 internal fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit) {
@@ -104,7 +105,7 @@ internal fun AppearanceSection(settings: Settings, onChange: (SettingsChange) ->
         exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec(), Alignment.Top) +
             fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
     ) {
-        ColorChoice(settings) { onChange(SettingsChange.ThemeColorChanged(it)) }
+        ColorChoice(settings.themeColor, settings.themeMode, { onChange(SettingsChange.ThemeColorChanged(it)) })
     }
     Choice(
         title = stringResource(R.string.handedness),

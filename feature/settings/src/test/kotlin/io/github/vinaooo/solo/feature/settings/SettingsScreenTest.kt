@@ -16,11 +16,11 @@ import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
-import io.github.vinaooo.solo.domain.model.Handedness
-import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeColor
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.Handedness
+import io.github.vinaooo.vinkit.core.PhoneViewSide
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.core.ThemeMode
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import org.junit.Rule

@@ -26,15 +26,6 @@
     <string name="theme_dark">Escuro</string>
     <string name="dynamic_color">Cores dinâmicas</string>
     <string name="dynamic_color_note">Usar as cores do seu papel de parede</string>
-    <string name="theme_color">Cor</string>
-    <string name="color_green">Verde</string>
-    <string name="color_teal">Verde-azulado</string>
-    <string name="color_blue">Azul</string>
-    <string name="color_indigo">Anil</string>
-    <string name="color_purple">Roxo</string>
-    <string name="color_pink">Rosa</string>
-    <string name="color_red">Vermelho</string>
-    <string name="color_orange">Laranja</string>
     <string name="sound">Efeitos sonoros</string>
     <string name="haptics">Vibração</string>
     <string name="section_privacy">Privacidade</string>

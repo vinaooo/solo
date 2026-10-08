@@ -4,6 +4,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.designsystem.paletteScheme
 
 /**
  * Colors for the playing table. Spades and clubs take the color of the game toolbar's icons (onPrimaryContainer):
@@ -38,4 +40,5 @@ internal fun cardColorsFor(scheme: ColorScheme, darkTheme: Boolean): CardColors 
 private val FaceLight = Color(0xFFFFFFFF)
 private val FaceDark = Color(0xFF2B302D)
 
-val LocalCardColors = staticCompositionLocalOf { cardColorsFor(BrandColors.light, darkTheme = false) }
+val LocalCardColors =
+    staticCompositionLocalOf { cardColorsFor(paletteScheme(ThemeColor.GREEN, dark = false), darkTheme = false) }

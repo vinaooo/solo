@@ -5,8 +5,8 @@ import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.model.Settings
-import io.github.vinaooo.solo.domain.model.ThemeColor
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.core.ThemeMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

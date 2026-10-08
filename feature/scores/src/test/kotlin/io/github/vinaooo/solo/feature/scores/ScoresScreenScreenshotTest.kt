@@ -9,7 +9,7 @@ import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.ScoreRecord
-import io.github.vinaooo.solo.domain.model.ThemeMode
+import io.github.vinaooo.vinkit.core.ThemeMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

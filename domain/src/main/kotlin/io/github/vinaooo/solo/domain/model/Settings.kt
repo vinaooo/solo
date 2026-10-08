@@ -1,15 +1,10 @@
 package io.github.vinaooo.solo.domain.model
 
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
-
-/** The app's colors when dynamic color is off or not available; green is Solo's brand. */
-enum class ThemeColor { GREEN, TEAL, BLUE, INDIGO, PURPLE, PINK, RED, ORANGE }
-
-/** Where the board sits in the height it has: at the top, or as low as the tallest possible column lets it. */
-enum class BoardAlignment { TOP, BOTTOM }
-
-/** Where phone view's board sits across the room it has on a tablet. */
-enum class PhoneViewSide { LEFT, CENTER, RIGHT }
+import io.github.vinaooo.vinkit.core.BoardAlignment
+import io.github.vinaooo.vinkit.core.Handedness
+import io.github.vinaooo.vinkit.core.PhoneViewSide
+import io.github.vinaooo.vinkit.core.ThemeColor
+import io.github.vinaooo.vinkit.core.ThemeMode
 
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,

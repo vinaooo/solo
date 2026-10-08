@@ -26,15 +26,6 @@
     <string name="theme_dark">Dark</string>
     <string name="dynamic_color">Dynamic color</string>
     <string name="dynamic_color_note">Use colors from your wallpaper</string>
-    <string name="theme_color">Color</string>
-    <string name="color_green">Green</string>
-    <string name="color_teal">Teal</string>
-    <string name="color_blue">Blue</string>
-    <string name="color_indigo">Indigo</string>
-    <string name="color_purple">Purple</string>
-    <string name="color_pink">Pink</string>
-    <string name="color_red">Red</string>
-    <string name="color_orange">Orange</string>
     <string name="sound">Sound effects</string>
     <string name="haptics">Vibration</string>
     <string name="section_privacy">Privacy</string>

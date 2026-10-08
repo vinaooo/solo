@@ -61,14 +61,14 @@ import io.github.vinaooo.solo.core.designsystem.component.CardDimensions
 import io.github.vinaooo.solo.core.designsystem.component.EmptyPileSlot
 import io.github.vinaooo.solo.core.designsystem.component.PlayingCard
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
-import io.github.vinaooo.solo.domain.model.BoardAlignment
 import io.github.vinaooo.solo.domain.model.GameState
-import io.github.vinaooo.solo.domain.model.Handedness
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.CardSpot
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.core.BoardAlignment
+import io.github.vinaooo.vinkit.core.Handedness
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

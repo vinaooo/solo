@@ -65,13 +65,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
-import io.github.vinaooo.solo.domain.model.PhoneViewSide
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.GameMessage
 import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.GameViewModel
 import io.github.vinaooo.solo.feature.game.R
 import io.github.vinaooo.solo.feature.game.board.GameBoard
+import io.github.vinaooo.vinkit.core.PhoneViewSide
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.domain.model
 
+import io.github.vinaooo.vinkit.core.ThemeMode
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
