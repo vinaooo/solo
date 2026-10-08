@@ -95,8 +95,8 @@ fun GameBoard(
         var drag by remember { mutableStateOf<DragState?>(null) }
         val currentState by rememberUpdatedState(state)
         val currentOnIntent by rememberUpdatedState(onIntent)
-
         val moving = remember { mutableStateMapOf<CardIdentity, Boolean>() }
+        val launch = rememberLaunch(state)
         val placedCards = layout.positions(state).values
         val deal = rememberDeal(deals, state, layout)
 
@@ -127,21 +127,18 @@ fun GameBoard(
                     pileMoving = stillMoving(placedCards, moving)[placed.pile],
                     onMovingChange = { moving[placed.card.identity()] = it },
                     deal = deal,
+                    launch = launch,
                     accessibility = accessibility,
                     gestures = accessibility.modifier.then(
-                        if (!isDraggable(state, placed)) {
-                            Modifier
-                        } else {
-                            Modifier.cardDrag(
-                                placed = placed,
-                                onDragChange = { drag = it },
-                                onDrop = { offset ->
-                                    layout.dropTarget(currentState, placed, offset.x, offset.y)?.let { to ->
-                                        currentOnIntent(GameIntent.Drop(placed.pile, placed.index, to))
-                                    }
-                                },
-                            )
-                        },
+                        Modifier.takeIf { isDraggable(state, placed) }?.cardDrag(
+                            placed = placed,
+                            onDragChange = { drag = it },
+                            onDrop = { offset ->
+                                layout.dropTarget(currentState, placed, offset.x, offset.y)?.let { to ->
+                                    currentOnIntent(GameIntent.Drop(placed.pile, placed.index, to))
+                                }
+                            },
+                        ) ?: Modifier,
                     ),
                 )
             }
@@ -188,6 +185,7 @@ private fun BoardCard(
     accessibility: CardAccessibility,
     gestures: Modifier,
     deal: Deal,
+    launch: Int,
 ) {
     val target = deal.target(placed)
     // A column's face-down cards are drawn as its bar instead, once dealt.
@@ -235,7 +233,11 @@ private fun BoardCard(
     val awaitingCover = placed.index < (pileMoving?.last ?: -1)
     val drawn = shown.drawn(visible, departing, animated.isRunning, awaitingCover)
     val flying = shown.flying(placed.pile, appearing, dragging, lifted || departing)
-    SideEffect { shown.update(drawn, visible, placed.pile) }
+    val flight = shown.flight(departing, dragging, launch)
+    SideEffect {
+        shown.update(drawn, visible, placed.pile)
+        shown.launch = flight
+    }
     PlayingCard(
         card = deal.face(placed, showFace = stockReturn.showsFace(placed.pile) || !visible),
         highlighted = highlighted,
@@ -246,7 +248,7 @@ private fun BoardCard(
         shadow = shadow,
         modifier = Modifier
             .offset { dragPosition ?: animated.value }
-            .zIndex(deal.zIndex(placed, animated.isRunning, otherwise = stockReturn.zIndex(placed, flying)))
+            .zIndex(deal.zIndex(placed, animated.isRunning, otherwise = stockReturn.zIndex(placed, flying, flight)))
             .scale(if (dragging) DRAG_SCALE else 1f)
             .alpha(if (drawn) 1f else 0f)
             .width(cardWidth)
@@ -263,6 +265,12 @@ private fun BoardCard(
 private class ShownFlag(var value: Boolean, var faceUp: Boolean, var pile: PileRef) {
     /** On its way to a new pile, from the composition that moved it there until its spring settles. */
     var arriving = false
+
+    /** The move that launched its last flight. */
+    var launch = 0
+
+    /** The move its flight belongs to: [launch], now, if it is leaving for a new slot or dragged (the latest). */
+    fun flight(departing: Boolean, dragging: Boolean, launch: Int) = if (departing || dragging) launch else this.launch
 
     fun arriving(pile: PileRef) = arriving || pile != this.pile
 
@@ -508,6 +516,13 @@ internal fun hintedCards(state: GameState, move: Move): Set<CardIdentity> = when
 private val GAP = 4.dp
 private val COLUMN_GAP = 8.dp
 internal const val LIFTED_Z = 10_000f
+
+/**
+ * A later flight's lift over an earlier one: more than any pile's layers, so cards launched by the same move keep
+ * their pile's order and a later move's cards fly above them.
+ */
+// ponytail: float layers stay exact for about 16,000 moves on one board; past that, close flights could tie.
+internal const val LAUNCH_Z = 1_000f
 private const val LANDED_PX = 2
 
 /** Above the stock's cards, under the foundations'. */
