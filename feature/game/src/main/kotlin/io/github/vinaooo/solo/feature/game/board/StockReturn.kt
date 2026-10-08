@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import io.github.vinaooo.solo.domain.model.GameState
 import io.github.vinaooo.solo.domain.model.PileRef
 
 /**
@@ -38,14 +39,15 @@ internal class StockReturn(pile: PileRef) {
 
     /**
      * Where [placed] sits among the cards: one on its way to a new pile ([flying]) is above every other card, like a
-     * dragged one; one going back to the stock slides under the stock's cards, still above the waste it leaves.
+     * dragged one, and above cards launched before it ([launch], the move that sent it); one going back to the stock
+     * slides under the stock's cards, still above the waste it leaves.
      */
-    fun zIndex(placed: PlacedCard, flying: Boolean): Float = when {
+    fun zIndex(placed: PlacedCard, flying: Boolean, launch: Int): Float = when {
         slidesUnder(placed.pile) -> placed.z - placed.index - UNDER_STOCK_OFFSET
         // A drawn card keeps the waste's own layer, already under the stock and its cover and over the older waste
         // cards: changing layers as it settles made the faces it covers blink.
         flying && isLeaving(placed.pile) -> placed.z
-        flying -> LIFTED_Z + placed.z
+        flying -> LIFTED_Z + launch * LAUNCH_Z + placed.z
         else -> placed.z
     }
 
@@ -93,3 +95,13 @@ internal fun rememberStockReturn(pile: PileRef): StockReturn {
 
 /** Below every card of the stock, which a returning card is about to join, and above the waste. */
 private const val UNDER_STOCK_OFFSET = 0.5f
+
+/**
+ * Counts the moves (changes in the piles; the clock's ticks don't count): a card flying off now is launched after any
+ * still in the air, and flies above them.
+ */
+@Composable
+internal fun rememberLaunch(state: GameState): Int {
+    val launches = remember { intArrayOf(0) }
+    return remember(state.stock, state.waste, state.foundations, state.tableau) { ++launches[0] }
+}
