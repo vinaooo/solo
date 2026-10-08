@@ -1,16 +1,19 @@
 package io.github.vinaooo.solo.domain.fake
 
-import io.github.vinaooo.solo.domain.model.GameStats
-import io.github.vinaooo.solo.domain.repository.StatsRepository
+import io.github.vinaooo.vinkit.core.GameStats
+import io.github.vinaooo.vinkit.core.StatsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
-class FakeStatsRepository(initial: GameStats = GameStats()) : StatsRepository {
+class FakeStatsRepository(initial: Map<String, GameStats> = emptyMap()) : StatsRepository {
     val stats = MutableStateFlow(initial)
 
-    override fun observe(): Flow<GameStats> = stats
+    override fun observe(mode: String): Flow<GameStats> = stats.map { it[mode] ?: GameStats() }
 
-    override suspend fun update(transform: (GameStats) -> GameStats) {
-        stats.value = transform(stats.value)
+    override fun observePlayedModes(): Flow<Set<String>> = stats.map { it.keys }
+
+    override suspend fun update(mode: String, transform: (GameStats) -> GameStats) {
+        stats.value += mode to transform(stats.value[mode] ?: GameStats())
     }
 }

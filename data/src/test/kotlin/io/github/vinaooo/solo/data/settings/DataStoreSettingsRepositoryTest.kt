@@ -68,4 +68,15 @@ class DataStoreSettingsRepositoryTest {
             handedness = Handedness.LEFT,
         )
     }
+
+    @Test
+    fun `the Vegas bank starts empty and keeps the balance it is given`() = scope.runTest {
+        val bank = DataStoreVegasBankRepository(dataStore)
+        bank.bank.first() shouldBe 0
+
+        bank.set(-104)
+
+        bank.bank.first() shouldBe -104
+        DataStoreSettingsRepository(dataStore).settings.first() shouldBe Settings()
+    }
 }

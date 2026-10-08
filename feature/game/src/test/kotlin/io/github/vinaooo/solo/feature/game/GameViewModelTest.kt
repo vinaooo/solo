@@ -10,6 +10,7 @@ import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
 import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
@@ -18,7 +19,6 @@ import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.GameState
-import io.github.vinaooo.solo.domain.model.GameStats
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Rank
 import io.github.vinaooo.solo.domain.model.Settings
@@ -31,6 +31,7 @@ import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
 import io.github.vinaooo.vinkit.core.AppSettings
+import io.github.vinaooo.vinkit.core.GameStats
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -86,13 +87,14 @@ class GameViewModelTest {
             savedGames,
             stats,
             scores,
+            FakeVegasBankRepository(),
             Dealer(),
             DealPicker({ 42 }, settings),
             clock = { 5_000 },
         ),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
-        finishGame = FinishGame(scores, stats, savedGames, clock = { 5_000 }),
+        finishGame = FinishGame(scores, stats, FakeVegasBankRepository(), savedGames, clock = { 5_000 }),
         loseGame = LoseGame(stats, savedGames),
         settingsRepository = settings,
         appSettingsRepository = appSettings,
@@ -175,7 +177,7 @@ class GameViewModelTest {
 
         vm.session.state.drawMode shouldBe DrawMode.THREE
         vm.session.state.moves shouldBe 0
-        stats.stats.value.played shouldBe 1
+        stats.stats.value.values.single().played shouldBe 1
     }
 
     @Test
@@ -425,7 +427,7 @@ class GameViewModelTest {
 
         vm.uiState.value.isTimeUp shouldBe true
         vm.session.state.secondsLeft shouldBe 0
-        stats.stats.value shouldBe GameStats(played = 1)
+        stats.stats.value.values.single() shouldBe GameStats(played = 1)
         savedGames.saved.shouldBeNull()
         val before = vm.session
         vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
@@ -438,7 +440,7 @@ class GameViewModelTest {
         vm.onIntent(GameIntent.NewGame)
         runCurrent()
         vm.uiState.value.isTimeUp shouldBe false
-        stats.stats.value shouldBe GameStats(played = 1)
+        stats.stats.value.values.single() shouldBe GameStats(played = 1)
     }
 
     @Test
@@ -522,7 +524,7 @@ class GameViewModelTest {
 
         val record = vm.uiState.value.winRecord.shouldNotBeNull()
         scores.records.value shouldContainExactly listOf(record)
-        stats.stats.value shouldBe GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1)
+        stats.stats.value.values.single() shouldBe GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1)
         savedGames.saved.shouldBeNull()
         feedback.sounds.last() shouldBe FeedbackEvent.WIN
     }
@@ -537,7 +539,7 @@ class GameViewModelTest {
         runCurrent()
 
         vm.session.state.moves shouldBe 0
-        stats.stats.value shouldBe GameStats(played = 1)
+        stats.stats.value.values.single() shouldBe GameStats(played = 1)
     }
 
     @Test

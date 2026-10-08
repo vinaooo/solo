@@ -9,19 +9,25 @@ import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
+import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
-import io.github.vinaooo.solo.domain.model.GameStats
-import io.github.vinaooo.solo.domain.model.ScoreRecord
+import io.github.vinaooo.solo.domain.model.difficulty
+import io.github.vinaooo.solo.domain.model.drawMode
+import io.github.vinaooo.solo.domain.model.gameMode
+import io.github.vinaooo.solo.domain.model.moves
+import io.github.vinaooo.solo.domain.model.ranking
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.suitRun
 import io.github.vinaooo.solo.domain.withFoundation
+import io.github.vinaooo.vinkit.core.GameStats
+import io.github.vinaooo.vinkit.core.Ranking
+import io.github.vinaooo.vinkit.core.ScoreRecord
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -32,6 +38,7 @@ class GameUseCasesTest {
     private val stats = FakeStatsRepository()
     private val scores = FakeScoreRepository()
     private val settings = FakeSettingsRepository()
+    private val bank = FakeVegasBankRepository()
 
     private val wonState = emptyState()
         .copy(score = 1234, moves = 110, elapsedSeconds = 300)
@@ -43,7 +50,7 @@ class GameUseCasesTest {
     @Nested
     inner class StartNewGameTest {
         private val startNewGame =
-            StartNewGame(savedGames, stats, scores, Dealer(), DealPicker({ 77 }, settings), clock = { 9L })
+            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 77 }, settings), clock = { 9L })
 
         @Test
         fun `deals a fresh game from a new seed and saves it`() = runTest {
@@ -94,7 +101,7 @@ class GameUseCasesTest {
 
             startNewGame(DrawMode.ONE)
 
-            stats.stats.value shouldBe GameStats(played = 1)
+            stats.stats.value shouldBe mapOf("STANDARD" to GameStats(played = 1))
         }
 
         @Test
@@ -103,7 +110,7 @@ class GameUseCasesTest {
 
             startNewGame(DrawMode.ONE)
 
-            stats.stats.value shouldBe GameStats()
+            stats.stats.value shouldBe emptyMap()
         }
 
         @Test
@@ -117,7 +124,7 @@ class GameUseCasesTest {
 
         @Test
         fun `cumulative Vegas starts from the carried balance`() = runTest {
-            stats.update { it.copy(vegasBank = 30) }
+            bank.set(30)
 
             startNewGame(DrawMode.ONE, GameMode.VEGAS_CUMULATIVE).state.score shouldBe -22
         }
@@ -130,9 +137,15 @@ class GameUseCasesTest {
             startNewGame(DrawMode.ONE, GameMode.VEGAS)
 
             scores.records.value shouldContainExactly listOf(
-                ScoreRecord(-37, 0, 20, DrawMode.ONE, playedAtMillis = 9L, mode = GameMode.VEGAS),
+                ScoreRecord(
+                    "VEGAS",
+                    -37,
+                    0,
+                    9L,
+                    mapOf("moves" to "20", "drawMode" to "ONE", "difficulty" to "HARD"),
+                ),
             )
-            stats.stats.value.played shouldBe 1
+            stats.stats.value.getValue("VEGAS").played shouldBe 1
         }
 
         @Test
@@ -142,7 +155,7 @@ class GameUseCasesTest {
 
             val next = startNewGame(DrawMode.ONE, GameMode.VEGAS_CUMULATIVE)
 
-            stats.stats.value.vegasBank shouldBe -52
+            bank.bank.value shouldBe -52
             next.state.score shouldBe -104
             scores.records.value.shouldBeEmpty()
         }
@@ -168,7 +181,7 @@ class GameUseCasesTest {
 
     @Nested
     inner class FinishGameTest {
-        private val finishGame = FinishGame(scores, stats, savedGames, clock = { 1_000L })
+        private val finishGame = FinishGame(scores, stats, bank, savedGames, clock = { 1_000L })
 
         @Test
         fun `records the score, counts the win and clears the saved game`() = runTest {
@@ -176,9 +189,15 @@ class GameUseCasesTest {
 
             val record = finishGame(GameSession(3, wonState))
 
-            record shouldBe ScoreRecord(1234, 300, 110, DrawMode.ONE, playedAtMillis = 1_000L)
+            record.points shouldBe 1234
+            record.elapsedSeconds shouldBe 300
+            record.moves shouldBe 110
+            record.drawMode shouldBe DrawMode.ONE
+            record.gameMode shouldBe GameMode.STANDARD
+            record.playedAtMillis shouldBe 1_000L
             scores.records.value shouldContainExactly listOf(record)
-            stats.stats.value shouldBe GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1)
+            stats.stats.value shouldBe
+                mapOf("STANDARD" to GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1))
             savedGames.saved.shouldBeNull()
         }
 
@@ -188,8 +207,8 @@ class GameUseCasesTest {
 
             finishGame(GameSession(3, won))
 
-            stats.stats.value.vegasBank shouldBe 156
-            stats.stats.value.won shouldBe 1
+            bank.bank.value shouldBe 156
+            stats.stats.value.getValue("VEGAS_CUMULATIVE").won shouldBe 1
             scores.records.value.shouldBeEmpty()
         }
     }
@@ -201,38 +220,20 @@ class GameUseCasesTest {
             val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
             savedGames.saved = GameSession(1, deal.copy(mode = GameMode.COUNTER_TIME, moves = 5, elapsedSeconds = 600))
 
-            LoseGame(stats, savedGames)()
-            StartNewGame(savedGames, stats, scores, Dealer(), DealPicker({ 2 }, settings), clock = { 0L })(DrawMode.ONE)
+            LoseGame(stats, savedGames)(GameMode.COUNTER_TIME)
+            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 2 }, settings), clock = { 0L })(
+                DrawMode.ONE,
+            )
 
-            stats.stats.value shouldBe GameStats(played = 1)
+            stats.stats.value shouldBe mapOf("COUNTER_TIME" to GameStats(played = 1))
         }
     }
 
-    @Nested
-    inner class ObserveTest {
-        @Test
-        fun `top scores are ranked by points then fastest time, limited to ten`() = runTest {
-            val records = (
-                (1..12).map { ScoreRecord(it * 10, 100L - it, 50, DrawMode.ONE, 0) } +
-                    ScoreRecord(120, 5, 50, DrawMode.ONE, 0) +
-                    ScoreRecord(130, 99, 50, DrawMode.ONE, 0)
-                ).shuffled(kotlin.random.Random(1))
-            records.forEach { scores.add(it) }
-
-            val top = ObserveTopScores(scores)(GameMode.STANDARD).first()
-
-            top.size shouldBe 10
-            top[0] shouldBe ScoreRecord(130, 99, 50, DrawMode.ONE, 0)
-            top[1] shouldBe ScoreRecord(120, 5, 50, DrawMode.ONE, 0)
-            top[2] shouldBe ScoreRecord(120, 88, 50, DrawMode.ONE, 0)
-            top.last().points shouldBe 50
-        }
-
-        @Test
-        fun `stats are observed from the repository`() = runTest {
-            stats.update { GameStats(played = 2, won = 1) }
-
-            ObserveStats(stats)().first() shouldBe GameStats(played = 2, won = 1)
-        }
+    @Test
+    fun `each mode ranks its own way, and cumulative Vegas not at all`() {
+        GameMode.STANDARD.ranking() shouldBe Ranking.HIGHEST_POINTS
+        GameMode.VEGAS.ranking() shouldBe Ranking.HIGHEST_POINTS
+        GameMode.COUNTER_TIME.ranking() shouldBe Ranking.FASTEST
+        GameMode.VEGAS_CUMULATIVE.ranking().shouldBeNull()
     }
 }

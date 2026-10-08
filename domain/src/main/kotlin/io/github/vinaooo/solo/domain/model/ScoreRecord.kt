@@ -1,28 +1,34 @@
 package io.github.vinaooo.solo.domain.model
 
-data class ScoreRecord(
-    val points: Int,
-    val elapsedSeconds: Long,
-    val moves: Int,
-    val drawMode: DrawMode,
-    val playedAtMillis: Long,
-    val mode: GameMode = GameMode.STANDARD,
-    val difficulty: Difficulty = Difficulty.HARD,
-) {
-    companion object {
-        /** Highest points (or dollars) first; ties go to the fastest game. */
-        val RANKING: Comparator<ScoreRecord> =
-            compareByDescending<ScoreRecord> { it.points }.thenBy { it.elapsedSeconds }
+import io.github.vinaooo.vinkit.core.Ranking
+import io.github.vinaooo.vinkit.core.ScoreRecord
 
-        /** Counter time: the fastest win first; ties go to fewer moves. */
-        val FASTEST: Comparator<ScoreRecord> = compareBy<ScoreRecord> { it.elapsedSeconds }.thenBy { it.moves }
+/** Solo's scores are vinkit's: the mode's key is [GameMode]'s name, and the game's details go in the extras. */
+val GameMode.key: String get() = name
 
-        fun rankingFor(mode: GameMode): Comparator<ScoreRecord> =
-            if (mode == GameMode.COUNTER_TIME) FASTEST else RANKING
-
-        /** The modes that keep a ranking: cumulative Vegas only shows its balance, by the user's choice. */
-        fun isRanked(mode: GameMode): Boolean = mode != GameMode.VEGAS_CUMULATIVE
-
-        const val TOP_LIMIT = 10
-    }
+/** How each mode ranks: counter time by the fastest win, cumulative Vegas not at all (by the user's choice). */
+fun GameMode.ranking(): Ranking? = when (this) {
+    GameMode.COUNTER_TIME -> Ranking.FASTEST
+    GameMode.VEGAS_CUMULATIVE -> null
+    else -> Ranking.HIGHEST_POINTS
 }
+
+/** This game as a score played at [nowMillis]. */
+fun GameState.toRecord(nowMillis: Long) = ScoreRecord(
+    mode = mode.key,
+    points = score,
+    elapsedSeconds = elapsedSeconds,
+    playedAtMillis = nowMillis,
+    extras = mapOf(MOVES to moves.toString(), DRAW_MODE to drawMode.name, DIFFICULTY to difficulty.name),
+)
+
+val ScoreRecord.gameMode: GameMode get() = enumValueOf(mode)
+val ScoreRecord.moves: Int get() = extras[MOVES]?.toIntOrNull() ?: 0
+val ScoreRecord.drawMode: DrawMode get() = enumOrNull<DrawMode>(extras[DRAW_MODE]) ?: DrawMode.ONE
+val ScoreRecord.difficulty: Difficulty get() = enumOrNull<Difficulty>(extras[DIFFICULTY]) ?: Difficulty.HARD
+
+private inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? = enumValues<T>().firstOrNull { it.name == name }
+
+private const val MOVES = "moves"
+private const val DRAW_MODE = "drawMode"
+private const val DIFFICULTY = "difficulty"

@@ -1,8 +1,5 @@
 package io.github.vinaooo.solo.domain.repository
 
-import io.github.vinaooo.solo.domain.model.GameMode
-import io.github.vinaooo.solo.domain.model.GameStats
-import io.github.vinaooo.solo.domain.model.ScoreRecord
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.session.GameSession
 import kotlinx.coroutines.flow.Flow
@@ -15,20 +12,11 @@ interface SavedGameRepository {
     suspend fun clear()
 }
 
-interface ScoreRepository {
-    /** The best [limit] scores of [mode], in its ranking order ([ScoreRecord.rankingFor]). */
-    fun observeTopScores(mode: GameMode, limit: Int = ScoreRecord.TOP_LIMIT): Flow<List<ScoreRecord>>
+/** Cumulative Vegas's balance in dollars, carried from one game to the next. */
+interface VegasBankRepository {
+    val bank: Flow<Int>
 
-    /** The modes that have at least one score. */
-    fun observeRankedModes(): Flow<Set<GameMode>>
-
-    suspend fun add(record: ScoreRecord)
-}
-
-interface StatsRepository {
-    fun observe(): Flow<GameStats>
-
-    suspend fun update(transform: (GameStats) -> GameStats)
+    suspend fun set(dollars: Int)
 }
 
 interface SettingsRepository {

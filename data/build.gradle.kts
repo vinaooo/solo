@@ -8,17 +8,10 @@ android {
     namespace = "io.github.vinaooo.solo.data"
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-    arg("room.generateKotlin", "true")
-}
-
 dependencies {
     implementation(project(":domain"))
     implementation("com.github.vinaooo.vinkit:settings:${providers.gradleProperty("vinkit.tag").get()}")
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
+    implementation("com.github.vinaooo.vinkit:scores:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
@@ -28,5 +21,4 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.junit4)
     testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.room.testing)
 }
