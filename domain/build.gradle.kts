@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.solo.jvm.library)
+    alias(libs.plugins.vinkit.jvm.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.pitest)
     `java-test-fixtures`

@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.solo.android.application)
-    alias(libs.plugins.solo.android.compose)
-    alias(libs.plugins.solo.hilt)
+    alias(libs.plugins.vinkit.android.application)
+    alias(libs.plugins.vinkit.android.compose)
+    alias(libs.plugins.vinkit.hilt)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
 }

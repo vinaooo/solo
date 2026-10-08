@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.solo.android.feature)
+    alias(libs.plugins.vinkit.android.feature)
     alias(libs.plugins.roborazzi)
 }
 
@@ -8,6 +8,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:designsystem"))
+    implementation(project(":core:ui"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     testImplementation(libs.roborazzi)

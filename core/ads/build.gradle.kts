@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.solo.android.library)
-    alias(libs.plugins.solo.android.compose)
-    alias(libs.plugins.solo.hilt)
+    alias(libs.plugins.vinkit.android.library)
+    alias(libs.plugins.vinkit.android.compose)
+    alias(libs.plugins.vinkit.hilt)
 }
 
 android {

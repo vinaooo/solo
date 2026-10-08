@@ -11,7 +11,7 @@ plugins {
     alias(libs.plugins.pitest) apply false
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.kover) apply false
-    alias(libs.plugins.solo.root.coverage)
+    alias(libs.plugins.vinkit.root.coverage)
 }
 
 dependencies {
@@ -22,7 +22,3 @@ dependencies {
     kover(project(":feature:settings"))
 }
 
-// `./gradlew test` also runs the build logic's own tests (the included build isn't a subproject).
-tasks.register("test") {
-    dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
-}
