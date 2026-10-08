@@ -9,13 +9,14 @@ Klondike solitaire for Android — Kotlin, Jetpack Compose, Material 3 Expressiv
 | Module | Responsibility |
 |---|---|
 | `:domain` | Pure Kotlin game rules, scoring, use cases, repository interfaces |
-| `:data` | Room (scores/stats), DataStore (settings), saved game serialization |
-| `:core:designsystem` | `SoloTheme` (dynamic color, light/dark, expressive motion), card composables |
-| `:core:ui` | Shared UI helpers |
-| `:core:ads` | AdMob banner and consent (UMP) behind `AdBannerProvider` / `AdConsent` |
-| `:feature:game` / `:feature:scores` / `:feature:settings` | Screens + ViewModels |
-| `:app` | Application, navigation, app scaffold with the bottom banner |
-| `build-logic` | Gradle convention plugins |
+| `:data` | Wires vinkit's scores database and settings, Solo's own settings and Vegas bank (DataStore), saved game serialization |
+| `:core:designsystem` | `SoloTheme` (vinkit's theme plus card colors), card composables |
+| `:core:ui` | Solo's text helpers (mode names, dollars) |
+| `:feature:game` / `:feature:scores` / `:feature:settings` | Screens + ViewModels, on vinkit's shell, Scores and Settings screens |
+| `:app` | Application, navigation, Hilt wiring of vinkit's ads and feedback, app scaffold with the bottom banner |
+
+Shared pieces (build plugins, version catalog, theme, ads, bug report, settings, scores, game shell) come from
+[vinkit](https://github.com/vinaooo/vinkit), pinned by `vinkit.tag` in `gradle.properties`.
 
 ## Requirements
 
