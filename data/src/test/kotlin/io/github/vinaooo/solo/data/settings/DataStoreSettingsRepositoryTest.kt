@@ -44,6 +44,7 @@ class DataStoreSettingsRepositoryTest {
             difficulty = Difficulty.EASY,
             autoCompleteTipsShown = 2,
             dealCursor = 4_321,
+            winStreak = 7,
         )
 
         repository.update { changed }

@@ -1,5 +1,6 @@
 package io.github.vinaooo.solo.feature.game
 
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Move
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.domain.model.Settings
@@ -28,6 +29,8 @@ data class GameUiState(
     /** Where each face-up card can legally go; TalkBack offers these as actions. */
     val destinations: Map<CardSpot, List<PileRef>> = emptyMap(),
     val announcement: Announced? = null,
+    /** Badges just unlocked, to show once no dialog covers the game. */
+    val earned: List<Achievement> = emptyList(),
 ) {
     /** Counter time ran out before the game was won: it's lost, and no more moves can be played. */
     val isTimeUp: Boolean get() = session?.state?.isTimeUp == true
@@ -63,6 +66,8 @@ sealed interface GameIntent {
     data object AutoCompleteTipShown : GameIntent
 
     data object StuckTipShown : GameIntent
+
+    data object BadgesShown : GameIntent
 
     /** The screen became visible: the clock may run. */
     data object Resume : GameIntent

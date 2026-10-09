@@ -58,4 +58,67 @@
     <string name="vinkit_report_bug">Report a bug</string>
     <string name="vinkit_report_bug_body">Tell us what happened. Sending by email attaches a screenshot of the board and the game, so we can replay it.</string>
     <string name="vinkit_report_subject">%1$s bug report</string>
+
+    <!-- Badges -->
+    <string name="badge_earned">Badge earned: %1$s</string>
+    <plurals name="badges_earned">
+        <item quantity="one">%d badge earned</item>
+        <item quantity="other">%d badges earned</item>
+    </plurals>
+    <plurals name="badge_played_name">
+        <item quantity="one">%d game</item>
+        <item quantity="other">%d games</item>
+    </plurals>
+    <plurals name="badge_played_note">
+        <item quantity="one">Play %d game</item>
+        <item quantity="other">Play %d games</item>
+    </plurals>
+    <plurals name="badge_days_name">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days in a row</item>
+    </plurals>
+    <plurals name="badge_days_note">
+        <item quantity="one">Play on %d day</item>
+        <item quantity="other">Play on %d days in a row</item>
+    </plurals>
+    <plurals name="badge_won_name">
+        <item quantity="one">%d win</item>
+        <item quantity="other">%d wins</item>
+    </plurals>
+    <plurals name="badge_won_note">
+        <item quantity="one">Win %d game</item>
+        <item quantity="other">Win %d games</item>
+    </plurals>
+    <plurals name="badge_streak_name">
+        <item quantity="one">%d win in a row</item>
+        <item quantity="other">%d wins in a row</item>
+    </plurals>
+    <plurals name="badge_streak_note">
+        <item quantity="one">Win %d game in a row, in any mode</item>
+        <item quantity="other">Win %d games in a row, in any mode</item>
+    </plurals>
+    <string name="badge_win_standard_name">Standard win</string>
+    <string name="badge_win_standard_note">Win a Standard game</string>
+    <string name="badge_win_vegas_name">Vegas win</string>
+    <string name="badge_win_vegas_note">Win a Vegas game</string>
+    <string name="badge_win_vegas_cumulative_name">Vegas cumulative win</string>
+    <string name="badge_win_vegas_cumulative_note">Win a Vegas cumulative game</string>
+    <string name="badge_win_counter_time_name">Counter time win</string>
+    <string name="badge_win_counter_time_note">Win a Counter time game</string>
+    <string name="badge_win_every_mode_name">Every mode</string>
+    <string name="badge_win_every_mode_note">Win in each of the four modes</string>
+    <string name="badge_win_draw_3_name">Draw 3 win</string>
+    <string name="badge_win_draw_3_note">Win a game drawing 3 cards</string>
+    <string name="badge_win_hard_name">Hard win</string>
+    <string name="badge_win_hard_note">Win a game on Hard</string>
+    <string name="badge_win_no_undo_name">No undo</string>
+    <string name="badge_win_no_undo_note">Win a game without undoing a move</string>
+    <string name="badge_win_under_3_min_name">Under 3 minutes</string>
+    <string name="badge_win_under_3_min_note">Win a game in less than 3 minutes</string>
+    <string name="badge_win_under_100_moves_name">Under 100 moves</string>
+    <string name="badge_win_under_100_moves_note">Win a game in fewer than 100 moves</string>
+    <string name="badge_vegas_profit_name">Vegas profit</string>
+    <string name="badge_vegas_profit_note">End a Vegas game above the balance it started with</string>
+    <string name="badge_bank_positive_name">In the black</string>
+    <string name="badge_bank_positive_note">End a Vegas cumulative game with the balance above $0</string>
 </resources>

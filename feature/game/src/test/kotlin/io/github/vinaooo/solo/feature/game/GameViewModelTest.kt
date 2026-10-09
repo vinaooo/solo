@@ -5,6 +5,7 @@ import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.deal.WinnableDeals
+import io.github.vinaooo.solo.domain.fake.FakeAchievementRepository
 import io.github.vinaooo.solo.domain.fake.FakeAppSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
@@ -14,6 +15,7 @@ import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
 import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
@@ -27,9 +29,11 @@ import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.FinishGame
 import io.github.vinaooo.solo.domain.usecase.LoseGame
+import io.github.vinaooo.solo.domain.usecase.RecordAchievements
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
+import io.github.vinaooo.vinkit.core.AchievementProgress
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.GameStats
 import io.github.vinaooo.vinkit.shell.FeedbackEvent
@@ -60,6 +64,8 @@ class GameViewModelTest {
     private val scores = FakeScoreRepository()
     private val settings = FakeSettingsRepository()
     private val appSettings = FakeAppSettingsRepository()
+    private val badges = FakeAchievementRepository()
+    private val achievements = RecordAchievements(badges, stats, settings) { 5_000 }
     private val feedback = FakeGameFeedback()
     private val engine = GameEngine()
 
@@ -92,11 +98,12 @@ class GameViewModelTest {
             Dealer(),
             DealPicker({ 42 }, settings),
             clock = { 5_000 },
+            achievements,
         ),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
-        finishGame = FinishGame(scores, stats, FakeVegasBankRepository(), savedGames, clock = { 5_000 }),
-        loseGame = LoseGame(stats, savedGames),
+        finishGame = FinishGame(scores, stats, FakeVegasBankRepository(), savedGames, { 5_000 }, achievements),
+        loseGame = LoseGame(stats, savedGames, achievements),
         settingsRepository = settings,
         appSettingsRepository = appSettings,
         engine = engine,
@@ -104,6 +111,8 @@ class GameViewModelTest {
         hints = HintEngine(),
         autoCompleter = AutoCompleter(),
         feedback = feedback,
+        recordAchievements = achievements,
+        achievements = badges,
         deadEndDetector = DeadEndDetector(),
         searchDispatcher = dispatcher,
     ).also {
@@ -128,6 +137,19 @@ class GameViewModelTest {
         drawMode = DrawMode.ONE,
         moves = 10,
     )
+
+    @Test
+    fun `badges unlocked while playing are shown, not the ones already earned`() = gameTest {
+        badges.current.value = AchievementProgress(unlocked = setOf(Achievement.WON_1.name))
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+
+        vm.uiState.value.earned shouldBe listOf(Achievement.DAYS_1)
+        vm.onIntent(GameIntent.BadgesShown)
+        vm.uiState.value.earned shouldBe emptyList()
+    }
 
     @Test
     fun `resumes the saved game in progress`() = gameTest {

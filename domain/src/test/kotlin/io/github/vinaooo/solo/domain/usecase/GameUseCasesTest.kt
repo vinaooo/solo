@@ -5,14 +5,18 @@ import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.deal.WinnableDeals
 import io.github.vinaooo.solo.domain.emptyState
+import io.github.vinaooo.solo.domain.fake.FakeAchievementRepository
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
 import io.github.vinaooo.solo.domain.fake.FakeSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeStatsRepository
 import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
+import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.solo.domain.model.badges
 import io.github.vinaooo.solo.domain.model.difficulty
 import io.github.vinaooo.solo.domain.model.drawMode
 import io.github.vinaooo.solo.domain.model.gameMode
@@ -25,6 +29,8 @@ import io.github.vinaooo.vinkit.core.GameStats
 import io.github.vinaooo.vinkit.core.Ranking
 import io.github.vinaooo.vinkit.core.ScoreRecord
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -39,6 +45,8 @@ class GameUseCasesTest {
     private val scores = FakeScoreRepository()
     private val settings = FakeSettingsRepository()
     private val bank = FakeVegasBankRepository()
+    private val badges = FakeAchievementRepository()
+    private val achievements = RecordAchievements(badges, stats, settings) { NOON_UTC }
 
     private val wonState = emptyState()
         .copy(score = 1234, moves = 110, elapsedSeconds = 300)
@@ -50,7 +58,7 @@ class GameUseCasesTest {
     @Nested
     inner class StartNewGameTest {
         private val startNewGame =
-            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 77 }, settings), clock = { 9L })
+            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 77 }, settings), { 9L }, achievements)
 
         @Test
         fun `deals a fresh game from a new seed and saves it`() = runTest {
@@ -98,10 +106,12 @@ class GameUseCasesTest {
         fun `abandoning a game in progress counts as a loss`() = runTest {
             val inProgress = GameSession(1, Dealer().deal(SeededShuffler(1), DrawMode.ONE).copy(moves = 3))
             savedGames.saved = inProgress
+            settings.current.value = Settings(winStreak = 4)
 
             startNewGame(DrawMode.ONE)
 
             stats.stats.value shouldBe mapOf("STANDARD" to GameStats(played = 1))
+            settings.current.value.winStreak shouldBe 0
         }
 
         @Test
@@ -192,7 +202,7 @@ class GameUseCasesTest {
 
     @Nested
     inner class FinishGameTest {
-        private val finishGame = FinishGame(scores, stats, bank, savedGames, clock = { 1_000L })
+        private val finishGame = FinishGame(scores, stats, bank, savedGames, { 1_000L }, achievements)
 
         @Test
         fun `records the score, counts the win and clears the saved game`() = runTest {
@@ -210,6 +220,8 @@ class GameUseCasesTest {
             stats.stats.value shouldBe
                 mapOf("STANDARD" to GameStats(played = 1, won = 1, currentStreak = 1, bestStreak = 1))
             savedGames.saved.shouldBeNull()
+            badges.current.value.badges shouldContainAll setOf(Achievement.WON_1, Achievement.WIN_STANDARD)
+            settings.current.value.winStreak shouldBe 1
         }
 
         @Test
@@ -220,6 +232,7 @@ class GameUseCasesTest {
 
             bank.bank.value shouldBe 156
             stats.stats.value.getValue("VEGAS_CUMULATIVE").won shouldBe 1
+            badges.current.value.badges shouldContain Achievement.BANK_POSITIVE
             scores.records.value.single().run {
                 mode shouldBe "VEGAS_CUMULATIVE"
                 points shouldBe 156
@@ -232,14 +245,16 @@ class GameUseCasesTest {
         @Test
         fun `a game out of time is a loss, and gone, so a new game doesn't count it again`() = runTest {
             val deal = Dealer().deal(SeededShuffler(1), DrawMode.ONE)
-            savedGames.saved = GameSession(1, deal.copy(mode = GameMode.COUNTER_TIME, moves = 5, elapsedSeconds = 600))
+            val lost = GameSession(1, deal.copy(mode = GameMode.COUNTER_TIME, moves = 5, elapsedSeconds = 600))
+            savedGames.saved = lost
 
-            LoseGame(stats, savedGames)(GameMode.COUNTER_TIME)
-            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 2 }, settings), clock = { 0L })(
+            LoseGame(stats, savedGames, achievements)(lost)
+            StartNewGame(savedGames, stats, scores, bank, Dealer(), DealPicker({ 2 }, settings), { 0L }, achievements)(
                 DrawMode.ONE,
             )
 
             stats.stats.value shouldBe mapOf("COUNTER_TIME" to GameStats(played = 1))
+            badges.current.value.badges shouldContain Achievement.PLAYED_1
         }
     }
 
@@ -249,5 +264,9 @@ class GameUseCasesTest {
         GameMode.VEGAS.ranking() shouldBe Ranking.HIGHEST_POINTS
         GameMode.VEGAS_CUMULATIVE.ranking() shouldBe Ranking.HIGHEST_POINTS
         GameMode.COUNTER_TIME.ranking() shouldBe Ranking.FASTEST
+    }
+
+    private companion object {
+        const val NOON_UTC = 1_760_011_200_000L // 2025-10-09T12:00Z
     }
 }

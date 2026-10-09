@@ -21,6 +21,8 @@ import io.github.vinaooo.solo.domain.repository.SavedGameRepository
 import io.github.vinaooo.solo.domain.repository.SeedSource
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.repository.VegasBankRepository
+import io.github.vinaooo.vinkit.achievements.DataStoreAchievementRepository
+import io.github.vinaooo.vinkit.core.AchievementRepository
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.AppSettingsRepository
 import io.github.vinaooo.vinkit.core.ScoreRepository
@@ -65,6 +67,12 @@ internal object DataProvidersModule {
     @Singleton
     fun appSettings(dataStore: DataStore<Preferences>): AppSettingsRepository =
         DataStoreAppSettingsRepository(dataStore, AppSettings(themeColor = ThemeColor.GREEN))
+
+    /** The badges, in the same DataStore (`achievements_*` keys). */
+    @Provides
+    @Singleton
+    fun achievements(dataStore: DataStore<Preferences>): AchievementRepository =
+        DataStoreAchievementRepository(dataStore)
 
     @Provides
     @Singleton

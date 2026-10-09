@@ -2,6 +2,9 @@ package io.github.vinaooo.solo.domain.repository
 
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.solo.domain.session.GameSession
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 
 interface SavedGameRepository {
@@ -31,4 +34,7 @@ fun interface SeedSource {
 
 fun interface Clock {
     fun nowMillis(): Long
+
+    /** The local calendar day now. */
+    fun today(): LocalDate = Instant.ofEpochMilli(nowMillis()).atZone(ZoneId.systemDefault()).toLocalDate()
 }

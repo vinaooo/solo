@@ -17,9 +17,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.vinaooo.solo.core.designsystem.theme.SoloThemeExtras
+import io.github.vinaooo.solo.feature.game.badges.BadgesRoute as BadgesScreenRoute
 import io.github.vinaooo.solo.feature.game.ui.GameRoute as GameScreenRoute
 import io.github.vinaooo.solo.feature.scores.ScoresRoute as ScoresScreenRoute
 import io.github.vinaooo.solo.feature.settings.SettingsRoute as SettingsScreenRoute
+import io.github.vinaooo.solo.navigation.BadgesRoute
 import io.github.vinaooo.solo.navigation.GameRoute
 import io.github.vinaooo.solo.navigation.ScoresRoute
 import io.github.vinaooo.solo.navigation.SettingsRoute
@@ -47,6 +49,7 @@ fun SoloApp(
                     GameScreenRoute(
                         onOpenScores = { navController.navigate(ScoresRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenBadges = { navController.navigate(BadgesRoute) },
                     )
                 }
                 // The slot takes the table's color, so it reads as part of the board rather than a separate strip.
@@ -55,6 +58,7 @@ fun SoloApp(
                 }
             }
         }
+        composable<BadgesRoute> { BadgesScreenRoute(onBack = navController::popBackStack) }
         composable<ScoresRoute> { ScoresScreenRoute(onBack = navController::popBackStack) }
         composable<SettingsRoute> {
             SettingsScreenRoute(

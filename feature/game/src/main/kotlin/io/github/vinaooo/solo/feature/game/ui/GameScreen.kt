@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MilitaryTech
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -48,12 +50,15 @@ import io.github.vinaooo.solo.feature.game.GameUiState
 import io.github.vinaooo.solo.feature.game.GameViewModel
 import io.github.vinaooo.solo.feature.game.R
 import io.github.vinaooo.solo.feature.game.SoloReports
+import io.github.vinaooo.solo.feature.game.badges.badge
 import io.github.vinaooo.solo.feature.game.board.GameBoard
 import io.github.vinaooo.solo.feature.game.gameReport
+import io.github.vinaooo.vinkit.achievements.R as AchievementsR
 import io.github.vinaooo.vinkit.shell.GameFrame
 import io.github.vinaooo.vinkit.shell.GameSurface
 import io.github.vinaooo.vinkit.shell.GameToolbar
 import io.github.vinaooo.vinkit.shell.LocalFrameInfo
+import io.github.vinaooo.vinkit.shell.NavigationAction
 import io.github.vinaooo.vinkit.shell.WinDialog
 import kotlinx.coroutines.delay
 
@@ -61,6 +66,7 @@ import kotlinx.coroutines.delay
 fun GameRoute(
     onOpenScores: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenBadges: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GameViewModel = hiltViewModel(),
 ) {
@@ -69,7 +75,7 @@ fun GameRoute(
         viewModel.onIntent(GameIntent.Resume)
         onPauseOrDispose { viewModel.onIntent(GameIntent.Pause) }
     }
-    GameScreen(uiState, viewModel::onIntent, onOpenScores, onOpenSettings, modifier)
+    GameScreen(uiState, viewModel::onIntent, onOpenScores, onOpenSettings, modifier, onOpenBadges)
 }
 
 @Composable
@@ -79,8 +85,10 @@ fun GameScreen(
     onOpenScores: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenBadges: (() -> Unit)? = null,
 ) {
     val snackbar = remember { SnackbarHostState() }
+    BadgesEarned(uiState, snackbar) { onIntent(GameIntent.BadgesShown) }
     val noMoves = stringResource(R.string.no_moves)
     LaunchedEffect(uiState.message) {
         if (uiState.message == GameMessage.NO_MOVES) {
@@ -126,6 +134,7 @@ fun GameScreen(
                 boardAspectRatio = null,
                 // Landscape's side holds only the stats: the sideways board gets the rest.
                 sideWidth = null,
+                navigation = badgesButton(onOpenBadges),
             )
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = SNACKBAR_SPACE))
             StuckMessage(uiState.showStuckTip, { onIntent(GameIntent.StuckTipShown) }, Modifier.align(Alignment.Center))
@@ -134,6 +143,35 @@ fun GameScreen(
     uiState.winRecord?.let { WinDialog(winLines(it), onNewGame = { onIntent(GameIntent.NewGame) }) }
     if (uiState.isTimeUp) {
         TimeUpDialog(onNewGame = { onIntent(GameIntent.NewGame) }, onRestart = { onIntent(GameIntent.RestartDeal) })
+    }
+}
+
+/** The Badges screen's button beside Scores and Settings, when there is one. */
+@Composable
+private fun badgesButton(onOpenBadges: (() -> Unit)?): List<NavigationAction> {
+    val label = stringResource(AchievementsR.string.vinkit_badges)
+    return listOfNotNull(onOpenBadges?.let { NavigationAction(Icons.Rounded.MilitaryTech, label, it) })
+}
+
+/**
+ * Badges just unlocked, in a snackbar once no dialog covers the game (it would time out behind one) and the
+ * auto-complete tip, in the same spot, has gone.
+ */
+@Composable
+private fun BadgesEarned(uiState: GameUiState, snackbar: SnackbarHostState, onShown: () -> Unit) {
+    val earned = uiState.earned
+    val covered = uiState.winRecord != null || uiState.isTimeUp || uiState.showAutoCompleteTip
+    val text = when (earned.size) {
+        0 -> null
+        1 -> stringResource(R.string.badge_earned, badge(earned.single()).name)
+        else -> pluralStringResource(R.plurals.badges_earned, earned.size, earned.size)
+    }
+    LaunchedEffect(text, covered) {
+        // Cleared once shown: clearing first would change the key and cancel the snackbar.
+        if (text != null && !covered) {
+            snackbar.showSnackbar(text)
+            onShown()
+        }
     }
 }
 
