@@ -9,6 +9,7 @@ import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.vinkit.core.AchievementRepository
 import io.github.vinaooo.vinkit.core.StatsRepository
+import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 
 /**
@@ -21,6 +22,8 @@ class RecordAchievements(
     private val settings: SettingsRepository,
     private val clock: Clock,
 ) {
+    private var lastPlayed: LocalDate? = null
+
     /** A counted game ended ([session] won, lost or abandoned in progress), after its stats were updated. */
     suspend fun gameEnded(session: GameSession) {
         val won = session.state.isWon
@@ -28,8 +31,13 @@ class RecordAchievements(
         record(session)
     }
 
-    /** A move was played today. */
-    suspend fun played() = record(ended = null)
+    /** A move was played: the first one each day marks the day. */
+    suspend fun played() {
+        val today = clock.today()
+        if (today == lastPlayed) return
+        lastPlayed = today
+        record(ended = null)
+    }
 
     private suspend fun record(ended: GameSession?) {
         val all = GameMode.entries.associateWith { stats.observe(it.key).first() }

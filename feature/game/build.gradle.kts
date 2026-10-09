@@ -10,6 +10,7 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
+    implementation("com.github.vinaooo.vinkit:achievements:${providers.gradleProperty("vinkit.tag").get()}")
     implementation("com.github.vinaooo.vinkit:bugreport:${providers.gradleProperty("vinkit.tag").get()}")
     implementation("com.github.vinaooo.vinkit:shell:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(libs.kotlinx.serialization.json)

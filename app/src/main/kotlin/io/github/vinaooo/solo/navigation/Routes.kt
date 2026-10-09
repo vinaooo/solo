@@ -10,3 +10,6 @@ data object ScoresRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object BadgesRoute

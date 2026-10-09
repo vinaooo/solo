@@ -27,65 +27,29 @@ class AchievementsTest {
     private fun earned(facts: AchievementFacts) = Achievements.earned(facts)
 
     /** Each rung is earned at its count and not one below, so `>=` can't drift to `>`. */
-    private fun checkLadder(rungs: Map<Int, Achievement>, facts: (Int) -> AchievementFacts) {
-        rungs.forEach { (count, badge) ->
-            earned(facts(count - 1)) shouldNotContain badge
-            earned(facts(count)) shouldContain badge
+    @Test
+    fun `every ladder rung is earned at its count, not one below`() {
+        val facts = mapOf<Ladder, (Int) -> AchievementFacts>(
+            Ladder.PLAYED to { none.copy(played = it) },
+            Ladder.DAYS to { none.copy(dayStreak = it) },
+            Ladder.WON to { none.copy(won = it) },
+            Ladder.STREAK to { none.copy(winStreak = it) },
+        )
+        Achievement.entries.filter { it.ladder != null }.forEach { badge ->
+            val at = facts.getValue(badge.ladder!!)
+            earned(at(badge.count - 1)) shouldNotContain badge
+            earned(at(badge.count)) shouldContain badge
         }
     }
 
     @Test
-    fun `nothing played earns nothing`() {
-        earned(none).shouldBeEmpty()
+    fun `the ladders are the ones asked for`() {
+        fun rungs(ladder: Ladder) = Achievement.entries.filter { it.ladder == ladder }.map { it.count }
+        rungs(Ladder.PLAYED) shouldBe listOf(1, 10, 50, 100, 500)
+        rungs(Ladder.DAYS) shouldBe listOf(1, 3, 5, 10, 20, 30, 50, 100, 200)
+        rungs(Ladder.WON) shouldBe listOf(1, 10, 50, 100, 500, 1000)
+        rungs(Ladder.STREAK) shouldBe listOf(3, 5, 10, 20)
     }
-
-    @Test
-    fun `games played ladder`() = checkLadder(
-        mapOf(
-            1 to Achievement.PLAYED_1,
-            10 to Achievement.PLAYED_10,
-            50 to Achievement.PLAYED_50,
-            100 to Achievement.PLAYED_100,
-            500 to Achievement.PLAYED_500,
-        ),
-    ) { none.copy(played = it) }
-
-    @Test
-    fun `days in a row ladder`() = checkLadder(
-        mapOf(
-            1 to Achievement.DAYS_1,
-            3 to Achievement.DAYS_3,
-            5 to Achievement.DAYS_5,
-            10 to Achievement.DAYS_10,
-            20 to Achievement.DAYS_20,
-            30 to Achievement.DAYS_30,
-            50 to Achievement.DAYS_50,
-            100 to Achievement.DAYS_100,
-            200 to Achievement.DAYS_200,
-        ),
-    ) { none.copy(dayStreak = it) }
-
-    @Test
-    fun `wins ladder`() = checkLadder(
-        mapOf(
-            1 to Achievement.WON_1,
-            10 to Achievement.WON_10,
-            50 to Achievement.WON_50,
-            100 to Achievement.WON_100,
-            500 to Achievement.WON_500,
-            1000 to Achievement.WON_1000,
-        ),
-    ) { none.copy(won = it) }
-
-    @Test
-    fun `win streak ladder`() = checkLadder(
-        mapOf(
-            3 to Achievement.STREAK_3,
-            5 to Achievement.STREAK_5,
-            10 to Achievement.STREAK_10,
-            20 to Achievement.STREAK_20,
-        ),
-    ) { none.copy(winStreak = it) }
 
     @Test
     fun `a mode won earns its badge, all four earn every mode`() {

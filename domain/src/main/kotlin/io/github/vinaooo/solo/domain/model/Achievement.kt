@@ -4,32 +4,35 @@ import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.vinkit.core.AchievementProgress
 import java.time.LocalDate
 
-/** A badge. Its name is its key in storage (vinkit's `AchievementProgress`): never rename one after release. */
-enum class Achievement {
-    PLAYED_1,
-    PLAYED_10,
-    PLAYED_50,
-    PLAYED_100,
-    PLAYED_500,
-    DAYS_1,
-    DAYS_3,
-    DAYS_5,
-    DAYS_10,
-    DAYS_20,
-    DAYS_30,
-    DAYS_50,
-    DAYS_100,
-    DAYS_200,
-    WON_1,
-    WON_10,
-    WON_50,
-    WON_100,
-    WON_500,
-    WON_1000,
-    STREAK_3,
-    STREAK_5,
-    STREAK_10,
-    STREAK_20,
+/**
+ * A badge. Its name is its key in storage (vinkit's `AchievementProgress`): never rename one after release.
+ * A badge on a [ladder] is earned once that count reaches [count].
+ */
+enum class Achievement(val ladder: Ladder? = null, val count: Int = 0) {
+    PLAYED_1(Ladder.PLAYED, 1),
+    PLAYED_10(Ladder.PLAYED, 10),
+    PLAYED_50(Ladder.PLAYED, 50),
+    PLAYED_100(Ladder.PLAYED, 100),
+    PLAYED_500(Ladder.PLAYED, 500),
+    DAYS_1(Ladder.DAYS, 1),
+    DAYS_3(Ladder.DAYS, 3),
+    DAYS_5(Ladder.DAYS, 5),
+    DAYS_10(Ladder.DAYS, 10),
+    DAYS_20(Ladder.DAYS, 20),
+    DAYS_30(Ladder.DAYS, 30),
+    DAYS_50(Ladder.DAYS, 50),
+    DAYS_100(Ladder.DAYS, 100),
+    DAYS_200(Ladder.DAYS, 200),
+    WON_1(Ladder.WON, 1),
+    WON_10(Ladder.WON, 10),
+    WON_50(Ladder.WON, 50),
+    WON_100(Ladder.WON, 100),
+    WON_500(Ladder.WON, 500),
+    WON_1000(Ladder.WON, 1000),
+    STREAK_3(Ladder.STREAK, 3),
+    STREAK_5(Ladder.STREAK, 5),
+    STREAK_10(Ladder.STREAK, 10),
+    STREAK_20(Ladder.STREAK, 20),
     WIN_STANDARD,
     WIN_VEGAS,
     WIN_VEGAS_CUMULATIVE,
@@ -42,6 +45,21 @@ enum class Achievement {
     WIN_UNDER_100_MOVES,
     VEGAS_PROFIT,
     BANK_POSITIVE,
+}
+
+/** What a ladder of badges counts. */
+enum class Ladder {
+    /** Games played, in every mode. */
+    PLAYED,
+
+    /** Days played in a row. */
+    DAYS,
+
+    /** Games won, in every mode. */
+    WON,
+
+    /** Games won in a row, in any mode. */
+    STREAK,
 }
 
 /** The badges earned that this version knows; keys a newer version wrote are skipped. */
@@ -66,38 +84,6 @@ object Achievements {
     /** The collected set of days played (ISO dates, local time): never rename. */
     const val DAYS_PLAYED = "days_played"
 
-    private val PLAYED = mapOf(
-        1 to Achievement.PLAYED_1,
-        10 to Achievement.PLAYED_10,
-        50 to Achievement.PLAYED_50,
-        100 to Achievement.PLAYED_100,
-        500 to Achievement.PLAYED_500,
-    )
-    private val DAYS = mapOf(
-        1 to Achievement.DAYS_1,
-        3 to Achievement.DAYS_3,
-        5 to Achievement.DAYS_5,
-        10 to Achievement.DAYS_10,
-        20 to Achievement.DAYS_20,
-        30 to Achievement.DAYS_30,
-        50 to Achievement.DAYS_50,
-        100 to Achievement.DAYS_100,
-        200 to Achievement.DAYS_200,
-    )
-    private val WON = mapOf(
-        1 to Achievement.WON_1,
-        10 to Achievement.WON_10,
-        50 to Achievement.WON_50,
-        100 to Achievement.WON_100,
-        500 to Achievement.WON_500,
-        1000 to Achievement.WON_1000,
-    )
-    private val STREAK = mapOf(
-        3 to Achievement.STREAK_3,
-        5 to Achievement.STREAK_5,
-        10 to Achievement.STREAK_10,
-        20 to Achievement.STREAK_20,
-    )
     private val MODE_WINS = mapOf(
         GameMode.STANDARD to Achievement.WIN_STANDARD,
         GameMode.VEGAS to Achievement.WIN_VEGAS,
@@ -116,10 +102,13 @@ object Achievements {
         progress.copy(unlocked = progress.unlocked + earned(facts).map { it.name })
 
     fun earned(facts: AchievementFacts): Set<Achievement> = buildSet {
-        addAll(reached(PLAYED, facts.played))
-        addAll(reached(DAYS, facts.dayStreak))
-        addAll(reached(WON, facts.won))
-        addAll(reached(STREAK, facts.winStreak))
+        val counts = mapOf(
+            Ladder.PLAYED to facts.played,
+            Ladder.DAYS to facts.dayStreak,
+            Ladder.WON to facts.won,
+            Ladder.STREAK to facts.winStreak,
+        )
+        addAll(Achievement.entries.filter { badge -> badge.ladder?.let { counts.getValue(it) >= badge.count } == true })
         facts.modesWon.forEach { add(MODE_WINS.getValue(it)) }
         if (facts.modesWon.containsAll(GameMode.entries)) add(Achievement.WIN_EVERY_MODE)
         facts.ended?.let { addAll(gameBadges(it)) }
@@ -128,8 +117,6 @@ object Achievements {
     /** The days in a row played up to [today], from the ISO dates in [days]. */
     fun dayStreak(days: Set<String>, today: LocalDate): Int =
         generateSequence(today) { it.minusDays(1) }.takeWhile { it.toString() in days }.count()
-
-    private fun reached(ladder: Map<Int, Achievement>, count: Int) = ladder.filterKeys { count >= it }.values
 
     private fun gameBadges(session: GameSession): Set<Achievement> = buildSet {
         val state = session.state

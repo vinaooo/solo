@@ -45,6 +45,19 @@ class RecordAchievementsTest {
     }
 
     @Test
+    fun `only the first move of a day is recorded`() = runTest {
+        record.played()
+        badges.current.value = AchievementProgress()
+
+        record.played()
+        badges.current.value shouldBe AchievementProgress()
+
+        today = today.plusDays(1)
+        record.played()
+        badges.current.value.collected[Achievements.DAYS_PLAYED] shouldBe setOf("2026-10-10")
+    }
+
+    @Test
     fun `three days in a row earn the three-day badge`() = runTest {
         badges.current.value =
             AchievementProgress(collected = mapOf(Achievements.DAYS_PLAYED to setOf("2026-10-07", "2026-10-08")))

@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTouchInput
 import io.github.vinaooo.solo.core.designsystem.theme.SoloTheme
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
@@ -165,6 +166,23 @@ class GameScreenTest {
         compose.onNodeWithText("No useful moves left. Try a new game.").assertExists()
         compose.mainClock.advanceTimeBy(SNACKBAR_MILLIS)
         intents shouldContain GameIntent.MessageShown
+    }
+
+    @Test
+    fun `a badge earned shows in a snackbar and is acknowledged`() {
+        show(playing.copy(earned = listOf(Achievement.WON_10)))
+
+        compose.onNodeWithText("Badge earned: 10 wins").assertExists()
+        compose.mainClock.advanceTimeBy(SNACKBAR_MILLIS)
+        intents shouldContain GameIntent.BadgesShown
+    }
+
+    @Test
+    fun `badges earned with a win wait for the win dialog`() {
+        val won = ScoreRecord("STANDARD", 1, 1, 0)
+        show(playing.copy(winRecord = won, earned = listOf(Achievement.WON_1, Achievement.WIN_STANDARD)))
+
+        compose.onNodeWithText("2 badges earned").assertDoesNotExist()
     }
 
     @Test

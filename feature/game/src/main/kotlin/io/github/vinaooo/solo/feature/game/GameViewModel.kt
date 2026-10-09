@@ -7,18 +7,22 @@ import io.github.vinaooo.solo.domain.autocomplete.AutoCompleter
 import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Move
+import io.github.vinaooo.solo.domain.model.badges
 import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.FinishGame
 import io.github.vinaooo.solo.domain.usecase.LoseGame
+import io.github.vinaooo.solo.domain.usecase.RecordAchievements
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
+import io.github.vinaooo.vinkit.core.AchievementRepository
 import io.github.vinaooo.vinkit.core.AppSettingsRepository
 import io.github.vinaooo.vinkit.shell.FeedbackEvent
 import io.github.vinaooo.vinkit.shell.GameFeedback
@@ -53,6 +57,8 @@ class GameViewModel @Inject constructor(
     private val hints: HintEngine,
     private val autoCompleter: AutoCompleter,
     private val feedback: GameFeedback,
+    private val recordAchievements: RecordAchievements,
+    achievements: AchievementRepository,
     deadEndDetector: DeadEndDetector,
     @SearchDispatcher searchDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -92,6 +98,15 @@ class GameViewModel @Inject constructor(
             appSettingsRepository.settings.collect { settings -> state.update { it.copy(appSettings = settings) } }
         }
         viewModelScope.launch {
+            // Badges unlocked from now on are shown; the ones already earned when the screen opened are not.
+            var known: Set<Achievement>? = null
+            achievements.progress.map { it.badges }.distinctUntilChanged().collect { now ->
+                val new = known?.let { now - it }.orEmpty()
+                known = now
+                if (new.isNotEmpty()) state.update { it.copy(earned = it.earned + new) }
+            }
+        }
+        viewModelScope.launch {
             val resumed = resumeGame()
             val settings = settingsRepository.settings.first()
             show(resumed ?: startNewGame(settings.drawMode, settings.gameMode, settings.difficulty))
@@ -120,9 +135,11 @@ class GameViewModel @Inject constructor(
             GameIntent.Hint -> showHint()
             GameIntent.AutoComplete -> autoComplete()
             GameIntent.NewGame, GameIntent.RestartDeal -> newGame(restart = intent == GameIntent.RestartDeal)
-            GameIntent.MessageShown -> state.update { it.copy(message = null) }
-            GameIntent.AutoCompleteTipShown -> state.update { it.copy(showAutoCompleteTip = false) }
-            GameIntent.StuckTipShown -> state.update { it.copy(showStuckTip = false) }
+            GameIntent.MessageShown,
+            GameIntent.AutoCompleteTipShown,
+            GameIntent.StuckTipShown,
+            GameIntent.BadgesShown,
+            -> state.update { it.shown(intent) }
             GameIntent.Resume -> clock.start()
             GameIntent.Pause -> pause()
             GameIntent.ReportBug -> Unit
@@ -151,7 +168,10 @@ class GameViewModel @Inject constructor(
             }
         } else {
             feedback.give(FeedbackEvent.MOVE, state.value.appSettings)
-            viewModelScope.launch { saveGame(next) }
+            viewModelScope.launch {
+                saveGame(next)
+                recordAchievements.played()
+            }
         }
     }
 
@@ -263,4 +283,12 @@ class GameViewModel @Inject constructor(
 /** Numbers each announcement, so saying the same thing twice in a row is still spoken twice. */
 private fun MutableStateFlow<GameUiState>.announce(announcement: Announcement) {
     update { it.copy(announcement = Announced(announcement, (it.announcement?.sequence ?: 0) + 1)) }
+}
+
+/** Clears what the screen has just shown. */
+private fun GameUiState.shown(intent: GameIntent) = when (intent) {
+    GameIntent.MessageShown -> copy(message = null)
+    GameIntent.AutoCompleteTipShown -> copy(showAutoCompleteTip = false)
+    GameIntent.StuckTipShown -> copy(showStuckTip = false)
+    else -> copy(earned = emptyList())
 }

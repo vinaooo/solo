@@ -58,4 +58,76 @@
     <string name="vinkit_report_bug">Relatar um problema</string>
     <string name="vinkit_report_bug_body">Conte o que aconteceu. Enviando por e-mail, vão juntos uma captura da mesa e a partida, para podermos repeti-la.</string>
     <string name="vinkit_report_subject">%1$s: relato de problema</string>
+
+    <!-- Medalhas -->
+    <string name="badge_earned">Medalha conquistada: %1$s</string>
+    <plurals name="badges_earned">
+        <item quantity="one">%d medalha conquistada</item>
+        <item quantity="many">%d medalhas conquistadas</item>
+        <item quantity="other">%d medalhas conquistadas</item>
+    </plurals>
+    <plurals name="badge_played_name">
+        <item quantity="one">%d partida</item>
+        <item quantity="many">%d partidas</item>
+        <item quantity="other">%d partidas</item>
+    </plurals>
+    <plurals name="badge_played_note">
+        <item quantity="one">Jogue %d partida</item>
+        <item quantity="many">Jogue %d partidas</item>
+        <item quantity="other">Jogue %d partidas</item>
+    </plurals>
+    <plurals name="badge_days_name">
+        <item quantity="one">%d dia</item>
+        <item quantity="many">%d dias seguidos</item>
+        <item quantity="other">%d dias seguidos</item>
+    </plurals>
+    <plurals name="badge_days_note">
+        <item quantity="one">Jogue em %d dia</item>
+        <item quantity="many">Jogue em %d dias seguidos</item>
+        <item quantity="other">Jogue em %d dias seguidos</item>
+    </plurals>
+    <plurals name="badge_won_name">
+        <item quantity="one">%d vitória</item>
+        <item quantity="many">%d vitórias</item>
+        <item quantity="other">%d vitórias</item>
+    </plurals>
+    <plurals name="badge_won_note">
+        <item quantity="one">Vença %d partida</item>
+        <item quantity="many">Vença %d partidas</item>
+        <item quantity="other">Vença %d partidas</item>
+    </plurals>
+    <plurals name="badge_streak_name">
+        <item quantity="one">%d vitória seguida</item>
+        <item quantity="many">%d vitórias seguidas</item>
+        <item quantity="other">%d vitórias seguidas</item>
+    </plurals>
+    <plurals name="badge_streak_note">
+        <item quantity="one">Vença %d partida seguida, em qualquer modo</item>
+        <item quantity="many">Vença %d partidas seguidas, em qualquer modo</item>
+        <item quantity="other">Vença %d partidas seguidas, em qualquer modo</item>
+    </plurals>
+    <string name="badge_win_standard_name">Vitória no Padrão</string>
+    <string name="badge_win_standard_note">Vença uma partida no modo Padrão</string>
+    <string name="badge_win_vegas_name">Vitória no Vegas</string>
+    <string name="badge_win_vegas_note">Vença uma partida no modo Vegas</string>
+    <string name="badge_win_vegas_cumulative_name">Vitória no Vegas acumulado</string>
+    <string name="badge_win_vegas_cumulative_note">Vença uma partida no modo Vegas acumulado</string>
+    <string name="badge_win_counter_time_name">Vitória contra o tempo</string>
+    <string name="badge_win_counter_time_note">Vença uma partida no modo Contra o tempo</string>
+    <string name="badge_win_every_mode_name">Todos os modos</string>
+    <string name="badge_win_every_mode_note">Vença em cada um dos quatro modos</string>
+    <string name="badge_win_draw_3_name">Vitória no Virar 3</string>
+    <string name="badge_win_draw_3_note">Vença uma partida virando 3 cartas</string>
+    <string name="badge_win_hard_name">Vitória no Difícil</string>
+    <string name="badge_win_hard_note">Vença uma partida no Difícil</string>
+    <string name="badge_win_no_undo_name">Sem desfazer</string>
+    <string name="badge_win_no_undo_note">Vença uma partida sem desfazer nenhuma jogada</string>
+    <string name="badge_win_under_3_min_name">Menos de 3 minutos</string>
+    <string name="badge_win_under_3_min_note">Vença uma partida em menos de 3 minutos</string>
+    <string name="badge_win_under_100_moves_name">Menos de 100 jogadas</string>
+    <string name="badge_win_under_100_moves_note">Vença uma partida com menos de 100 jogadas</string>
+    <string name="badge_vegas_profit_name">Lucro no Vegas</string>
+    <string name="badge_vegas_profit_note">Termine uma partida de Vegas acima do saldo com que começou</string>
+    <string name="badge_bank_positive_name">No azul</string>
+    <string name="badge_bank_positive_note">Termine uma partida de Vegas acumulado com saldo acima de $0</string>
 </resources>

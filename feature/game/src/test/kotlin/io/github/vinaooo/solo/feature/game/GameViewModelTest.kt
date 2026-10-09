@@ -15,6 +15,7 @@ import io.github.vinaooo.solo.domain.fake.FakeVegasBankRepository
 import io.github.vinaooo.solo.domain.hint.DeadEndDetector
 import io.github.vinaooo.solo.domain.hint.HintEngine
 import io.github.vinaooo.solo.domain.interaction.MoveResolver
+import io.github.vinaooo.solo.domain.model.Achievement
 import io.github.vinaooo.solo.domain.model.Card
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
@@ -32,6 +33,7 @@ import io.github.vinaooo.solo.domain.usecase.RecordAchievements
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
+import io.github.vinaooo.vinkit.core.AchievementProgress
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.GameStats
 import io.github.vinaooo.vinkit.shell.FeedbackEvent
@@ -109,6 +111,8 @@ class GameViewModelTest {
         hints = HintEngine(),
         autoCompleter = AutoCompleter(),
         feedback = feedback,
+        recordAchievements = achievements,
+        achievements = badges,
         deadEndDetector = DeadEndDetector(),
         searchDispatcher = dispatcher,
     ).also {
@@ -133,6 +137,19 @@ class GameViewModelTest {
         drawMode = DrawMode.ONE,
         moves = 10,
     )
+
+    @Test
+    fun `badges unlocked while playing are shown, not the ones already earned`() = gameTest {
+        badges.current.value = AchievementProgress(unlocked = setOf(Achievement.WON_1.name))
+        val vm = viewModel()
+
+        vm.onIntent(GameIntent.Tap(PileRef.Stock, 0))
+        runCurrent()
+
+        vm.uiState.value.earned shouldBe listOf(Achievement.DAYS_1)
+        vm.onIntent(GameIntent.BadgesShown)
+        vm.uiState.value.earned shouldBe emptyList()
+    }
 
     @Test
     fun `resumes the saved game in progress`() = gameTest {
