@@ -11,6 +11,7 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation("com.github.vinaooo.vinkit:settings:${providers.gradleProperty("vinkit.tag").get()}")
+    implementation("com.github.vinaooo.vinkit:achievements:${providers.gradleProperty("vinkit.tag").get()}")
     implementation("com.github.vinaooo.vinkit:scores:${providers.gradleProperty("vinkit.tag").get()}")
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)

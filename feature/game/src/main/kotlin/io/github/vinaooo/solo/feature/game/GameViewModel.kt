@@ -222,7 +222,7 @@ class GameViewModel @Inject constructor(
     private fun timeUp() {
         clock.stop()
         state.announce(Announcement.TimeUp)
-        viewModelScope.launch { loseGame(GameMode.COUNTER_TIME) }
+        state.value.session?.let { viewModelScope.launch { loseGame(it) } }
     }
 
     private fun show(session: GameSession, keepHint: Boolean = false) {

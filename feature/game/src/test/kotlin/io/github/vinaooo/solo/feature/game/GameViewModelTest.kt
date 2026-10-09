@@ -5,6 +5,7 @@ import io.github.vinaooo.solo.domain.deal.DealPicker
 import io.github.vinaooo.solo.domain.deal.Dealer
 import io.github.vinaooo.solo.domain.deal.SeededShuffler
 import io.github.vinaooo.solo.domain.deal.WinnableDeals
+import io.github.vinaooo.solo.domain.fake.FakeAchievementRepository
 import io.github.vinaooo.solo.domain.fake.FakeAppSettingsRepository
 import io.github.vinaooo.solo.domain.fake.FakeSavedGameRepository
 import io.github.vinaooo.solo.domain.fake.FakeScoreRepository
@@ -27,6 +28,7 @@ import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.session.GameSession
 import io.github.vinaooo.solo.domain.usecase.FinishGame
 import io.github.vinaooo.solo.domain.usecase.LoseGame
+import io.github.vinaooo.solo.domain.usecase.RecordAchievements
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.solo.domain.usecase.SaveGame
 import io.github.vinaooo.solo.domain.usecase.StartNewGame
@@ -60,6 +62,8 @@ class GameViewModelTest {
     private val scores = FakeScoreRepository()
     private val settings = FakeSettingsRepository()
     private val appSettings = FakeAppSettingsRepository()
+    private val badges = FakeAchievementRepository()
+    private val achievements = RecordAchievements(badges, stats, settings) { 5_000 }
     private val feedback = FakeGameFeedback()
     private val engine = GameEngine()
 
@@ -92,11 +96,12 @@ class GameViewModelTest {
             Dealer(),
             DealPicker({ 42 }, settings),
             clock = { 5_000 },
+            achievements,
         ),
         resumeGame = ResumeGame(savedGames),
         saveGame = SaveGame(savedGames),
-        finishGame = FinishGame(scores, stats, FakeVegasBankRepository(), savedGames, clock = { 5_000 }),
-        loseGame = LoseGame(stats, savedGames),
+        finishGame = FinishGame(scores, stats, FakeVegasBankRepository(), savedGames, { 5_000 }, achievements),
+        loseGame = LoseGame(stats, savedGames, achievements),
         settingsRepository = settings,
         appSettingsRepository = appSettings,
         engine = engine,

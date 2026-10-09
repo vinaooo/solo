@@ -33,6 +33,7 @@ class StartNewGame(
     private val dealer: Dealer,
     private val deals: DealPicker,
     private val clock: Clock,
+    private val achievements: RecordAchievements,
 ) {
     suspend operator fun invoke(
         drawMode: DrawMode,
@@ -59,6 +60,7 @@ class StartNewGame(
         if (!saved.isInProgress) return
         stats.update(state.mode.key, GameStats::afterLoss)
         if (state.mode.isVegas) scores.add(state.toRecord(clock.nowMillis()))
+        achievements.gameEnded(saved)
     }
 }
 
@@ -72,14 +74,16 @@ class SaveGame(private val savedGames: SavedGameRepository) {
 
 /**
  * Records a won game: its score in its mode's ranking (cumulative Vegas: the balance, which the win also carries
- * over), the win in the stats, and removes the saved game.
+ * over), the win in the stats and the badges, and removes the saved game.
  */
+@Suppress("LongParameterList") // A win touches every store, and the badges.
 class FinishGame(
     private val scores: ScoreRepository,
     private val stats: StatsRepository,
     private val vegasBank: VegasBankRepository,
     private val savedGames: SavedGameRepository,
     private val clock: Clock,
+    private val achievements: RecordAchievements,
 ) {
     suspend operator fun invoke(session: GameSession): ScoreRecord {
         val state = session.state
@@ -88,14 +92,20 @@ class FinishGame(
         stats.update(state.mode.key, GameStats::afterWin)
         if (state.mode == GameMode.VEGAS_CUMULATIVE) vegasBank.set(state.score)
         savedGames.clear()
+        achievements.gameEnded(session)
         return record
     }
 }
 
 /** Records a game whose time ran out (counter time): a loss, and the saved game is gone, so it isn't counted again. */
-class LoseGame(private val stats: StatsRepository, private val savedGames: SavedGameRepository) {
-    suspend operator fun invoke(mode: GameMode) {
-        stats.update(mode.key, GameStats::afterLoss)
+class LoseGame(
+    private val stats: StatsRepository,
+    private val savedGames: SavedGameRepository,
+    private val achievements: RecordAchievements,
+) {
+    suspend operator fun invoke(session: GameSession) {
+        stats.update(session.state.mode.key, GameStats::afterLoss)
         savedGames.clear()
+        achievements.gameEnded(session)
     }
 }

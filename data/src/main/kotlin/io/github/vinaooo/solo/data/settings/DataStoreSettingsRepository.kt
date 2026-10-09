@@ -34,6 +34,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
             difficulty = enumOrDefault(this[Keys.DIFFICULTY], defaults.difficulty),
             autoCompleteTipsShown = this[Keys.AUTO_COMPLETE_TIPS_SHOWN] ?: defaults.autoCompleteTipsShown,
             dealCursor = this[Keys.DEAL_CURSOR],
+            winStreak = this[Keys.WIN_STREAK] ?: defaults.winStreak,
         )
     }
 
@@ -42,6 +43,7 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         this[Keys.GAME_MODE] = settings.gameMode.name
         this[Keys.DIFFICULTY] = settings.difficulty.name
         this[Keys.AUTO_COMPLETE_TIPS_SHOWN] = settings.autoCompleteTipsShown
+        this[Keys.WIN_STREAK] = settings.winStreak
         settings.dealCursor?.let { this[Keys.DEAL_CURSOR] = it } ?: remove(Keys.DEAL_CURSOR)
     }
 
@@ -54,5 +56,6 @@ class DataStoreSettingsRepository @Inject constructor(private val dataStore: Dat
         val DIFFICULTY = stringPreferencesKey("difficulty")
         val AUTO_COMPLETE_TIPS_SHOWN = intPreferencesKey("auto_complete_tips_shown")
         val DEAL_CURSOR = longPreferencesKey("deal_cursor")
+        val WIN_STREAK = intPreferencesKey("win_streak")
     }
 }

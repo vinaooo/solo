@@ -9,4 +9,6 @@ data class Settings(
     val autoCompleteTipsShown: Int = 0,
     /** Where the next Easy or Normal deal is taken from its list (`DealPicker`); null until the first one. */
     val dealCursor: Long? = null,
+    /** Games won in a row, in any mode; a counted loss ends the run (the streak badges). */
+    val winStreak: Int = 0,
 )

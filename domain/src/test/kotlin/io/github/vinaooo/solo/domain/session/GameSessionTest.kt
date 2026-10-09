@@ -40,6 +40,13 @@ class GameSessionTest {
     }
 
     @Test
+    fun `undos are counted, and a redo doesn't take them back`() {
+        val twice = start.play(Move.Draw, engine)!!.undo()!!.redo()!!.undo().shouldNotBeNull()
+
+        twice.undos shouldBe 2
+    }
+
+    @Test
     fun `undo with no history does nothing`() {
         start.undo().shouldBeNull()
     }

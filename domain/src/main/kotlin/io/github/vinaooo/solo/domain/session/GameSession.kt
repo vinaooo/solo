@@ -7,9 +7,17 @@ import io.github.vinaooo.solo.domain.rules.GameEngine
 import io.github.vinaooo.solo.domain.rules.MoveOutcome
 import kotlinx.serialization.Serializable
 
-/** A game being played: the deal's seed, the current board and its undo history. This is what gets saved. */
+/**
+ * A game being played: the deal's seed, the current board, its undo history and how many [undos] it took (here, not in
+ * the board, which a redo restores from history). This is what gets saved.
+ */
 @Serializable
-data class GameSession(val seed: Long, val state: GameState, val history: UndoHistory = UndoHistory()) {
+data class GameSession(
+    val seed: Long,
+    val state: GameState,
+    val history: UndoHistory = UndoHistory(),
+    val undos: Int = 0,
+) {
     val canUndo: Boolean get() = history.canUndo
 
     val canRedo: Boolean get() = history.canRedo
@@ -22,7 +30,7 @@ data class GameSession(val seed: Long, val state: GameState, val history: UndoHi
     }
 
     fun undo(): GameSession? = history.undo(state)?.let { (restored, remaining) ->
-        copy(state = restored, history = remaining)
+        copy(state = restored, history = remaining, undos = undos + 1)
     }
 
     fun redo(): GameSession? = history.redo(state)?.let { (replayed, remaining) ->
