@@ -153,11 +153,14 @@ private fun badgesButton(onOpenBadges: (() -> Unit)?): List<NavigationAction> {
     return listOfNotNull(onOpenBadges?.let { NavigationAction(Icons.Rounded.MilitaryTech, label, it) })
 }
 
-/** Badges just unlocked, in a snackbar once no dialog covers the game (it would time out behind one). */
+/**
+ * Badges just unlocked, in a snackbar once no dialog covers the game (it would time out behind one) and the
+ * auto-complete tip, in the same spot, has gone.
+ */
 @Composable
 private fun BadgesEarned(uiState: GameUiState, snackbar: SnackbarHostState, onShown: () -> Unit) {
     val earned = uiState.earned
-    val covered = uiState.winRecord != null || uiState.isTimeUp
+    val covered = uiState.winRecord != null || uiState.isTimeUp || uiState.showAutoCompleteTip
     val text = when (earned.size) {
         0 -> null
         1 -> stringResource(R.string.badge_earned, badge(earned.single()).name)

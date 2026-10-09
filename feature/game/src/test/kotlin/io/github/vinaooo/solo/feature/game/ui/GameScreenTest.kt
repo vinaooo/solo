@@ -186,6 +186,13 @@ class GameScreenTest {
     }
 
     @Test
+    fun `badges earned wait for the auto-complete tip`() {
+        show(playing.copy(showAutoCompleteTip = true, earned = listOf(Achievement.WON_1, Achievement.WIN_STANDARD)))
+
+        compose.onNodeWithText("2 badges earned").assertDoesNotExist()
+    }
+
+    @Test
     fun `the win dialog shows the result and starts a new game`() {
         show(playing.copy(winRecord = ScoreRecord("STANDARD", 4321, 185, 0, mapOf("moves" to "97"))))
 
