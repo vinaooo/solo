@@ -105,7 +105,7 @@ class GameScreenTest {
         compose.onNodeWithContentDescription("Undo").performClick()
         compose.onNodeWithContentDescription("Hint").performClick()
         compose.onNodeWithContentDescription("New game").performClick()
-        compose.onNodeWithText("Restart this deal").performClick()
+        compose.onNodeWithText("Restart this game").performClick()
         compose.onNodeWithContentDescription("New game").performClick()
         compose.onNodeWithText("New game").performClick()
 
@@ -172,7 +172,7 @@ class GameScreenTest {
     fun `a badge earned shows in a snackbar and is acknowledged`() {
         show(playing.copy(earned = listOf(Achievement.WON_10)))
 
-        compose.onNodeWithText("Badge earned: 10 wins").assertExists()
+        compose.onNodeWithText("New badge: 10 wins").assertExists()
         compose.mainClock.advanceTimeBy(SNACKBAR_MILLIS)
         intents shouldContain GameIntent.BadgesShown
     }
@@ -182,14 +182,14 @@ class GameScreenTest {
         val won = ScoreRecord("STANDARD", 1, 1, 0)
         show(playing.copy(winRecord = won, earned = listOf(Achievement.WON_1, Achievement.WIN_STANDARD)))
 
-        compose.onNodeWithText("2 badges earned").assertDoesNotExist()
+        compose.onNodeWithText("2 new badges").assertDoesNotExist()
     }
 
     @Test
     fun `badges earned wait for the auto-complete tip`() {
         show(playing.copy(showAutoCompleteTip = true, earned = listOf(Achievement.WON_1, Achievement.WIN_STANDARD)))
 
-        compose.onNodeWithText("2 badges earned").assertDoesNotExist()
+        compose.onNodeWithText("2 new badges").assertDoesNotExist()
     }
 
     @Test
@@ -270,6 +270,6 @@ class GameScreenTest {
         compose.onNodeWithContentDescription("Nova partida").performClick()
 
         compose.onNodeWithText("Nova partida").assertExists()
-        compose.onNodeWithText("Reiniciar partida").assertExists()
+        compose.onNodeWithText("Reiniciar esta partida").assertExists()
     }
 }

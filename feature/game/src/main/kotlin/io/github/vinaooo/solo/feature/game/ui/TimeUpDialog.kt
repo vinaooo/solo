@@ -9,6 +9,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.shell.R as ShellR
 
 /** Counter time ran out: the game is lost. It can't be dismissed, only left for a new game or another try. */
 @Composable
@@ -18,7 +19,7 @@ internal fun TimeUpDialog(onNewGame: () -> Unit, onRestart: () -> Unit) {
         icon = { Icon(Icons.Rounded.TimerOff, contentDescription = null) },
         title = { Text(stringResource(R.string.time_up_title)) },
         text = { Text(stringResource(R.string.time_up_body)) },
-        confirmButton = { TextButton(onClick = onNewGame) { Text(stringResource(R.string.new_game)) } },
-        dismissButton = { TextButton(onClick = onRestart) { Text(stringResource(R.string.restart_deal)) } },
+        confirmButton = { TextButton(onClick = onNewGame) { Text(stringResource(ShellR.string.vinkit_new_game)) } },
+        dismissButton = { TextButton(onClick = onRestart) { Text(stringResource(ShellR.string.vinkit_restart)) } },
     )
 }

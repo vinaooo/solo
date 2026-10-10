@@ -1,19 +1,11 @@
 <resources>
     <string name="score">Score</string>
     <string name="moves">Moves</string>
-    <string name="time">Time</string>
-    <string name="undo">Undo</string>
-    <string name="redo">Redo</string>
-    <string name="hint">Hint</string>
     <string name="auto_complete">Auto-complete</string>
     <string name="auto_complete_tip">Tap to auto-complete</string>
     <string name="stuck_title">No moves left</string>
     <string name="stuck_body">Undo, or start a new game.</string>
-    <string name="new_game">New game</string>
-    <string name="restart_deal">Restart this deal</string>
     <string name="no_moves">No useful moves left. Try a new game.</string>
-    <string name="win_score">Score: %1$d</string>
-    <string name="win_time">Time: %1$s</string>
     <string name="win_moves">Moves: %1$d</string>
     <string name="stock_empty">Empty stock</string>
     <string name="stock_recycle">Turn the waste over</string>
@@ -24,8 +16,6 @@
     <string name="a11y_moved_revealed">%1$s to %2$s. Revealed %3$s</string>
     <string name="a11y_drew">Drew %1$s</string>
     <string name="a11y_recycled">Waste turned over</string>
-    <string name="a11y_undone">Move undone</string>
-    <string name="a11y_redone">Move redone</string>
     <string name="a11y_hint_move">Hint: %1$s to %2$s</string>
     <string name="a11y_hint_draw">Hint: draw a card</string>
     <string name="a11y_hint_recycle">Hint: turn the waste over</string>
@@ -43,7 +33,6 @@
         <item quantity="one">Stock, %1$d card</item>
         <item quantity="other">Stock, %1$d cards</item>
     </plurals>
-    <string name="a11y_hinted">Hint</string>
     <string name="a11y_move_to_column">Move to column %1$d</string>
     <string name="a11y_move_to_foundation">Move to the foundation</string>
     <string name="a11y_click_move">move</string>
@@ -53,22 +42,10 @@
     <string name="time_up_body">The game wasn\'t finished in time. It counts as a loss.</string>
     <string name="win_money">Winnings: %1$s</string>
     <string name="stock_no_passes">No passes left</string>
-    <!-- Solo's words for vinkit's shell and bug report (its own resources win over vinkit's). -->
-    <string name="vinkit_new_game">New game</string>
-    <string name="vinkit_report_bug">Report a bug</string>
+    <!-- Solo's words for vinkit's bug report: a screenshot of the board (its own resources win over vinkit's). -->
     <string name="vinkit_report_bug_body">Tell us what happened. Sending by email attaches a screenshot of the board and the game, so we can replay it.</string>
-    <string name="vinkit_report_subject">%1$s bug report</string>
 
     <!-- Badges -->
-    <string name="badge_earned">Badge earned: %1$s</string>
-    <plurals name="badges_earned">
-        <item quantity="one">%d badge earned</item>
-        <item quantity="other">%d badges earned</item>
-    </plurals>
-    <plurals name="badge_played_name">
-        <item quantity="one">%d game</item>
-        <item quantity="other">%d games</item>
-    </plurals>
     <plurals name="badge_played_note">
         <item quantity="one">Play %d game</item>
         <item quantity="other">Play %d games</item>
@@ -81,17 +58,9 @@
         <item quantity="one">Play on %d day</item>
         <item quantity="other">Play on %d days in a row</item>
     </plurals>
-    <plurals name="badge_won_name">
-        <item quantity="one">%d win</item>
-        <item quantity="other">%d wins</item>
-    </plurals>
     <plurals name="badge_won_note">
         <item quantity="one">Win %d game</item>
         <item quantity="other">Win %d games</item>
-    </plurals>
-    <plurals name="badge_streak_name">
-        <item quantity="one">%d win in a row</item>
-        <item quantity="other">%d wins in a row</item>
     </plurals>
     <plurals name="badge_streak_note">
         <item quantity="one">Win %d game in a row, in any mode</item>

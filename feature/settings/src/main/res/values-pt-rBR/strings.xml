@@ -1,14 +1,7 @@
 <resources>
-    <string name="back">Voltar</string>
-    <string name="section_game">Jogo</string>
     <string name="draw_mode">Cartas viradas do monte</string>
     <string name="draw_one">Virar 1</string>
     <string name="draw_three">Virar 3</string>
-    <string name="difficulty">Dificuldade</string>
-    <string name="difficulty_easy">Fácil</string>
-    <string name="difficulty_normal">Normal</string>
-    <string name="difficulty_hard">Difícil</string>
-    <string name="new_game_confirm_text">Isso vai começar uma nova partida. A partida atual conta como derrota.</string>
     <string name="privacy_policy_url">https://vinaooo.github.io/solo/privacy.html#pt-br</string>
     <string name="game_mode">Pontuação</string>
     <string name="mode_standard_note">Pontos, com penalidade de tempo e bônus de rapidez</string>

@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vinaooo.solo.domain.model.Settings
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.settings.NewGameConfirmDialog
+import io.github.vinaooo.vinkit.settings.R as SettingsR
 import io.github.vinaooo.vinkit.settings.SettingsScreen as VinkitSettingsScreen
 import io.github.vinaooo.vinkit.settings.SettingsSection
 
@@ -41,7 +42,7 @@ fun SettingsRoute(
         NewGameConfirmDialog(
             viewModel::confirmChange,
             viewModel::dismissChange,
-            stringResource(R.string.new_game_confirm_text),
+            stringResource(SettingsR.string.vinkit_new_game_confirm_text),
         )
     }
 }
@@ -66,7 +67,7 @@ fun SettingsScreen(
         onOpenPrivacyPolicy = onOpenPrivacyPolicy,
         modifier = modifier,
         gameSections = listOf(
-            SettingsSection(stringResource(R.string.section_game)) { GameSection(settings, onChange) },
+            SettingsSection(stringResource(SettingsR.string.vinkit_section_game)) { GameSection(settings, onChange) },
         ),
         privacyOptionsRequired = privacyOptionsRequired,
         onOpenPrivacyOptions = onOpenPrivacyOptions,

@@ -163,8 +163,8 @@ private fun BadgesEarned(uiState: GameUiState, snackbar: SnackbarHostState, onSh
     val covered = uiState.winRecord != null || uiState.isTimeUp || uiState.showAutoCompleteTip
     val text = when (earned.size) {
         0 -> null
-        1 -> stringResource(R.string.badge_earned, badge(earned.single()).name)
-        else -> pluralStringResource(R.plurals.badges_earned, earned.size, earned.size)
+        1 -> stringResource(AchievementsR.string.vinkit_new_badge, badge(earned.single()).name)
+        else -> pluralStringResource(AchievementsR.plurals.vinkit_new_badges, earned.size, earned.size)
     }
     LaunchedEffect(text, covered) {
         // Cleared once shown: clearing first would change the key and cancel the snackbar.

@@ -18,6 +18,7 @@ import io.github.vinaooo.solo.core.designsystem.component.cardName
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.GameIntent
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.shell.R as ShellR
 
 /** What TalkBack says for a card, and the semantics and tap that go with it. */
 /** [modifier] handles taps; the card draws their ripple from [touches], so it follows its rounded corners. */
@@ -32,7 +33,7 @@ internal fun cardAccessibility(
     layout: BoardLayout,
     onIntent: (GameIntent) -> Unit,
 ): CardAccessibility {
-    val hintLabel = stringResource(R.string.a11y_hinted)
+    val hintLabel = stringResource(ShellR.string.vinkit_hint)
     val actions = moveActions(placed, destinations, onIntent)
     val touches = remember { MutableInteractionSource() }
     val modifier = Modifier
