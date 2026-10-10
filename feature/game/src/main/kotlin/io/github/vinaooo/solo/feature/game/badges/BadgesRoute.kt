@@ -12,6 +12,7 @@ import io.github.vinaooo.solo.domain.model.Ladder
 import io.github.vinaooo.solo.feature.game.R
 import io.github.vinaooo.vinkit.achievements.Badge
 import io.github.vinaooo.vinkit.achievements.BadgesScreen
+import io.github.vinaooo.vinkit.achievements.R as AchievementsR
 
 @Composable
 fun BadgesRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: BadgesViewModel = hiltViewModel()) {
@@ -37,10 +38,10 @@ internal fun badge(achievement: Achievement): Badge {
 }
 
 private val LADDER_TEXT = mapOf(
-    Ladder.PLAYED to (R.plurals.badge_played_name to R.plurals.badge_played_note),
+    Ladder.PLAYED to (AchievementsR.plurals.vinkit_badge_played to R.plurals.badge_played_note),
     Ladder.DAYS to (R.plurals.badge_days_name to R.plurals.badge_days_note),
-    Ladder.WON to (R.plurals.badge_won_name to R.plurals.badge_won_note),
-    Ladder.STREAK to (R.plurals.badge_streak_name to R.plurals.badge_streak_note),
+    Ladder.WON to (AchievementsR.plurals.vinkit_badge_won to R.plurals.badge_won_note),
+    Ladder.STREAK to (AchievementsR.plurals.vinkit_badge_streak to R.plurals.badge_streak_note),
 )
 
 private val BADGE_TEXT = mapOf(

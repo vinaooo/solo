@@ -3,6 +3,4 @@
     <string name="vinkit_phone_view_note">Cartas do tamanho de um celular</string>
     <string name="vinkit_phone_view_side">Lado da mesa</string>
     <string name="vinkit_board_alignment">Posição da mesa</string>
-    <string name="vinkit_board_top">Topo</string>
-    <string name="vinkit_board_bottom">Base</string>
 </resources>

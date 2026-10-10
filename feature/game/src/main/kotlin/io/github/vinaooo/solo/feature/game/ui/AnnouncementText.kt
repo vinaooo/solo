@@ -6,6 +6,7 @@ import io.github.vinaooo.solo.core.designsystem.component.cardName
 import io.github.vinaooo.solo.domain.model.PileRef
 import io.github.vinaooo.solo.feature.game.Announcement
 import io.github.vinaooo.solo.feature.game.R
+import io.github.vinaooo.vinkit.shell.R as ShellR
 
 @Composable
 internal fun announcementText(announcement: Announcement): String = when (announcement) {
@@ -21,8 +22,8 @@ internal fun announcementText(announcement: Announcement): String = when (announ
     }
     is Announcement.Drew -> stringResource(R.string.a11y_drew, cardName(announcement.card))
     Announcement.Recycled -> stringResource(R.string.a11y_recycled)
-    Announcement.Undone -> stringResource(R.string.a11y_undone)
-    Announcement.Redone -> stringResource(R.string.a11y_redone)
+    Announcement.Undone -> stringResource(ShellR.string.vinkit_undone)
+    Announcement.Redone -> stringResource(ShellR.string.vinkit_redone)
     is Announcement.HintMove ->
         stringResource(R.string.a11y_hint_move, cardName(announcement.card), placeName(announcement.to))
     Announcement.HintDraw -> stringResource(R.string.a11y_hint_draw)

@@ -17,6 +17,7 @@ import io.github.vinaooo.solo.domain.model.drawMode
 import io.github.vinaooo.solo.domain.model.gameMode
 import io.github.vinaooo.solo.domain.model.moves
 import io.github.vinaooo.vinkit.core.ScoreRecord
+import io.github.vinaooo.vinkit.designsystem.R as DesignR
 import io.github.vinaooo.vinkit.scores.ScorePoints
 import io.github.vinaooo.vinkit.scores.ScoresScreen as VinkitScoresScreen
 import io.github.vinaooo.vinkit.scores.ScoresUiState
@@ -67,9 +68,9 @@ private fun details(record: ScoreRecord): String = stringResource(
     stringResource(if (record.drawMode == DrawMode.ONE) R.string.draw_one else R.string.draw_three),
     stringResource(
         when (record.difficulty) {
-            Difficulty.EASY -> R.string.difficulty_easy
-            Difficulty.NORMAL -> R.string.difficulty_normal
-            Difficulty.HARD -> R.string.difficulty_hard
+            Difficulty.EASY -> DesignR.string.vinkit_difficulty_easy
+            Difficulty.NORMAL -> DesignR.string.vinkit_difficulty_medium
+            Difficulty.HARD -> DesignR.string.vinkit_difficulty_hard
         },
     ),
 )

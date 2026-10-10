@@ -12,6 +12,7 @@ import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
 import io.github.vinaooo.solo.domain.model.Settings
+import io.github.vinaooo.vinkit.designsystem.R as DesignR
 import io.github.vinaooo.vinkit.settings.Choice
 import io.github.vinaooo.vinkit.settings.IconChoice
 import io.github.vinaooo.vinkit.settings.IconOption
@@ -29,11 +30,11 @@ internal fun GameSection(settings: Settings, onChange: (SettingsChange) -> Unit)
         onSelect = { onChange(SettingsChange.DrawModeChanged(it)) },
     )
     Choice(
-        title = stringResource(R.string.difficulty),
+        title = stringResource(DesignR.string.vinkit_difficulty),
         options = listOf(
-            Difficulty.EASY to stringResource(R.string.difficulty_easy),
-            Difficulty.NORMAL to stringResource(R.string.difficulty_normal),
-            Difficulty.HARD to stringResource(R.string.difficulty_hard),
+            Difficulty.EASY to stringResource(DesignR.string.vinkit_difficulty_easy),
+            Difficulty.NORMAL to stringResource(DesignR.string.vinkit_difficulty_medium),
+            Difficulty.HARD to stringResource(DesignR.string.vinkit_difficulty_hard),
         ),
         selected = settings.difficulty,
         onSelect = { onChange(SettingsChange.DifficultyChanged(it)) },

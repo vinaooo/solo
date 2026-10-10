@@ -33,6 +33,7 @@ import io.github.vinaooo.vinkit.core.ScoreRecord
 import io.github.vinaooo.vinkit.core.formatElapsed
 import io.github.vinaooo.vinkit.designsystem.spokenElapsed
 import io.github.vinaooo.vinkit.shell.MenuOption
+import io.github.vinaooo.vinkit.shell.R as ShellR
 import io.github.vinaooo.vinkit.shell.ToolbarAction
 import io.github.vinaooo.vinkit.shell.ToolbarTip
 
@@ -65,7 +66,7 @@ private fun Stats(uiState: GameUiState, large: Boolean = false) {
         Stat(stringResource(R.string.time_left), formatElapsed(left), large, spoken = spokenElapsed(left))
     } else if (mode == GameMode.STANDARD) {
         val elapsed = state?.elapsedSeconds ?: 0
-        Stat(stringResource(R.string.time), formatElapsed(elapsed), large, spoken = spokenElapsed(elapsed))
+        Stat(stringResource(ShellR.string.vinkit_time), formatElapsed(elapsed), large, spoken = spokenElapsed(elapsed))
     }
 }
 
@@ -97,15 +98,17 @@ internal fun toolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit
     return listOf(
         ToolbarAction.Button(
             Icons.AutoMirrored.Rounded.Undo,
-            stringResource(R.string.undo),
+            stringResource(ShellR.string.vinkit_undo),
             enabled = uiState.session?.canUndo == true,
         ) { onIntent(GameIntent.Undo) },
         ToolbarAction.Button(
             Icons.AutoMirrored.Rounded.Redo,
-            stringResource(R.string.redo),
+            stringResource(ShellR.string.vinkit_redo),
             enabled = uiState.session?.canRedo == true,
         ) { onIntent(GameIntent.Redo) },
-        ToolbarAction.Button(Icons.Rounded.Lightbulb, stringResource(R.string.hint)) { onIntent(GameIntent.Hint) },
+        ToolbarAction.Button(Icons.Rounded.Lightbulb, stringResource(ShellR.string.vinkit_hint)) {
+            onIntent(GameIntent.Hint)
+        },
         ToolbarAction.Button(
             Icons.Rounded.AutoAwesome,
             stringResource(R.string.auto_complete),
@@ -125,8 +128,10 @@ internal fun toolbarActions(uiState: GameUiState, onIntent: (GameIntent) -> Unit
 /** The new game menu: a new deal, or this deal again. */
 @Composable
 internal fun menuOptions(onIntent: (GameIntent) -> Unit): List<MenuOption> = listOf(
-    MenuOption(Icons.Rounded.Style, stringResource(R.string.new_game)) { onIntent(GameIntent.NewGame) },
-    MenuOption(Icons.Rounded.Refresh, stringResource(R.string.restart_deal)) { onIntent(GameIntent.RestartDeal) },
+    MenuOption(Icons.Rounded.Style, stringResource(ShellR.string.vinkit_new_game)) { onIntent(GameIntent.NewGame) },
+    MenuOption(Icons.Rounded.Refresh, stringResource(ShellR.string.vinkit_restart)) {
+        onIntent(GameIntent.RestartDeal)
+    },
 )
 
 /** What a win shows: Vegas's winnings, or the score (counter time ranks by time alone), then the time and moves. */
@@ -134,9 +139,9 @@ internal fun menuOptions(onIntent: (GameIntent) -> Unit): List<MenuOption> = lis
 internal fun winLines(record: ScoreRecord): List<String> = listOfNotNull(
     when {
         record.gameMode.isVegas -> stringResource(R.string.win_money, formatDollars(record.points))
-        record.gameMode != GameMode.COUNTER_TIME -> stringResource(R.string.win_score, record.points)
+        record.gameMode != GameMode.COUNTER_TIME -> stringResource(ShellR.string.vinkit_win_score, record.points)
         else -> null
     },
-    stringResource(R.string.win_time, formatElapsed(record.elapsedSeconds)),
+    stringResource(ShellR.string.vinkit_win_time, formatElapsed(record.elapsedSeconds)),
     stringResource(R.string.win_moves, record.moves),
 )

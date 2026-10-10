@@ -5,6 +5,4 @@
     <string name="vinkit_phone_view_note">Cards at a phone\'s size</string>
     <string name="vinkit_phone_view_side">Board side</string>
     <string name="vinkit_board_alignment">Board position</string>
-    <string name="vinkit_board_top">Top</string>
-    <string name="vinkit_board_bottom">Bottom</string>
 </resources>
