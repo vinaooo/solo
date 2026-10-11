@@ -1,5 +1,10 @@
 package io.github.vinaooo.solo.domain.model
 
+import io.github.vinaooo.vinkit.core.ThemeColor
+
+/** Solo's brand color: the theme before the player picks one. */
+val BRAND_COLOR = ThemeColor.GREEN
+
 /** Solo's own settings; the ones every vinkit game has (theme, feedback, hand, layout) are vinkit's `AppSettings`. */
 data class Settings(
     val drawMode: DrawMode = DrawMode.ONE,

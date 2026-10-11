@@ -39,11 +39,7 @@ fun SettingsRoute(
         onOpenPrivacyPolicy = { uriHandler.openUri(privacyPolicyUrl) },
     )
     if (pendingChange != null) {
-        NewGameConfirmDialog(
-            viewModel::confirmChange,
-            viewModel::dismissChange,
-            stringResource(SettingsR.string.vinkit_new_game_confirm_text),
-        )
+        NewGameConfirmDialog(viewModel::confirmChange, viewModel::dismissChange)
     }
 }
 

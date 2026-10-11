@@ -3,6 +3,7 @@ package io.github.vinaooo.solo.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.vinaooo.solo.domain.model.BRAND_COLOR
 import io.github.vinaooo.solo.domain.model.Difficulty
 import io.github.vinaooo.solo.domain.model.DrawMode
 import io.github.vinaooo.solo.domain.model.GameMode
@@ -11,7 +12,6 @@ import io.github.vinaooo.solo.domain.repository.SettingsRepository
 import io.github.vinaooo.solo.domain.usecase.ResumeGame
 import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.AppSettingsRepository
-import io.github.vinaooo.vinkit.core.ThemeColor
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -51,7 +51,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            AppSettings(themeColor = ThemeColor.GREEN),
+            AppSettings(themeColor = BRAND_COLOR),
         )
 
     private val pending = MutableStateFlow<SettingsChange?>(null)

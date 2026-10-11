@@ -16,6 +16,7 @@ import io.github.vinaooo.solo.data.settings.DataStoreSettingsRepository
 import io.github.vinaooo.solo.data.settings.DataStoreVegasBankRepository
 import io.github.vinaooo.solo.data.system.RandomSeedSource
 import io.github.vinaooo.solo.data.system.SystemClock
+import io.github.vinaooo.solo.domain.model.BRAND_COLOR
 import io.github.vinaooo.solo.domain.repository.Clock
 import io.github.vinaooo.solo.domain.repository.SavedGameRepository
 import io.github.vinaooo.solo.domain.repository.SeedSource
@@ -27,7 +28,6 @@ import io.github.vinaooo.vinkit.core.AppSettings
 import io.github.vinaooo.vinkit.core.AppSettingsRepository
 import io.github.vinaooo.vinkit.core.ScoreRepository
 import io.github.vinaooo.vinkit.core.StatsRepository
-import io.github.vinaooo.vinkit.core.ThemeColor
 import io.github.vinaooo.vinkit.scores.data.RoomScoreRepository
 import io.github.vinaooo.vinkit.scores.data.RoomStatsRepository
 import io.github.vinaooo.vinkit.scores.data.ScoresDatabase
@@ -66,7 +66,7 @@ internal object DataProvidersModule {
     @Provides
     @Singleton
     fun appSettings(dataStore: DataStore<Preferences>): AppSettingsRepository =
-        DataStoreAppSettingsRepository(dataStore, AppSettings(themeColor = ThemeColor.GREEN))
+        DataStoreAppSettingsRepository(dataStore, AppSettings(themeColor = BRAND_COLOR))
 
     /** The badges, in the same DataStore (`achievements_*` keys). */
     @Provides

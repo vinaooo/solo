@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
+import io.github.vinaooo.solo.domain.model.BRAND_COLOR
 import io.github.vinaooo.vinkit.core.ThemeColor
 import io.github.vinaooo.vinkit.core.ThemeMode
 import io.github.vinaooo.vinkit.designsystem.VinkitTheme
@@ -17,11 +18,11 @@ import io.github.vinaooo.vinkit.designsystem.isDarkTheme
 fun SoloTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     dynamicColor: Boolean = true,
-    themeColor: ThemeColor = ThemeColor.GREEN,
+    themeColor: ThemeColor = BRAND_COLOR,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = isDarkTheme(themeMode, isSystemInDarkTheme())
-    VinkitTheme(themeColor, themeMode, dynamicColor, SoloTypography) {
+    VinkitTheme(themeColor, themeMode, dynamicColor) {
         val colorScheme = MaterialTheme.colorScheme
         val cardColors = remember(colorScheme, darkTheme) { cardColorsFor(colorScheme, darkTheme) }
         CompositionLocalProvider(LocalCardColors provides cardColors, content = content)
